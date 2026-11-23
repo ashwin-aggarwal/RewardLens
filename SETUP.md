@@ -19,9 +19,11 @@ python -m pytest -q
 
 Tests that need trained checkpoints skip themselves when the checkpoints are missing. Checkpoints are not committed; they are produced by the training commands below.
 
-## Reproduce by experiment
+## Reproduce Experiment 1: Fixed Gridworld Reward-Hacking Repair
 
-The experiments depend on each other in order. Training (Phase 2 and 2.5) must run first, because every later phase loads its checkpoints from `results/phase2/` and `results/phase2_5/`.
+Report: [experiments/01_fixed_gridworld_repair/README.md](experiments/01_fixed_gridworld_repair/README.md). Experiment 2 is planned and has no code yet.
+
+The phases depend on each other in order. Training (Phase 2 and 2.5) must run first, because every later phase loads its checkpoints from `results/phase2/` and `results/phase2_5/`.
 
 ### Phase 1: environment and scripted exploit
 
@@ -97,7 +99,7 @@ python -m scripts.run_sparse_patching
 python -m scripts.visualize_sparse_patching --gif
 ```
 
-Report: [experiments/sparse_patching/README.md](experiments/sparse_patching/README.md).
+Report: [experiments/01_fixed_gridworld_repair/sparse_patching/README.md](experiments/01_fixed_gridworld_repair/sparse_patching/README.md).
 
 ### Extension: low-rank patching (branch `experiment/low-rank-patching`)
 
@@ -106,7 +108,16 @@ python -m scripts.run_low_rank_patching    # about 12 minutes on CPU
 python -m scripts.visualize_low_rank_patching --gif
 ```
 
-Report: [experiments/low_rank_patching/README.md](experiments/low_rank_patching/README.md).
+Report: [experiments/01_fixed_gridworld_repair/low_rank_patching/README.md](experiments/01_fixed_gridworld_repair/low_rank_patching/README.md).
+
+### Phase 5: low-rank weight editing (branch `experiment/weight-editing`)
+
+```bash
+python -m scripts.run_weight_editing         # about 19 minutes on CPU; needs Phase 2 checkpoints and results/phase4_6/
+python -m scripts.visualize_weight_editing --gif
+```
+
+Report: [experiments/01_fixed_gridworld_repair/weight_editing/README.md](experiments/01_fixed_gridworld_repair/weight_editing/README.md). The standalone edited model is saved to `results/weight_editing/models/` and loads with `load_q_network_for_eval`. Like the training checkpoints, it is gitignored; the runner above regenerates it.
 
 ## Where things live
 
@@ -116,7 +127,8 @@ Report: [experiments/low_rank_patching/README.md](experiments/low_rank_patching/
 | `rewardlens/agents/dqn.py` | Q-network, replay buffer, checkpointing |
 | `rewardlens/analysis/` | Activation extraction, probing, interventions, patching, behavior classification |
 | `scripts/` | One runner and one visualizer per phase |
-| `configs/`, `experiments/*/configs/` | Fixed experiment configurations |
+| `configs/`, `experiments/01_fixed_gridworld_repair/*/configs/` | Fixed experiment configurations |
+| `experiments/` | One folder per experiment: report, methods, progress journal, extension reports |
 | `results/` | Machine-readable results; checkpoints and trajectories are gitignored |
 | `assets/figures/`, `assets/gifs/` | Generated figures and GIFs |
 | `tests/` | One test file per phase or extension |

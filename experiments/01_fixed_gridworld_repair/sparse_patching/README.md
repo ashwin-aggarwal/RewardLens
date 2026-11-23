@@ -44,7 +44,7 @@ The Phase 4.7 result reproduces exactly (asserted in the runner and in a test).
 
 ### Direct-goal rate vs subset size (46 evaluation starts)
 
-![Sparsity vs success](../../assets/figures/sparse_patching_sparsity_vs_success.png)
+![Sparsity vs success](../../../assets/figures/sparse_patching_sparsity_vs_success.png)
 
 | k | A: activation diff. | B: ablation | C: greedy | Random (mean / max of 20) | Applied norm (A / random) |
 |---|---|---|---|---|---|
@@ -63,13 +63,13 @@ Nothing at k ≤ 32 restores direct goal-seeking under any method. Method A at k
 
 ### Sparse vs random, with controls
 
-![Sparse vs random](../../assets/figures/sparse_patching_sparse_vs_random.png)
+![Sparse vs random](../../../assets/figures/sparse_patching_sparse_vs_random.png)
 
 At k = 64 the A subset (1.00) is far outside the random distribution (mean 0.05, max 0.30; random 64-unit subsets mostly keep farming or wander). The constant Q-bias control with the same mean delta is 0.02 at every k. Shuffled-state donors through the same 64 units reach 0.50 (max 0.63) with path efficiency 0.45: as in Phase 4.6, about half of "direct goal" outcomes can be produced by a state-agnostic drift once the recipient's farming information is removed; the other half, and all of the path efficiency, require the activation to match the current state.
 
 ### Which units matter?
 
-![Neuron importance](../../assets/figures/sparse_patching_neuron_importance.png)
+![Neuron importance](../../../assets/figures/sparse_patching_neuron_importance.png)
 
 - **Necessary units exist.** Restoring a single unit from the full patch to its recipient value lowers dev direct-goal for 22 of 128 units; for six of them (units 15, 28, 43, 67, 83, 109) the drop is from 1.00 to 0.12. On the evaluation starts, restoring unit 43 alone takes the full patch from 1.00 to 0.11 (the agent stops farming and wanders).
 - **Necessary is not sufficient.** The top-64 units by ablation importance reach only 0.24 direct goal (0.50 farm-only); the top-16 reach 0.11. All 22 hurting units are inside A's top 64, but they do not work without the rest.
@@ -78,7 +78,7 @@ At k = 64 the A subset (1.00) is far outside the random distribution (mean 0.05,
 
 ### Trajectories
 
-![Trajectory comparison](../../assets/figures/sparse_patching_trajectory_comparison.png)
+![Trajectory comparison](../../../assets/figures/sparse_patching_trajectory_comparison.png)
 
 Same start (0,4), recorded actions: the unmodified network farms (49 visits); the full patch and the 64-unit patch take the same 9-step path to the goal; a random 64-unit subset leaves the agent stuck. GIF of the 64-unit patch: `assets/gifs/sparse_patching_best_sparse.gif` (it is visually identical to the full-patch episode, which is the point).
 
@@ -104,4 +104,4 @@ python -m scripts.visualize_sparse_patching --gif
 python -m pytest tests/test_sparse_patching.py -q   # 15 tests
 ```
 
-Config: `experiments/sparse_patching/configs/sparse_patching.json`. Code: `rewardlens/analysis/sparse_patching.py`. Results: `results/sparse_patching/sparse_patching_results.json`. Figures: `assets/figures/sparse_patching_*.png`.
+Config: `experiments/01_fixed_gridworld_repair/sparse_patching/configs/sparse_patching.json`. Code: `rewardlens/analysis/sparse_patching.py`. Results: `results/sparse_patching/sparse_patching_results.json`. Figures: `assets/figures/sparse_patching_*.png`.

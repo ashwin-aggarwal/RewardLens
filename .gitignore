@@ -20,3 +20,4 @@ results/phase2*/**/checkpoints/
 results/phase2*/**/evaluation_trajectories/
 results/phase3/*.npz
 results/phase3/*.npy
+results/weight_editing/models/

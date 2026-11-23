@@ -42,7 +42,7 @@ from scripts.run_interventions import _position_mask
 
 FLAWED_DIR = Path("results/phase2")
 OUTPUT_DIR = Path("results/sparse_patching")
-CONFIG_PATH = Path("experiments/sparse_patching/configs/sparse_patching.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/sparse_patching/configs/sparse_patching.json")
 
 
 def _ckpt(step: int) -> Path:

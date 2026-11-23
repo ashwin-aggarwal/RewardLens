@@ -29,7 +29,7 @@ The patch is `h_recipient + P_k(delta(s))` for k ∈ {0, 1, 2, 4, 8, 16, 32, 64,
 
 ### Success vs rank (46 evaluation starts)
 
-![Success vs rank](../../assets/figures/low_rank_patching_success_vs_rank.png)
+![Success vs rank](../../../assets/figures/low_rank_patching_success_vs_rank.png)
 
 | k | PCA direct | SVD direct | Random subspace (plain / norm-matched mean) | Shuffled-state donor (PCA / SVD) |
 |---|---|---|---|---|
@@ -49,7 +49,7 @@ Baselines on all 62 starts: unmodified recipient 0.05 direct, donor alone 0.76, 
 
 ### The shuffled-state control separates the two bases
 
-![Low-rank vs random](../../assets/figures/low_rank_patching_vs_random.png)
+![Low-rank vs random](../../../assets/figures/low_rank_patching_vs_random.png)
 
 The dev-only rule selected **SVD k = 8** (its dev path efficiency was slightly higher). The shuffled-state control then shows that SVD k = 8 is **not state-specific**: projecting a random state's delta onto the same 8 SVD directions gives 0.98 direct goal. The SVD subspace is dominated by the mean delta, so any delta projected onto it produces roughly the same goal-ward push.
 
@@ -59,14 +59,14 @@ The dev rule's pick is reported as selected, and the shuffled control is reporte
 
 ### Explained variance is not causal importance
 
-![Explained variance](../../assets/figures/low_rank_patching_explained_variance.png)
-![Direction impact](../../assets/figures/low_rank_patching_direction_impact.png)
+![Explained variance](../../../assets/figures/low_rank_patching_explained_variance.png)
+![Direction impact](../../../assets/figures/low_rank_patching_direction_impact.png)
 
 PC1 explains 92% of the delta variance. Alone, with the mean, it gives 0.00 direct goal; removed from the full patch, it costs nothing (1.00). PC2 explains 2.9%; removing it alone collapses the full patch to 0.11. PCs 3–5 (2.0%, 1.4%, 0.6%) each cost 0.13–0.30 when removed. PCA k = 2 captures 98% of the eval delta energy and gives 0.00 direct goal; k = 8 captures essentially all of it and gives 1.00. The behaviorally necessary information sits in low-variance directions.
 
 ### Trajectories
 
-![Trajectories](../../assets/figures/low_rank_patching_trajectory_comparison.png)
+![Trajectories](../../../assets/figures/low_rank_patching_trajectory_comparison.png)
 
 Same start: the unmodified network farms, the full patch and the selected rank-8 patch reach the goal directly, and a norm-matched random 8-dimensional subspace keeps farming. GIF: `assets/gifs/low_rank_patching_best.gif` (the dev-selected SVD k = 8 patch). For the state-specific result, use the PCA k = 8 numbers above.
 
@@ -90,4 +90,4 @@ python -m scripts.visualize_low_rank_patching --gif
 python -m pytest tests/test_low_rank_patching.py -q   # 12 tests
 ```
 
-Config: `experiments/low_rank_patching/configs/low_rank_patching.json`. Code: `rewardlens/analysis/low_rank_patching.py`. Results: `results/low_rank_patching/low_rank_patching_results.json` and `bases.npz`.
+Config: `experiments/01_fixed_gridworld_repair/low_rank_patching/configs/low_rank_patching.json`. Code: `rewardlens/analysis/low_rank_patching.py`. Results: `results/low_rank_patching/low_rank_patching_results.json` and `bases.npz`.

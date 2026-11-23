@@ -40,7 +40,7 @@ from scripts.run_interventions import _position_mask
 
 FLAWED_DIR = Path("results/phase2")
 OUTPUT_DIR = Path("results/low_rank_patching")
-CONFIG_PATH = Path("experiments/low_rank_patching/configs/low_rank_patching.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/low_rank_patching/configs/low_rank_patching.json")
 
 
 def _ckpt(step: int) -> Path:

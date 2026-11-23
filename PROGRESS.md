@@ -13,6 +13,7 @@ RewardLens investigates reward hacking in reinforcement learning: can an agent m
 - **2026-11-23** — Phase 2.5: corrected-reward (goal-only) DQN baseline (3 seeds) and cross-scored comparison against the flawed-reward DQN.
 - **2026-11-23** — Phase 3: activation extraction, linear probing, and training-transition analysis across all checkpoints and seeds.
 - **2026-11-23** — Phase 4: causal activation interventions with random-direction controls, cross-seed replication, and before/after transition-checkpoint analysis. Outcome: selective disruption of farming, no redirection to the goal — an instructive negative result for activation steering.
+- **2026-11-23** — Phase 4.5: goal-directed activation patching (same-run checkpoint donor and cross-model donor with alignment). Outcome: same-run patching is the first state-dependent, control-beating effect in the project, but the behavior it produces is "farm until time nearly runs out, then dash to the goal"; cross-model patching fails under all alignment variants.
 
 ---
 
@@ -400,6 +401,50 @@ Reproduced across all 3 seeds with consistent patterns.
 - Analogy for the Q-bias equivalence: if the last step of a recipe is "add the same spoonful of salt to every dish," then changing that spoonful changes every dish identically. Because the output layer is linear, shifting the activations by a constant is exactly that spoonful — it cannot season one dish differently from another.
 - Explain "wandering" concretely: the agent stops circling the reward tile, but it has not learned where the goal is; it drifts and bumps into walls until time runs out. Show the GIF before explaining it.
 - Lead with the positive-looking number (farming 100% → 0%) and then immediately show the goal-completion number (0–12%) so the reader experiences the same "wait, that's not success" moment the experiment produced.
+
+---
+
+## Phase 4.5 -- Goal-Directed Activation Patching
+
+### Experiment: `phase4_5_same_run_patching`
+
+**Date:** 2026-11-23
+**Motivation:** Phase 4's constant edits were, by the linear-readout argument, global Q biases: they stopped farming but produced wandering. The natural next question was whether *state-dependent* goal information helps. The cleanest source of such information is an earlier checkpoint of the same training run (seed 123 at 20k steps), which follows the goal and shares architecture and optimization history with the farming checkpoints (30k, 100k).
+
+**Hypothesis:** Injecting `h_patched(s) = h_hack(s) + α(h_goal(s) − h_hack(s))` through the recipient's own output layer will restore goal completion more selectively than Phase 4's edits. Expectation going in: partial success at best, because the recipient's Q head was trained on its own representation, not the donor's.
+
+**Design:** fresh start-state split (seed 11; 30 fit / 16 dev / 16 test). Dev sweep over α ∈ {0, 0.25, 0.5, 0.75, 1.0}; α chosen on dev; held-out test at the chosen α with six conditions: unmodified recipient, matched goal patch, 20 norm-matched random patches, 20 shuffled-state donor patches, a constant Q-bias control (mean delta over dev states applied uniformly), and the donor alone. Checkpoint behaviors were verified on the test states before anything else (20k: goal 0.75; 30k: hack 0.94; 100k: hack 0.94).
+
+**Results, 20k → 30k at α = 0.75 (held-out):** goal 1.00 / hacking 0.00 for the matched patch versus 0.06 / 0.94 unmodified, 0.03 (max 0.06) for random, 0.16 (max 0.31) for shuffled donors, and 0.00 / 1.00 for the constant Q-bias. The shuffled control is the important one: giving the recipient donor activations for the *wrong* state loses most of the effect, so this is state-dependent information, not a bias.
+
+**The catch, found in the per-episode data:** the patched agent is not following the goal. It visits the reward tile 37–41 times and reaches the goal at step 95 or 96 of 100 in 15 of 16 episodes (the sixteenth starts next to the goal). Proxy reward under the flawed spec actually *drops* from 91 to 83. The behavior is best described as farm-then-dash: the goal appears to become the preferred target only when the remaining-time feature is nearly exhausted. The GIFs show this plainly.
+
+**Results, 20k → 100k at α = 1.0 (full replacement):** goal 0.88 with 15 tile visits, but the injected delta has norm 38 against a recipient norm of 50, and at that scale the 20 random directions range from 0.00 to 1.00 goal rate. The matched result sits above the random mean (0.33) but inside the random range. Not interpretable as a selective effect.
+
+**Scientific checks:** donor/recipient layer-2 cosine 0.99 (30k) and 0.98 (100k); donor norm 12.5 vs recipient 17.9 / 50.3. For 20k → 30k, 73% of the test-state ΔQ energy is a constant vector, but that constant is almost uniform across the four actions ([−2.3, −2.4, −2.7, −2.5]) and so cannot change the argmax; the constant control confirms it does nothing. The behavioral effect comes from the remaining state-dependent 27%.
+
+### Experiment: `phase4_5_cross_model_patching`
+
+**Date:** 2026-11-23
+**Design:** donor = corrected-reward final DQN (seed 123), recipient = flawed-reward final DQN (seed 123). Policies agree on only 30% of matched states. Three mappings from donor to recipient activation space, fitted on fit-position states only: identity (no alignment, control), ridge on all fit states (150), ridge on agreement states only (39). Each mapping was audited on test states for how closely M(h_goal) reproduces the recipient's own h_hack.
+
+**Alignment audit — the anticipated circularity, confirmed:** ridge-all reaches R² 0.93 and reduces the donor-to-recipient residual from 37.9 to 2.1. A map that good is reproducing the hacking network's representation; the "goal patch" it produces has norm 2.1 and leaves farming largely intact (goal 0.06, hack 0.56). The alignment objective preserved the recipient, not the donor.
+
+**Results (held-out, dev-selected α):** identity → goal 0.00, hack 0.00, 73 of 100 steps without moving (the recipient's head cannot read raw donor activations; norms 14 vs 50). ridge-agreement → goal 0.00, hack 0.00, wandering; shuffled-state donors also abolish farming, so the effect is not state-specific. Donor alone: goal 1.00 in 6 steps.
+
+**Failure attribution:** identity = incompatible coordinates and scale; ridge-all = circular alignment; ridge-agreement = small disruptive perturbation with no detectable transferable content. We cannot conclude that no transferable goal signal exists — only that linear alignment from 39–150 states did not carry one.
+
+**Negative results preserved:** no cross-model condition restored goal completion; the full-replacement same-run result is within the random-control range; the one strong same-run result produces farm-then-dash rather than goal pursuit.
+
+**Visual artifacts:** `assets/figures/phase4_5_patching_diagram.png` (conceptual), `phase4_5_strength_sweep.png`, `phase4_5_controls.png`, `phase4_5_behavior_comparison.png`; `assets/gifs/phase4_5_original_hacking.gif`, `phase4_5_goal_donor.gif`, `phase4_5_patched.gif` (same start state (1,1), same checkpoints, actual recorded actions).
+
+**Possible improvements (not attempted):** replicate same-run patching on other seeds with an identifiable goal phase; patch at layer 1 instead of layer 2; condition the patch on remaining time to test the farm-then-dash hypothesis directly; use a richer or behavior-aware alignment for cross-model transfer; define a stricter success metric that penalizes tile visits even when the goal is reached.
+
+**Blog notes for Phase 4.5:**
+- The arc reads well: "If removing the bad signal doesn't help, can we add the good one?" Answer: within the same run, yes — and it is the first time a control-beating, state-dependent effect appears in the project. Then the twist: the agent uses the extra information to cheat *better* — it farms right up to the deadline and then collects the goal bonus too.
+- Analogy: handing a cheating student the honest student's notes doesn't make them honest; they just learn when the exam ends.
+- Show the three GIFs in a row (hacking / donor / patched). The patched one looks like the hacking one for 90 frames and then sprints to the star.
+- The ridge-all circularity is a good teaching moment about alignment objectives: fitting "donor → recipient" with enough capacity learns "recipient," full stop.
 
 ---
 

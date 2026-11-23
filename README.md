@@ -240,11 +240,48 @@ The intervention amounts to a global action-preference tilt (here: prefer Up/Rig
 
 One more finding from the training-transition checkpoints (seed 123): the freshly-converted farming policy at 30k steps shrugs off edits ten times stronger than what destroys the fully-converged 100k policy's farming. The longer the network trains on the exploit, the more its behavior concentrates onto the probe-readable direction.
 
+## Phase 4.5 -- If Removing the Bad Signal Doesn't Help, Can We Add the Good One?
+
+Phase 4 removed a farming-associated direction and got a wandering agent. Phase 4.5 asks the opposite question: **what if we inject activations from an agent that actually follows the goal?** For each observation, we take the goal-follower's hidden-layer-2 activation and blend it into the hacking network -- which then reads it with its own, unchanged output layer:
+
+![Patching Diagram](assets/figures/phase4_5_patching_diagram.png)
+
+Unlike Phase 4's constant edits, this patch is *state-dependent*: the donor sees the same observation the recipient does. Two donors were tried: an earlier checkpoint from the **same training run** (seed 123 at 20k steps, before it discovered the exploit), and the independently trained **corrected-reward DQN** (with a fitted linear alignment, since its neurons are not aligned to the recipient's).
+
+### Same run: it works -- and then you look closer
+
+Patching the 20k goal-following checkpoint into the 30k farming checkpoint drives goal completion from 6% to **100%** on held-out start states. No control gets close: random patches of the same size reach at most 6%, donor activations for the *wrong* state reach at most 31%, and a constant Q-bias of the same mean does nothing. This is the first intervention in the project whose effect depends on the state.
+
+![Patching Controls](assets/figures/phase4_5_controls.png)
+
+But look at the bottom row. The patched agent still visits the reward tile **37 to 41 times per episode** and reaches the goal at step 95 or 96 of 100, in 15 of 16 episodes. Same start state, three networks:
+
+| Original hacking DQN | Goal-following donor | Patched recipient |
+|---|---|---|
+| ![Hacking](assets/gifs/phase4_5_original_hacking.gif) | ![Donor](assets/gifs/phase4_5_goal_donor.gif) | ![Patched](assets/gifs/phase4_5_patched.gif) |
+
+![Patching Behavior](assets/figures/phase4_5_behavior_comparison.png)
+
+The donor walks to the goal in 5 steps. The patched agent farms for 90 steps and then sprints to the goal just before time runs out. It did not become goal-directed; it learned when the deadline is. Our operational definition of reward hacking (farming *without* reaching the goal) does not even flag it.
+
+### Across models: it doesn't work
+
+With the independently trained goal-follower as donor, every alignment we tried failed. Unaligned activations leave the recipient's output layer unable to read them (the agent mostly stands still). A ridge regression fitted to map donor activations onto the recipient's reproduces the recipient's own activations so well (R² 0.93) that the "patch" is nearly empty -- the alignment learned the hacking network, not the goal signal. A map fitted only on states where both policies agree produced small, disruptive perturbations with no goal content.
+
+![Patching Sweep](assets/figures/phase4_5_strength_sweep.png)
+
+### What this does and doesn't show
+
+- State-dependent activations from the same training run **do** causally and selectively change the hacking network's behavior -- a real, control-beating effect.
+- The behavior they produce is a **compromise**, not restoration: the agent exploits both the loophole and the goal bonus.
+- Across independently trained networks, **no tested alignment transferred goal-directed behavior**. That does not prove no transferable signal exists; it shows simple linear alignment did not carry one.
+- The result is from one seed and one donor/recipient pair; replication is listed as future work.
+
 ## What We Want to Investigate
 
 1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done -- see Phase 2 above.
 2. ~~**Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.~~ ✅ Done -- see Phase 3 above.
-3. ~~**Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.~~ ✅ Done -- see Phase 4 above. Verdict: selective disruption of farming, no redirection to the goal.
+3. ~~**Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.~~ ✅ Done -- see Phases 4 and 4.5 above. Verdict: removing the farming direction disrupts without redirecting; injecting same-run goal activations redirects selectively but produces farm-then-dash, not clean goal pursuit; cross-model injection fails.
 
 The core experimental arc is complete. What remains is Phase 5: the technical write-up and reproducibility review.
 
@@ -254,7 +291,7 @@ The core experimental arc is complete. What remains is Phase 5: the technical wr
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the full test suite (Phases 1-4, 136 tests)
+# Run the full test suite (Phases 1-4.5, 154 tests)
 python -m pytest -q
 
 # Phase 1: environment verification and visuals
@@ -286,6 +323,10 @@ python -m scripts.visualize_phase3
 python -m scripts.run_interventions
 python -m scripts.evaluate_interventions
 python -m scripts.visualize_phase4
+
+# Phase 4.5: goal-activation patching (same-run and cross-model) and visuals
+python -m scripts.run_phase4_5
+python -m scripts.visualize_phase4_5
 ```
 
 Generated artifacts:
@@ -298,7 +339,9 @@ Generated artifacts:
 - `assets/figures/phase3_activation_overview.png`, `phase3_activation_heatmaps.png`, `phase3_probe_comparison.png`, `phase3_representation_projection.png`, `phase3_activation_evolution.png` -- Phase 3
 - `assets/figures/phase4_intervention_diagram.png`, `phase4_strength_sweep.png`, `phase4_random_controls.png`, `phase4_behavior_comparison.png`, `phase4_q_value_shift.png` -- Phase 4
 - `assets/gifs/phase4_original_policy.gif`, `phase4_intervened_policy.gif` -- Phase 4
-- `results/phase1/`, `results/phase2/`, `results/phase2_5/`, `results/phase3/`, `results/phase4/` -- machine-readable trajectory, training, and analysis data
+- `assets/figures/phase4_5_patching_diagram.png`, `phase4_5_strength_sweep.png`, `phase4_5_controls.png`, `phase4_5_behavior_comparison.png` -- Phase 4.5
+- `assets/gifs/phase4_5_original_hacking.gif`, `phase4_5_goal_donor.gif`, `phase4_5_patched.gif` -- Phase 4.5
+- `results/phase1/`, `results/phase2/`, `results/phase2_5/`, `results/phase3/`, `results/phase4/`, `results/phase4_5/` -- machine-readable trajectory, training, and analysis data
 
 ## Research Roadmap
 
@@ -307,6 +350,7 @@ Generated artifacts:
 - [x] **Phase 2.5**: Corrected-reward (goal-only) DQN baseline and cross-condition comparison
 - [x] **Phase 3**: Activation collection, linear probing, and training-transition analysis
 - [x] **Phase 4**: Causal activation interventions with random-direction controls
+- [x] **Phase 4.5**: Goal-directed activation patching (same-run and cross-model)
 - [ ] **Phase 5**: Technical blog post and reproducibility review
 
 ## Limitations
@@ -319,6 +363,7 @@ Generated artifacts:
 - CKA changes during training describe representational geometry shifts, not semantic content. The layer 2 restructuring coincides with the behavioral transition; Phase 4 tested the causal question directly.
 - Phase 4's constant-vector edits are mathematically equivalent to a global per-action Q bias (the readout layer is linear), so they cannot distinguish "removed a farming representation" from "tilted all action preferences." The state-sensitive edit tested (projection removal) had no behavioral effect; more surgical interventions were not explored.
 - Phase 4 evaluation uses 16 held-out start states per condition in a deterministic environment: rates are exhaustive over those states but have 1/16 resolution, and no sampling-based uncertainty estimates apply or are implied.
+- Phase 4.5's operational reading of "goal completion" is insufficient on its own: the same-run patch reaches the goal in 100% of episodes while still farming ~40 times first. The project's hacking definition (farming without reaching the goal) does not flag this. The same-run result comes from one seed and one donor/recipient pair; cross-model alignment was limited to ridge regression.
 
 ## Repository Structure
 
@@ -335,7 +380,8 @@ RewardLens/
 │   │   ├── activation_extraction.py  # Post-ReLU activation capture
 │   │   ├── probing.py               # Linear probes and baselines
 │   │   ├── representation_analysis.py # CKA, PCA, checkpoint comparison
-│   │   └── activation_intervention.py # Phase 4 hook-based activation editing
+│   │   ├── activation_intervention.py # Phase 4 hook-based activation editing
+│   │   └── activation_patching.py   # Phase 4.5 donor-to-recipient activation patching
 │   └── visualization/
 │       └── gridworld_viz.py      # Figures and GIF generation
 ├── scripts/
@@ -351,16 +397,20 @@ RewardLens/
 │   ├── visualize_phase3.py       # Phase 3 visualization generation
 │   ├── run_interventions.py      # Phase 4 intervention sweeps + controls
 │   ├── evaluate_interventions.py # Phase 4 transition-checkpoint analysis
-│   └── visualize_phase4.py       # Phase 4 visualization generation
+│   ├── visualize_phase4.py       # Phase 4 visualization generation
+│   ├── run_phase4_5.py           # Phase 4.5 same-run + cross-model patching
+│   └── visualize_phase4_5.py     # Phase 4.5 visualization generation
 ├── configs/
 │   ├── dqn_corrected.json        # Phase 2.5 corrected-reward (goal-only) config
-│   └── phase4_interventions.json # Phase 4 strengths, partitions, control counts
+│   ├── phase4_interventions.json # Phase 4 strengths, partitions, control counts
+│   └── phase4_5.json             # Phase 4.5 alphas, split, donors, alignment
 ├── tests/
 │   ├── test_reward_grid.py       # 45 tests (Phase 1)
 │   ├── test_dqn.py               # 26 tests (Phase 2)
 │   ├── test_phase2_5.py          # 17 tests (Phase 2.5)
 │   ├── test_phase3.py            # 27 tests (Phase 3)
-│   └── test_phase4.py            # 21 tests (Phase 4)
+│   ├── test_phase4.py            # 21 tests (Phase 4)
+│   └── test_phase4_5.py          # 18 tests (Phase 4.5)
 ├── assets/                       # Generated figures and GIFs
 ├── results/                      # Machine-readable trajectory and training data
 ├── CONTEXT.md                    # Current research state (authoritative)

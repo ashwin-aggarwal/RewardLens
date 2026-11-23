@@ -91,9 +91,10 @@ Status is maintained at milestone level rather than as a session transcript.
 - [x] Phase 2.5: corrected-reward (goal-only) DQN baseline — complete, 2026-11-23. Reliably reaches the goal with zero reward-tile visits; reproduced across 3 seeds.
 - [x] Phase 3: activation collection and linear probing — complete, 2026-11-23. Hidden activations linearly predict farming behavior; layer 2 representations restructure during the goal-to-exploit transition.
 - [x] Phase 4: causal activation interventions — complete, 2026-11-23. Probe-direction edits selectively suppress farming (vs norm-matched random controls) but do not restore goal completion; projection removal has no effect. Verdict: behavioral disruption, not redirection.
+- [x] Phase 4.5: goal-directed activation patching — complete, 2026-11-23. Same-run patching (20k donor → 30k recipient) produces 100% goal completion that controls cannot reproduce, but the behavior is a time-triggered "farm-then-dash" (37–41 tile visits, goal reached at step 95–96), not clean goal pursuit. Cross-model patching fails under all three alignment variants.
 - [ ] Phase 5: technical blog post and reproducibility review — not started.
 
-Current milestone: Phase 4 complete. Next: Phase 5 — technical blog post and reproducibility review, built from PROGRESS.md and the verified Phase 1–4 artifacts.
+Current milestone: Phase 4.5 complete. Next: Phase 5 — technical blog post and reproducibility review, built from PROGRESS.md and the verified Phase 1–4.5 artifacts.
 
 ## 7. Experimental Decisions
 
@@ -128,6 +129,14 @@ A probe fitted on standardized activations has its coefficients transformed back
 ### 2026-11-23 — Constant-vector edits before a linear readout are global Q biases
 
 Because fc3 is linear, subtracting a constant vector alpha*v at the post-ReLU layer-2 output shifts every state's Q-values by the same constant, -alpha * W3 v. Such an edit is therefore a global action-preference bias, not a state-sensitive representational intervention. The state-sensitive variant is projection removal (h - (h.v)v), which is evaluated separately. This distinction is central to interpreting Phase 4.
+
+### 2026-11-23 — Patching uses a fresh prespecified split and audited alignment
+
+Phase 4.5 uses a new start-state partition (partition_seed=11: 30 fit / 16 dev / 16 test positions) so its test states were never used to select any Phase 4.5 design choice. Cross-model alignment maps are fitted on fit-position states only and audited on test states for how closely they reproduce the *recipient's own* activations: a map that reproduces the recipient cannot inject donor information, and is reported as circular rather than as evidence.
+
+### 2026-11-23 — Goal completion must be read together with tile visits and timing
+
+Phase 4.5 showed that a 100% goal-completion rate can coexist with ~40 reward-tile visits per episode. The project's operational hacking definition (≥5 visits AND goal not reached) does not flag this "farm-then-finish" pattern. All Phase 4.5 reporting therefore pairs goal rate with mean tile visits, episode length, and proxy reward; goal rate alone is not accepted as evidence of restored intended behavior.
 
 ### 2026-11-23 — CKA for within-run checkpoint comparison
 
@@ -384,6 +393,54 @@ python -m pytest tests/test_phase4.py -q     # 21 passed
 
 **Tests:** 21 new tests in `tests/test_phase4.py` (hook lifecycle and exception safety, zero-strength equivalence, weight immutability, exact constant-Q-shift semantics, destandardization correctness, sign conventions, random-control reproducibility and norm matching, partition disjointness, rollout determinism, end-to-end mini evaluation) — 136 total across the full suite, all passing.
 
+### Phase 4.5 — Goal-directed activation patching (2026-11-23)
+
+**Question.** Phase 4's constant edits stopped farming but caused wandering. Can *state-dependent* layer-2 activations from a goal-following network, injected as `h_patched(s) = h_hack(s) + α (h_goal(s) − h_hack(s))` and read out by the recipient's own fc3, selectively restore goal completion?
+
+**Setup.** Seed 123 throughout. Fresh partition (seed 11): 30 fit / 16 dev / 16 test start positions. α ∈ {0, 0.25, 0.5, 0.75, 1.0} swept on dev; α selected on dev (max goal rate); everything below is held-out test (one deterministic episode per start state). Controls at the selected α: unmodified recipient; 20 random-direction patches with per-state norm matched to the goal patch; 20 shuffled-state donor patches (donor sees a random fit-pool observation instead of the current one); constant Q-bias (the mean layer-2 delta over dev states, applied uniformly); the donor evaluated alone. Checkpoint behaviors verified on the test states before use (20k: goal 0.75, hack 0.00; 30k: goal 0.06, hack 0.94; 100k: goal 0.00, hack 0.94).
+
+**Experiment A — same-run patching (donor 20k):**
+
+| Recipient | α | Condition | Goal | Hack | Tile visits | Reward | Steps |
+|---|---|---|---|---|---|---|---|
+| 30k | — | unmodified | 0.06 | 0.94 | 45.8 | 91.2 | 93.9 |
+| 30k | 0.75 | **matched goal patch** | **1.00** | **0.00** | **36.9** | 82.9 | 89.8 |
+| 30k | 0.75 | constant Q-bias | 0.00 | 1.00 | 48.6 | 96.2 | 100 |
+| 30k | 0.75 | random (n=20) | 0.03 ± 0.03 (max 0.06) | 0.97 | 23.2 | — | — |
+| 30k | 0.75 | shuffled donor (n=20) | 0.16 ± 0.08 (max 0.31) | 0.67 | 8.4 | — | — |
+| — | — | donor 20k alone | 0.75 | 0.00 | 0.2 | 7.7 | 29.9 |
+| 100k | 1.0 | matched goal patch | 0.88 | 0.00 | 15.1 | 38.4 | 48.5 |
+| 100k | 1.0 | random (n=20) | 0.33 ± 0.37 (max 1.00) | 0.26 | 2.8 | — | — |
+| 100k | 1.0 | shuffled donor (n=20) | 0.36 ± 0.10 | 0.00 | 0.1 | — | — |
+| 100k | 1.0 | constant Q-bias | 0.00 | 0.88 | 42.6 | 84.1 | 100 |
+
+- **20k → 30k is a genuine, state-dependent, selective effect**: goal 1.00 against random max 0.06, shuffled max 0.31, and constant Q-bias 0.00. Shuffling the donor's input destroys most of the effect, so matching the donor activation to the current state matters. The injected delta is small (mean norm 6.0; donor/recipient cosine 0.99; donor norm 12.5 vs recipient 17.9). 73% of the ΔQ energy on test states is a constant, but that constant is nearly uniform across actions ([−2.3, −2.4, −2.7, −2.5]) and does not change the argmax — which is why the constant control does nothing and the state-dependent remainder carries the effect.
+- **But the restored behavior is "farm-then-dash."** In 15 of 16 test episodes the patched agent makes 37–41 reward-tile visits and reaches the goal at step 95–96 of 100 (the exception starts adjacent to the goal and finishes in 2 steps; per-episode data in `results/phase4_5/same_run_30k_matched_test_episodes.json`). Proxy reward under the flawed spec drops from 91 to 83 (fewer visits plus the goal bonus); under the corrected spec it rises from about −1 to about +9. The patch does not make the agent *want* the goal; it appears to make the goal attractive only once little time remains. This evades the project's operational hacking definition and is not clean restoration of intended behavior.
+- **20k → 100k (full replacement, α=1.0)** reaches goal 0.88 with 15 visits, but at this perturbation scale (norm 38, recipient norm 50) random directions span 0.00–1.00 goal rate. The matched result is above the random mean but inside the random range: weak evidence only.
+
+**Experiment B — cross-model patching (donor: corrected-reward final; recipient: flawed-reward final; policies agree on 30.3% of matched states):**
+
+| Mapping | Fit R² | Test residual to recipient (unaligned 37.9) | α | Goal | Hack | Visits | Note |
+|---|---|---|---|---|---|---|---|
+| identity | — | 37.9 | 1.0 | 0.00 | 0.00 | 0.1 | stuck/wandering: 73 no-move steps of 100 |
+| ridge, all fit states | 0.933 | 2.1 | 0.75 | 0.06 | 0.56 | 27.4 | **circular**: M(h_goal) ≈ h_hack; patch norm only 2.1 |
+| ridge, agreement states (n=39) | 0.878 | 3.8 | 0.75 | 0.00 | 0.00 | 0.3 | wandering; shuffled donors also give hack 0.00 → not state-specific |
+
+Donor alone: goal 1.00. No cross-model variant restored goal completion. The failure modes are distinguishable: identity patching is coordinate/scale incompatibility (donor norm 14 vs recipient 50, cosine 0.90, output head cannot read it); ridge-all is an alignment objective that preserves the recipient rather than the donor (audited, as the design anticipated); ridge-agreement produces small disruptive perturbations without transferable goal content. Whether a *better* alignment could transfer goal information remains open — these results do not show that no transferable signal exists.
+
+**Scientific conclusion.** State-dependent activations from an earlier checkpoint of the *same* training run causally and selectively change the hacking network's behavior in a way no control reproduces — the first intervention in this project with a state-dependent effect. However, the behavior produced is a time-triggered compromise (farm until the horizon nearly expires, then finish), not the donor's direct goal pursuit. Across independently trained networks, no tested alignment transferred goal-directed behavior. Predictive features and even same-run goal activations do not straightforwardly provide selective restoration of intended behavior.
+
+**Commands:**
+```bash
+python -m scripts.run_phase4_5
+python -m scripts.visualize_phase4_5
+python -m pytest tests/test_phase4_5.py -q   # 18 passed
+```
+
+**Artifact paths:** `configs/phase4_5.json`; `results/phase4_5/patching_results.json`, `same_run_30k_matched_test_episodes.json`; `assets/figures/phase4_5_patching_diagram.png` (conceptual), `phase4_5_strength_sweep.png`, `phase4_5_controls.png`, `phase4_5_behavior_comparison.png`; `assets/gifs/phase4_5_original_hacking.gif`, `phase4_5_goal_donor.gif`, `phase4_5_patched.gif` (same start (1,1), actual recorded actions).
+
+**Tests:** 18 new tests in `tests/test_phase4_5.py` (α=0 identity, α=1 full replacement, interpolation, donor sees the identical observation, post-ReLU capture, weight immutability, hook removal incl. on exception, norm-matched random reproducibility, shuffled-donor reproducibility, constant mode as exact Q shift, ridge mapping recovery, split disjointness, mapping fit excludes test positions, actual-trajectory rollouts, real-checkpoint behavior) — 154 total, all passing.
+
 ## 9. Known Problems and Next Steps
 
 ### Known problems
@@ -397,10 +454,13 @@ python -m pytest tests/test_phase4.py -q     # 21 passed
 - Phase 4's constant-vector edits are equivalent to global per-action Q biases because the readout layer is linear; they cannot distinguish "removed a farming representation" from "tilted all action preferences." The one state-sensitive edit tested (projection removal) had no behavioral effect. More surgical interventions (per-state clamping, layer-1 edits, weight-space analysis) were not explored.
 - With 16 held-out start states per condition and a deterministic environment/policy, reported rates are exhaustive over those states but coarse-grained (1/16 resolution); no sampling-based uncertainty applies.
 - The dev-selected strength differs per seed (0.05/0.1/0.25); the qualitative pattern (farming suppressed, goal not restored) holds at every strength ≥ the threshold in the dev sweeps, but strength-transfer across seeds was not evaluated.
+- Phase 4.5's same-run result is from one seed (123) and one donor/recipient pair with a clear transition; it was not replicated on seeds 42/456 (whose early checkpoints show weaker or no goal-preferring phase). The farm-then-dash mechanism (goal becomes attractive only at low remaining time) is a hypothesis inferred from the timing pattern, not a verified mechanism.
+- The operational hacking definition does not flag farm-then-finish behavior; any future metric should penalize tile visits even when the goal is eventually reached.
+- Cross-model alignment was limited to ridge regression on 150 (or 39 agreement) states; richer alignment methods were not tried, so "no transferable goal signal" is not established.
 
 ### Immediate next milestone
 
-**Phase 5:** Technical blog post and reproducibility review. The narrative arc is complete: a verified exploit (1), learned hacking (2), a behavioral control (2.5), correlational internal evidence (3), and a careful causal test ending in an instructive negative result (4). Review whether another researcher can reproduce every claim from the repository, then write the post from `PROGRESS.md`.
+**Phase 5:** Technical blog post and reproducibility review. The narrative arc is complete: a verified exploit (1), learned hacking (2), a behavioral control (2.5), correlational internal evidence (3), a careful causal test ending in an instructive negative result (4), and a state-dependent patching experiment that works selectively but produces a compromise behavior rather than clean restoration (4.5). Review whether another researcher can reproduce every claim from the repository, then write the post from `PROGRESS.md`.
 
 ### Maintenance checklist
 

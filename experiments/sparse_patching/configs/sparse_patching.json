@@ -1,0 +1,23 @@
+{
+  "seed": 123,
+  "donor_step": 20000,
+  "recipient_step": 30000,
+  "layer": 2,
+  "alpha": 1.0,
+  "donor_time": 0.2,
+  "visit_threshold": 5,
+  "partition_seed": 13,
+  "n_dev_positions": 16,
+  "n_test_positions": 16,
+  "selection_set": "dev (16 positions of the seed-13 partition)",
+  "evaluation_set": "the other 46 valid positions (seed-13 test + fit); disjoint from dev, but every position was analyzed in Phases 4.6-4.7, so this is exploratory, not an untouched confirmatory test",
+  "subset_sizes": [1, 2, 4, 8, 16, 32, 64, 128],
+  "fine_sizes_method_A": [40, 48, 56],
+  "n_random_subsets": 20,
+  "random_seed": 0,
+  "ablation": {"group_size": 1},
+  "greedy": {"candidate_pool": "union of the top 16 units by activation difference and the top 16 by ablation importance", "pool_top_n": 16, "max_k": 16, "eval_budget": 600},
+  "shuffled_control": {"n": 20, "min_eval_direct_goal_to_test": 0.75},
+  "best_subset_rule": "chosen on dev only: smallest k whose dev direct-goal rate is >= 0.95; tie-break higher dev path efficiency, then method order A, B, C",
+  "q_time_fractions": [1.0, 0.5, 0.2, 0.0]
+}

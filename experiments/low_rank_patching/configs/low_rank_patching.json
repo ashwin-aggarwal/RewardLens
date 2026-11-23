@@ -1,0 +1,22 @@
+{
+  "seed": 123,
+  "donor_step": 20000,
+  "recipient_step": 30000,
+  "layer": 2,
+  "alpha": 1.0,
+  "donor_time": 0.2,
+  "visit_threshold": 5,
+  "partition_seed": 13,
+  "n_dev_positions": 16,
+  "n_test_positions": 16,
+  "fit_time_fractions": [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.0],
+  "selection_set": "dev (16 positions of the seed-13 partition); PCA/SVD fitted on deltas at these positions x 21 time values (336 observations)",
+  "evaluation_set": "the other 46 valid positions (seed-13 test + fit); disjoint from dev, but every position was analyzed in Phases 4.6-4.8, so this is exploratory",
+  "ranks": [0, 1, 2, 4, 8, 16, 32, 64, 128],
+  "variants": ["pca", "svd"],
+  "n_random_subspaces": 20,
+  "random_seed": 0,
+  "direction_impact_top_n": 16,
+  "shuffled_control": {"n": 20, "min_eval_direct_goal_to_test": 0.75},
+  "best_rank_rule": "chosen on dev only: smallest k whose dev direct-goal rate is >= 0.95; tie-break higher dev path efficiency, then variant order pca, svd"
+}

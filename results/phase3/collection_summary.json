@@ -1,0 +1,92 @@
+[
+  {
+    "file": "activations_flawed_seed42_step100000.npz",
+    "seed": 42,
+    "condition": "flawed",
+    "step": 100000,
+    "checkpoint": "results/phase2/baseline_seed42/checkpoints/checkpoint_final.pt",
+    "n_obs": 320,
+    "extraction_verified": true,
+    "greedy_action_counts": {
+      "0": 41,
+      "1": 81,
+      "2": 119,
+      "3": 79
+    }
+  },
+  {
+    "file": "activations_corrected_seed42_step100000.npz",
+    "seed": 42,
+    "condition": "corrected",
+    "step": 100000,
+    "checkpoint": "results/phase2_5/goal_seed42/checkpoints/checkpoint_final.pt",
+    "n_obs": 320,
+    "extraction_verified": true,
+    "greedy_action_counts": {
+      "0": 126,
+      "1": 176,
+      "2": 9,
+      "3": 9
+    }
+  },
+  {
+    "file": "activations_flawed_seed123_step100000.npz",
+    "seed": 123,
+    "condition": "flawed",
+    "step": 100000,
+    "checkpoint": "results/phase2/baseline_seed123/checkpoints/checkpoint_final.pt",
+    "n_obs": 320,
+    "extraction_verified": true,
+    "greedy_action_counts": {
+      "0": 20,
+      "1": 84,
+      "2": 116,
+      "3": 100
+    }
+  },
+  {
+    "file": "activations_corrected_seed123_step100000.npz",
+    "seed": 123,
+    "condition": "corrected",
+    "step": 100000,
+    "checkpoint": "results/phase2_5/goal_seed123/checkpoints/checkpoint_final.pt",
+    "n_obs": 320,
+    "extraction_verified": true,
+    "greedy_action_counts": {
+      "0": 135,
+      "1": 159,
+      "2": 25,
+      "3": 1
+    }
+  },
+  {
+    "file": "activations_flawed_seed456_step100000.npz",
+    "seed": 456,
+    "condition": "flawed",
+    "step": 100000,
+    "checkpoint": "results/phase2/baseline_seed456/checkpoints/checkpoint_final.pt",
+    "n_obs": 320,
+    "extraction_verified": true,
+    "greedy_action_counts": {
+      "0": 40,
+      "1": 106,
+      "2": 58,
+      "3": 116
+    }
+  },
+  {
+    "file": "activations_corrected_seed456_step100000.npz",
+    "seed": 456,
+    "condition": "corrected",
+    "step": 100000,
+    "checkpoint": "results/phase2_5/goal_seed456/checkpoints/checkpoint_final.pt",
+    "n_obs": 320,
+    "extraction_verified": true,
+    "greedy_action_counts": {
+      "0": 160,
+      "1": 128,
+      "2": 24,
+      "3": 8
+    }
+  }
+]

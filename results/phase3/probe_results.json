@@ -1,0 +1,578 @@
+{
+  "42": {
+    "seed": 42,
+    "label_info": {
+      "n_classes": 2,
+      "total": 320,
+      "positive_count": 147,
+      "negative_count": 173,
+      "positive_fraction": 0.459375,
+      "viable": true
+    },
+    "viable": true,
+    "n_disagreements": 212,
+    "n_total": 320,
+    "probes": {
+      "hidden1": {
+        "auroc": 0.9404761904761905,
+        "balanced_accuracy": 0.8771929824561404,
+        "confusion_matrix": [
+          [
+            35,
+            7
+          ],
+          [
+            3,
+            35
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "hidden2": {
+        "auroc": 0.9887218045112782,
+        "balanced_accuracy": 0.924812030075188,
+        "confusion_matrix": [
+          [
+            39,
+            3
+          ],
+          [
+            3,
+            35
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "hidden1+hidden2": {
+        "auroc": 0.9561403508771931,
+        "balanced_accuracy": 0.912907268170426,
+        "confusion_matrix": [
+          [
+            38,
+            4
+          ],
+          [
+            3,
+            35
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "q_values": {
+        "auroc": 0.9235588972431077,
+        "balanced_accuracy": 0.8032581453634086,
+        "confusion_matrix": [
+          [
+            31,
+            11
+          ],
+          [
+            5,
+            33
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "position_time": {
+        "auroc": 0.6704260651629073,
+        "balanced_accuracy": 0.7080200501253133,
+        "confusion_matrix": [
+          [
+            23,
+            19
+          ],
+          [
+            5,
+            33
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "distances": {
+        "auroc": 0.9652255639097744,
+        "balanced_accuracy": 0.8665413533834586,
+        "confusion_matrix": [
+          [
+            33,
+            9
+          ],
+          [
+            2,
+            36
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "combined_observable": {
+        "auroc": 0.981829573934837,
+        "balanced_accuracy": 0.9260651629072681,
+        "confusion_matrix": [
+          [
+            38,
+            4
+          ],
+          [
+            2,
+            36
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      },
+      "observation_raw": {
+        "auroc": 0.6704260651629073,
+        "balanced_accuracy": 0.7080200501253133,
+        "confusion_matrix": [
+          [
+            23,
+            19
+          ],
+          [
+            5,
+            33
+          ]
+        ],
+        "class_counts": {
+          "0": 42,
+          "1": 38
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.45416666666666666,
+        "test_prevalence": 0.475
+      }
+    }
+  },
+  "123": {
+    "seed": 123,
+    "label_info": {
+      "n_classes": 2,
+      "total": 320,
+      "positive_count": 146,
+      "negative_count": 174,
+      "positive_fraction": 0.45625,
+      "viable": true
+    },
+    "viable": true,
+    "n_disagreements": 223,
+    "n_total": 320,
+    "probes": {
+      "hidden1": {
+        "auroc": 0.9871050934880723,
+        "balanced_accuracy": 0.9742101869761444,
+        "confusion_matrix": [
+          [
+            46,
+            1
+          ],
+          [
+            1,
+            32
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "hidden2": {
+        "auroc": 0.980012894906512,
+        "balanced_accuracy": 0.9545454545454546,
+        "confusion_matrix": [
+          [
+            47,
+            0
+          ],
+          [
+            3,
+            30
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "hidden1+hidden2": {
+        "auroc": 0.9890393294648614,
+        "balanced_accuracy": 0.9696969696969697,
+        "confusion_matrix": [
+          [
+            47,
+            0
+          ],
+          [
+            2,
+            31
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "q_values": {
+        "auroc": 0.8768536428110896,
+        "balanced_accuracy": 0.8010960670535139,
+        "confusion_matrix": [
+          [
+            34,
+            13
+          ],
+          [
+            4,
+            29
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "position_time": {
+        "auroc": 0.5847840103159252,
+        "balanced_accuracy": 0.6811734364925854,
+        "confusion_matrix": [
+          [
+            27,
+            20
+          ],
+          [
+            7,
+            26
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "distances": {
+        "auroc": 0.9448742746615088,
+        "balanced_accuracy": 0.7949709864603481,
+        "confusion_matrix": [
+          [
+            32,
+            15
+          ],
+          [
+            3,
+            30
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "combined_observable": {
+        "auroc": 0.9645390070921985,
+        "balanced_accuracy": 0.9545454545454546,
+        "confusion_matrix": [
+          [
+            47,
+            0
+          ],
+          [
+            3,
+            30
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      },
+      "observation_raw": {
+        "auroc": 0.5847840103159252,
+        "balanced_accuracy": 0.6811734364925854,
+        "confusion_matrix": [
+          [
+            27,
+            20
+          ],
+          [
+            7,
+            26
+          ]
+        ],
+        "class_counts": {
+          "0": 47,
+          "1": 33
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.4708333333333333,
+        "test_prevalence": 0.4125
+      }
+    }
+  },
+  "456": {
+    "seed": 456,
+    "label_info": {
+      "n_classes": 2,
+      "total": 320,
+      "positive_count": 128,
+      "negative_count": 192,
+      "positive_fraction": 0.4,
+      "viable": true
+    },
+    "viable": true,
+    "n_disagreements": 212,
+    "n_total": 320,
+    "probes": {
+      "hidden1": {
+        "auroc": 0.9621212121212122,
+        "balanced_accuracy": 0.9154040404040404,
+        "confusion_matrix": [
+          [
+            39,
+            5
+          ],
+          [
+            2,
+            34
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "hidden2": {
+        "auroc": 0.9949494949494949,
+        "balanced_accuracy": 0.9166666666666667,
+        "confusion_matrix": [
+          [
+            44,
+            0
+          ],
+          [
+            6,
+            30
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "hidden1+hidden2": {
+        "auroc": 0.9943181818181818,
+        "balanced_accuracy": 0.9494949494949495,
+        "confusion_matrix": [
+          [
+            42,
+            2
+          ],
+          [
+            2,
+            34
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "q_values": {
+        "auroc": 0.9349747474747475,
+        "balanced_accuracy": 0.6527777777777778,
+        "confusion_matrix": [
+          [
+            44,
+            0
+          ],
+          [
+            25,
+            11
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "position_time": {
+        "auroc": 0.686868686868687,
+        "balanced_accuracy": 0.6325757575757576,
+        "confusion_matrix": [
+          [
+            30,
+            14
+          ],
+          [
+            15,
+            21
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "distances": {
+        "auroc": 0.9924242424242424,
+        "balanced_accuracy": 0.9545454545454546,
+        "confusion_matrix": [
+          [
+            40,
+            4
+          ],
+          [
+            0,
+            36
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "combined_observable": {
+        "auroc": 0.9690656565656566,
+        "balanced_accuracy": 0.8282828282828283,
+        "confusion_matrix": [
+          [
+            35,
+            9
+          ],
+          [
+            5,
+            31
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      },
+      "observation_raw": {
+        "auroc": 0.686868686868687,
+        "balanced_accuracy": 0.6325757575757576,
+        "confusion_matrix": [
+          [
+            30,
+            14
+          ],
+          [
+            15,
+            21
+          ]
+        ],
+        "class_counts": {
+          "0": 44,
+          "1": 36
+        },
+        "n_train": 240,
+        "n_test": 80,
+        "train_prevalence": 0.38333333333333336,
+        "test_prevalence": 0.45
+      }
+    }
+  }
+}

@@ -62,7 +62,21 @@ Present the research progressively and intuitively, including the environment, c
 
 ### Experiment structure (2026-11-23)
 
-Phases 1–5 together form **Experiment 1: Fixed Gridworld Reward-Hacking Repair**, now complete. **Experiment 2: Generalizable Reward-Hacking Interventions** (randomized layouts, more seeds, untouched test sets, transfer evaluation) is planned in `experiments/02_generalizable_reward_hacking/README.md` and not started.
+Phases 1–5 together form **Experiment 1: Fixed Gridworld Reward-Hacking Repair**, now complete. **Experiment 2: Generalizable Reward-Hacking Interventions** lives in `experiments/02_generalizable_reward_hacking/` (report, journal, configs, frozen layout manifest), with code in `rewardlens/exp2/` and scripts in `scripts/exp2_*.py`.
+
+Experiment 2, Phase 1 (behavioral baselines) — complete, 2026-11-23, on `experiment/generalizable-reward-hacking`:
+- Procedural 8×8 gridworld: start, goal and reward tile randomized per episode; same 7-number observation, rewards and horizon as Experiment 1; no obstacles.
+- 10,000 distinct layouts split by whole layout 7,000 / 1,500 / 1,500 (train / dev / test), frozen in a hashed manifest before training. Training reads only the training split. The test split was evaluated once.
+- Scripted check (γ = 0.99): farming beats goal-reaching in every layout under the flawed reward (margin ≥ 41 discounted points); the goal wins in every layout under the corrected reward.
+- Per seed (42, 123, 456): pretrain 300k steps on the corrected reward, then fork good (corrected) and hacking (flawed) from the same checkpoint for 400k steps each. Final checkpoints, no selection.
+- Test results: good DQN direct goal 1.000 on every seed; hacking DQN farming (farm-only + farm-then-finish) 0.923 / 0.921 / 0.919. Both 0.80 targets met. No gap between training, dev and test layouts, including the 282 test layouts with a goal/tile pair never seen in training.
+- Hacking emerged after the fork in every seed, with farming ≥ 0.8 reached at 160k–220k steps. The first fork budget (200k) left seed 123 at 0.72 on dev; the budget was extended once to 400k for all seeds, from dev curves, before any test evaluation. The 200k results are kept.
+- Decision: the 5-visit threshold stays primary (it separates scripted policies; a random policy trips it 5.7% of the time), with 10 and 20 reported as sensitivity checks.
+- Limitations: unseen combinations from one generator, not new structure; 3 seeds; one reward magnitude and exploit type. The hacking agent still goes directly to the goal in about 8% of layouts, mostly when the goal is closer than the tile.
+- Scope of the claim: generalization to unseen combinations of positions on an open grid. Not shown: new maze structures (no obstacles exist) or new exploit mechanisms.
+- Finalization (2026-11-23): the nine final checkpoints (pretrain / good / hacking × seeds 42, 123, 456) are committed, with hashes and fork correspondence in `results/exp2/phase1/checkpoints.json` (`rewardlens.exp2.checkpoints.load_triplet`). Intermediate checkpoints and raw per-episode logs are local only.
+- Evaluation integrity rule: the 1,500 test layouts were used once for Phase 1 baselines and must not be used to select representations, interventions or hyperparameters. Phase 2 development uses training and development layouts only. A fresh 1,500-layout final evaluation set, disjoint from all others, is frozen in `experiments/02_generalizable_reward_hacking/layouts/final_eval_manifest.json` and reserved for the final steering experiment. It has never been evaluated.
+- Next: Phase 2, comparing the internals of the pretrained, good and hacking agents of each seed on identical states. Not started; no interpretability or steering has been done in Experiment 2.
 
 ## 4. Scientific Controls
 
@@ -110,7 +124,7 @@ Status is maintained at milestone level rather than as a session transcript.
   - Transfer to seeds 42 and 456 fails because the runtime patch itself fails there (0.10, 0.03).
   - Interpretation: behavioral imitation of a patch through a compact edit, not discovery of the reward-hacking mechanism. Details: `experiments/01_fixed_gridworld_repair/weight_editing/README.md`.
 
-Current milestone: Experiment 1 (Phases 1–5) complete and documented on `experiment/weight-editing`, uncommitted. Experiment 2 planned, not started.
+Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 complete and finalized on `experiment/generalizable-reward-hacking`.
 
 Documentation layout (revised 2026-11-23, on `experiment/weight-editing`): the root README is a short landing page listing experiments. Experiment 1 lives in `experiments/01_fixed_gridworld_repair/`: `README.md` (research report), `METHODS.md` (shared methods and limitations), `PROGRESS.md` (the full chronological journal, moved from the root, including the archived phase-by-phase README), and one folder per extension (`sparse_patching/`, `low_rank_patching/`, `weight_editing/`) with its report and config. The root `PROGRESS.md` is a short index. `SETUP.md` holds all installation and reproduction commands. Code, scripts, results and assets stay at their shared top-level locations; only the three runner config paths changed. The edited-model checkpoint `results/weight_editing/models/` is gitignored like the training checkpoints and regenerated by `scripts.run_weight_editing`. `requirements.txt` lists `torch` and `scikit-learn`, which the code always required but the file originally omitted.
 
@@ -593,7 +607,7 @@ python -m pytest tests/test_phase4_7.py -q   # 14 passed
 
 ### Immediate next milestone
 
-Experiment 1 is complete. Before Experiment 2, review and merge `experiment/weight-editing`. Experiment 2 should start from its plan (`experiments/02_generalizable_reward_hacking/README.md`): a randomized-layout environment with a scripted exploit check, then more training seeds and untouched held-out layouts. The open Experiment 1 question most relevant to it is why the patch fails for seeds 42 and 456 (weaker donors, or a seed-specific time clamp).
+Phase 2 (not started): representation analysis of the pretrained, good and hacking agents on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
 
 ### Maintenance checklist
 

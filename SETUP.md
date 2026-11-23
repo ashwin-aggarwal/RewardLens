@@ -21,7 +21,7 @@ Tests that need trained checkpoints skip themselves when the checkpoints are mis
 
 ## Reproduce Experiment 1: Fixed Gridworld Reward-Hacking Repair
 
-Report: [experiments/01_fixed_gridworld_repair/README.md](experiments/01_fixed_gridworld_repair/README.md). Experiment 2 is planned and has no code yet.
+Report: [experiments/01_fixed_gridworld_repair/README.md](experiments/01_fixed_gridworld_repair/README.md). Experiment 2 has its own section below.
 
 The phases depend on each other in order. Training (Phase 2 and 2.5) must run first, because every later phase loads its checkpoints from `results/phase2/` and `results/phase2_5/`.
 
@@ -119,6 +119,30 @@ python -m scripts.visualize_weight_editing --gif
 
 Report: [experiments/01_fixed_gridworld_repair/weight_editing/README.md](experiments/01_fixed_gridworld_repair/weight_editing/README.md). The standalone edited model is saved to `results/weight_editing/models/` and loads with `load_q_network_for_eval`. Like the training checkpoints, it is gitignored; the runner above regenerates it.
 
+## Reproduce Experiment 2: Generalizable Reward-Hacking Interventions
+
+Report: [experiments/02_generalizable_reward_hacking/README.md](experiments/02_generalizable_reward_hacking/README.md). Independent of Experiment 1's checkpoints.
+
+### Phase 1: procedural gridworld and behavioral baselines
+
+```bash
+python -m scripts.exp2_scripted_returns       # scripted goal vs farming returns (train + dev layouts)
+python -m scripts.exp2_train --all-seeds      # pretrain, then good and hacking forks; about 9 minutes on CPU
+python -m scripts.exp2_evaluate               # training sample + development layouts
+python -m scripts.exp2_evaluate --final-test  # adds the held-out test layouts; refuses to run twice
+python -m scripts.exp2_visualize --gif
+python -m pytest tests/test_exp2_phase1.py -q
+```
+
+The layout split is frozen in `experiments/02_generalizable_reward_hacking/layouts/manifest.json`. `python -m scripts.exp2_make_layouts` regenerates the identical file from the seeds in `configs/environment.json` and refuses to overwrite an existing one. One seed or stage can be run with `python -m scripts.exp2_train --seed 42 --stage pretrain` (stages: `pretrain`, `good`, `hacking`, `fork`). Checkpoints are written to `results/exp2/phase1/seed<N>/<stage>/checkpoints/`. The nine `checkpoint_final.pt` files (pretrain, good, hacking for each seed) are committed, so the evaluation and visualization commands work without retraining; intermediate checkpoints and per-episode training logs are gitignored. Retraining overwrites the committed files, and may not reproduce them bit-for-bit on other hardware, so after retraining rebuild the registry or restore the files with `git checkout -- results/exp2`.
+
+```python
+from rewardlens.exp2.checkpoints import load_triplet
+nets = load_triplet(42)   # {"pretrain": ..., "good": ..., "hacking": ...}, hashes verified
+```
+
+The test split has been used once for the Phase 1 baselines and must not guide Phase 2 choices. A separate final evaluation set is frozen in `layouts/final_eval_manifest.json` (`python -m scripts.exp2_make_layouts --final-eval` regenerates the identical file and refuses to overwrite it); do not evaluate on it until the final steering experiment.
+
 ## Where things live
 
 | Path | Contents |
@@ -127,7 +151,8 @@ Report: [experiments/01_fixed_gridworld_repair/weight_editing/README.md](experim
 | `rewardlens/agents/dqn.py` | Q-network, replay buffer, checkpointing |
 | `rewardlens/analysis/` | Activation extraction, probing, interventions, patching, behavior classification |
 | `scripts/` | One runner and one visualizer per phase |
-| `configs/`, `experiments/01_fixed_gridworld_repair/*/configs/` | Fixed experiment configurations |
+| `configs/`, `experiments/01_fixed_gridworld_repair/*/configs/`, `experiments/02_generalizable_reward_hacking/configs/` | Fixed experiment configurations |
+| `rewardlens/exp2/` | Experiment 2 code: layouts, procedural environment, scripted policies, batched evaluation, training |
 | `experiments/` | One folder per experiment: report, methods, progress journal, extension reports |
 | `results/` | Machine-readable results; checkpoints and trajectories are gitignored |
 | `assets/figures/`, `assets/gifs/` | Generated figures and GIFs |

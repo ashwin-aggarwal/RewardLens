@@ -48,16 +48,6 @@ The side-by-side view makes the problem clear: same reward function, opposite ou
 
 The cumulative reward chart shows the exploit policy's steady reward accumulation dwarfing the goal policy's one-time completion bonus. Under the proxy reward function alone, the exploiter is the "better" agent.
 
-## What We Want to Investigate
-
-This environment is the foundation for three experiments:
-
-1. **Train a DQN agent** and determine whether it independently discovers the exploit.
-2. **Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.
-3. **Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.
-
-These experiments are planned but not yet implemented. The scripted demonstrations above verify the environment, not a trained agent.
-
 ## Current Results (Phase 1)
 
 | Metric | Goal Policy | Exploit Policy |
@@ -68,7 +58,69 @@ These experiments are planned but not yet implemented. The scripted demonstratio
 | Episode steps | 10 | 100 |
 | Reward hacking | False | True |
 
-These are verified experimental results from scripted policies, not learned behavior.
+These are verified experimental results from scripted policies, not learned behavior. They establish that the exploit *exists* — not that a trained agent would ever find it. That's Phase 2.
+
+## Phase 2 — Does a DQN Learn the Exploit?
+
+A scripted policy proves a loophole exists. It says nothing about whether a neural network, learning only from trial and error, would ever stumble onto it. Phase 2 answers that question directly: **train a standard Deep Q-Network (DQN) from scratch, with no knowledge of the exploit programmed in, and see what it discovers.**
+
+A DQN is a small neural network that learns to estimate the long-term value ("Q-value") of taking each action in a given state. It picks whichever action looks best, but during training it occasionally acts randomly to keep exploring — that's **ε-greedy exploration**. Over time, as it accumulates experience, its action-value estimates improve and its behavior converges.
+
+![DQN Architecture](assets/figures/phase2_dqn_architecture.png)
+
+The network is small on purpose: 7 input features (the same observation from Phase 1), two 128-unit hidden layers, and 4 output Q-values — one per action. It's intentionally simple so that later phases can probe and intervene on its hidden activations without the added complexity of a larger architecture.
+
+**Before training**, we checked that the exploit is actually the better objective under the *discounted* return a DQN optimizes (not just undiscounted total reward):
+
+![Discounted Return](assets/figures/phase2_discounted_return.png)
+
+The exploit wins at every discount factor tested, including the γ = 0.99 used for training.
+
+**Training curves** for one baseline run (seed 42, 100,000 environment steps):
+
+![Training Curves](assets/figures/phase2_training_curves.png)
+
+Early in training the agent occasionally stumbles onto the goal — training-time goal completion briefly spikes before collapsing to near-zero as the reward-hacking rate climbs toward 100%. This is the training-time signal, which includes random exploratory actions; greedy (ε=0) evaluation tells a cleaner story:
+
+![Evaluation Progress](assets/figures/phase2_evaluation_progress.png)
+
+At the very first evaluation checkpoint (step 5,000) the greedy policy briefly preferred the goal. By step 10,000 it had flipped completely to farming the reward tile and never moved off it for the remaining 90,000 steps.
+
+**The trained agent in action** (greedy policy, no exploration):
+
+![Trained DQN](assets/gifs/phase2_trained_dqn.gif)
+
+**Scripted baselines vs. the learned policy, side by side:**
+
+![Scripted vs Learned](assets/figures/phase2_scripted_vs_learned.png)
+
+The trained DQN's final behavior is statistically indistinguishable from the hand-scripted exploit policy on the metrics that matter — but it got there by learning, not by being told where the reward tile was.
+
+### Verified Results
+
+| Metric | Goal Policy (scripted) | Exploit Policy (scripted) | Trained DQN (seed 42, greedy) |
+|---|---|---|---|
+| Proxy reward | +9.90 | +97.00 | **+97.00** |
+| Goal reached | True | False | **False** |
+| Reward-tile visits | 0 | 49 | **49** |
+| Episode steps | 10 | 100 | **100** |
+| Reward hacking | False | True | **True** |
+
+This result reproduced identically (97.00 reward, 49 visits, goal never reached) across three random seeds (42, 123, 456) — though the three seeds took different amounts of training to get there: one converged by step 5,000, another by step 10,000, and one not until ~30,000 (after a longer phase where it preferred the goal). See `PROGRESS.md` for the full per-seed experiment log, including the transitional behavior.
+
+### What This Does and Doesn't Establish
+
+**Does establish:** under this specific environment and hyperparameter configuration, a standard DQN with no explicit exploit knowledge reliably converges to reward-hacking behavior rather than the intended task, across multiple seeds.
+
+**Does not establish:** generality beyond this environment/architecture, *why* the network's internal computations favor exploitation once discovered, or anything about causal manipulation of that preference. Those are Phase 3 and Phase 4 questions.
+
+## What We Want to Investigate
+
+1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done — see Phase 2 above.
+2. **Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.
+3. **Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.
+
+Steps 2 and 3 are planned but not yet implemented.
 
 ## Reproduce the Experiment
 
@@ -76,35 +128,43 @@ These are verified experimental results from scripted policies, not learned beha
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the test suite
+# Run the full test suite (Phase 1 + Phase 2)
 python -m pytest -q
 
-# Run environment verification and generate all visuals
+# Phase 1: environment verification and visuals
 python -m scripts.verify_environment
+
+# Phase 2: discounted-return sanity check
+python -m scripts.discounted_returns
+
+# Phase 2: train the baseline DQN (one seed shown; repeat with --seed 123 / 456)
+python -m scripts.train_dqn --experiment-id baseline_seed42 --seed 42 --device cpu
+
+# Phase 2: generate all visuals from the trained run
+python -m scripts.visualize_phase2 --run-dir results/phase2/baseline_seed42
 ```
 
 Generated artifacts:
-- `assets/figures/gridworld_overview.png` — environment layout
-- `assets/gifs/goal_policy.gif` — goal policy animation
-- `assets/gifs/exploit_policy.gif` — exploit policy animation
-- `assets/figures/trajectory_comparison.png` — side-by-side paths
-- `assets/figures/cumulative_reward.png` — reward accumulation chart
-- `results/phase1/` — machine-readable trajectory data
+- `assets/figures/gridworld_overview.png`, `trajectory_comparison.png`, `cumulative_reward.png` — Phase 1
+- `assets/gifs/goal_policy.gif`, `exploit_policy.gif` — Phase 1
+- `assets/figures/phase2_discounted_return.png`, `phase2_dqn_architecture.png`, `phase2_training_curves.png`, `phase2_evaluation_progress.png`, `phase2_scripted_vs_learned.png` — Phase 2
+- `assets/gifs/phase2_trained_dqn.gif` — Phase 2
+- `results/phase1/`, `results/phase2/` — machine-readable trajectory and training data
 
 ## Research Roadmap
 
 - [x] **Phase 1**: Environment implementation, scripted exploit verification, visualizations
-- [ ] **Phase 2**: DQN training and behavioral evaluation
+- [x] **Phase 2**: DQN training and behavioral evaluation
 - [ ] **Phase 3**: Activation collection and linear probing
 - [ ] **Phase 4**: Causal activation interventions
 - [ ] **Phase 5**: Technical blog post and reproducibility review
 
 ## Limitations
 
-- The scripted policies demonstrate that the reward loophole *exists*, not that an RL agent will *discover* it. That is a Phase 2 question.
 - The reward-hacking classification uses an operational threshold (≥5 reward-tile visits without reaching the goal). This is a research definition, not a universal detection method.
 - The environment is deliberately minimal. Real-world reward hacking involves far more complex dynamics.
-- Internal activation analysis requires a trained neural network. No claims about DQN representations can be made until Phase 3.
+- Phase 2's three seeds are a preliminary stability check for one configuration, not statistical evidence of generality across environments, architectures, or hyperparameters.
+- Internal activation analysis requires probing a trained network. No claims about DQN *representations* — only its external behavior — can be made until Phase 3.
 
 ## Repository Structure
 
@@ -115,14 +175,22 @@ RewardLens/
 │   │   ├── reward_grid.py        # Gymnasium environment
 │   │   ├── scripted_policies.py  # Goal and exploit policies
 │   │   └── trajectory.py         # Trajectory recording
+│   ├── agents/
+│   │   └── dqn.py                # Q-network, replay buffer, checkpointing
 │   └── visualization/
 │       └── gridworld_viz.py      # Figures and GIF generation
 ├── scripts/
-│   └── verify_environment.py     # Phase 1 verification
+│   ├── verify_environment.py     # Phase 1 verification
+│   ├── discounted_returns.py     # Phase 2 discounted-return sanity check
+│   ├── train_dqn.py              # Phase 2 DQN training + evaluation
+│   └── visualize_phase2.py       # Phase 2 visualization generation
 ├── tests/
-│   └── test_reward_grid.py       # 45 tests
+│   ├── test_reward_grid.py       # 45 tests (Phase 1)
+│   └── test_dqn.py               # 26 tests (Phase 2)
 ├── assets/                       # Generated figures and GIFs
-├── results/                      # Machine-readable trajectory data
-├── CONTEXT.md                    # Research log
-└── AGENTS.md                     # Agent instructions
+├── results/                      # Machine-readable trajectory and training data
+├── CONTEXT.md                    # Current research state (authoritative)
+├── PROGRESS.md                   # Chronological research journal
+├── AGENTS.md                     # Shared agent instructions
+└── CLAUDE.md                     # Claude Code entry point
 ```

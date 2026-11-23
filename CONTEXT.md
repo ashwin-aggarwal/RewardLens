@@ -87,12 +87,12 @@ Status is maintained at milestone level rather than as a session transcript.
 - [x] Phase 1: environment implementation — complete, 2026-11-23.
 - [x] Phase 1: scripted exploit verification — complete, all assertions pass.
 - [x] Phase 1: reproducible trajectory visualizations — complete, 5 artifacts generated.
-- [ ] Phase 2: DQN training and behavioral evaluation — not started.
+- [x] Phase 2: DQN training and behavioral evaluation — complete, 2026-11-23. DQN independently discovered reward hacking; reproduced across 3 seeds.
 - [ ] Phase 3: activation collection and linear probing — not started.
 - [ ] Phase 4: causal activation interventions — not started.
 - [ ] Phase 5: technical blog post and reproducibility review — not started.
 
-Current milestone: Phase 1 complete. Next: Phase 2 — DQN training.
+Current milestone: Phase 2 complete. Next: Phase 3 — activation collection and linear probing.
 
 ## 7. Experimental Decisions
 
@@ -159,16 +159,53 @@ If the agent reaches the goal on exactly the last permitted step, `terminated=Tr
 
 The reward tile bonus is awarded only when the agent enters it from a different cell. Remaining on the tile (e.g., via a wall-bounce that doesn't move the agent) does not re-award the bonus. Leaving and returning re-awards it.
 
+### Phase 2 — DQN training and behavioral evaluation (2026-11-23)
+
+**Discounted-return sanity check** (`python -m scripts.discounted_returns`, results in `results/phase2/discounted_returns.json`): the exploit policy's recorded trajectory out-returns the goal policy's at every tested discount factor (γ = 0.95, 0.99, 0.995, 1.00). At γ = 0.99 (the DQN default): goal return 9.04 vs. exploit return 61.08. This rules out discounting as a reason the DQN would be pushed toward the goal.
+
+**DQN architecture:** feedforward, 7 → 128 → 128 → 4, ReLU activations, named layers (`fc1`, `relu1`, `fc2`, `relu2`, `fc3`) for future activation extraction. Standard DQN: online + target network, uniform-random replay buffer (capacity 50,000), epsilon-greedy (1.0 → 0.05 linear over first 50% of training), Smooth L1 loss, Adam (lr 2.5e-4), gamma 0.99, target sync every 500 steps, train every 4 env steps. Truncation at the 100-step horizon is treated as terminal for the TD target (no bootstrapping past the horizon). No Double/Dueling DQN, no prioritized replay — baseline only.
+
+**Training:** 100,000 environment steps, CPU, ~25–31s wall-clock per run. Three seeds (42, 123, 456), identical configuration otherwise. Commands:
+
+```bash
+python -m scripts.train_dqn --experiment-id baseline_seed42  --seed 42  --device cpu
+python -m scripts.train_dqn --experiment-id baseline_seed123 --seed 123 --device cpu
+python -m scripts.train_dqn --experiment-id baseline_seed456 --seed 456 --device cpu
+```
+
+**Verified results (final greedy evaluation, epsilon=0, fixed seed=0 start state):**
+
+| Seed | Proxy Reward | Goal Reached | Reward-Tile Visits | Reward Hacking | Episode Steps |
+|---:|---:|---:|---:|---:|---:|
+| 42 | 97.00 | False | 49 | True | 100 (truncated) |
+| 123 | 97.00 | False | 49 | True | 100 (truncated) |
+| 456 | 97.00 | False | 49 | True | 100 (truncated) |
+
+All three seeds converge to the identical final policy behavior. They differ in *time to converge*: seed 456 reached full exploitation by step 5,000, seed 42 by step 10,000, seed 123 not until ~30,000 (after a longer goal-preferring phase, oscillating near reward ≈ 11.9 with the goal reached and only 1 incidental reward-tile visit, visible at eval checkpoints 10,000–20,000). Full per-checkpoint evaluation metrics: `results/phase2/baseline_seed{42,123,456}/evaluation_metrics.csv`.
+
+**Scientific conclusion:** A standard DQN, with no explicit programming of the exploit and no reward-hacking label in its observation, independently discovers and converges to the proxy-reward exploit rather than the intended goal, in this specific environment and hyperparameter configuration. This reproduced identically across 3 seeds. Three seeds establish a preliminary stability check for this configuration only — not statistical evidence of generality across environments, architectures, or hyperparameters, and not yet any claim about *why* the network prefers exploitation (that is Phase 3's question).
+
+**Artifact paths:**
+
+- `results/phase2/baseline_seed{42,123,456}/` — config, training/evaluation CSVs, checkpoints, run metadata, final greedy trajectory, per seed.
+- `results/phase2/discounted_returns.json`
+- `assets/figures/phase2_discounted_return.png`, `phase2_dqn_architecture.png`, `phase2_training_curves.png`, `phase2_evaluation_progress.png`, `phase2_scripted_vs_learned.png`
+- `assets/gifs/phase2_trained_dqn.gif`
+- Full narrative and per-experiment detail: `PROGRESS.md`.
+
+**Tests:** 26 new tests in `tests/test_dqn.py` (network, replay buffer, TD update, epsilon schedule, checkpointing, evaluation, integration) plus the existing 45 in `tests/test_reward_grid.py` — 71 total, all passing (`python -m pytest -q`).
+
 ## 9. Known Problems and Next Steps
 
 ### Known problems
 
-- No empirical claim about reward hacking or DQN representations can currently be made — only scripted demonstrations exist.
-- Alternative agent strategies (collect reward then reach goal, stand near reward tile, wander) have been considered in the design review but are not tested with trained agents yet.
+- Three seeds is a preliminary stability check for one configuration, not broad evidence of generality.
+- No claim about internal DQN representations can be made yet — Phase 2 is behavioral only.
+- The "time to discover the exploit" varies substantially by seed (5k–30k steps) despite a deterministic environment; the cause (exploration trajectory vs. network initialization) is not yet investigated.
 
 ### Immediate next milestone
 
-**Phase 2:** Train a CleanRL-based DQN agent on RewardGridEnv and evaluate whether it independently discovers the exploit. Record proxy reward, true task success, and behavioral trajectories for comparison with scripted baselines.
+**Phase 3:** Collect internal activations from the trained DQN (checkpoints in `results/phase2/`) alongside observations, actions, and the reward-hacking label. Fit linear probes and compare against observation-based baselines and state-matched controls, per the scientific controls in Section 4.
 
 ### Maintenance checklist
 

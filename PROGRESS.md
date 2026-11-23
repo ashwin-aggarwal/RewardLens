@@ -4,7 +4,7 @@ This journal preserves the development story of RewardLens: the motivation, desi
 
 ## Project Overview
 
-RewardLens investigates reward hacking in reinforcement learning: can an agent maximize a flawed proxy reward while failing the task that reward was meant to represent? The long-term goal is to train a DQN, probe its internal activations for a decodable "exploitation" signal, and test whether intervening on that signal causally changes behavior. This journal currently covers Phase 1 (environment + scripted verification), Phase 2 (DQN training + behavioral evaluation), Phase 2.5 (goal-following control), and Phase 3 (activation collection and linear probing).
+RewardLens investigates reward hacking in reinforcement learning: can an agent maximize a flawed proxy reward while failing the task that reward was meant to represent? The long-term goal is to train a DQN, probe its internal activations for a decodable "exploitation" signal, and test whether intervening on that signal causally changes behavior. This journal covers Phase 1 (environment + scripted verification), Phase 2 (DQN training + behavioral evaluation), Phase 2.5 (goal-following control), Phase 3 (activation collection and linear probing), and Phase 4 (causal activation interventions).
 
 ## Timeline
 
@@ -12,6 +12,7 @@ RewardLens investigates reward hacking in reinforcement learning: can an agent m
 - **2026-11-23** — Phase 2: discounted-return sanity check, DQN implementation, baseline training (3 seeds), behavioral evaluation, visualization.
 - **2026-11-23** — Phase 2.5: corrected-reward (goal-only) DQN baseline (3 seeds) and cross-scored comparison against the flawed-reward DQN.
 - **2026-11-23** — Phase 3: activation extraction, linear probing, and training-transition analysis across all checkpoints and seeds.
+- **2026-11-23** — Phase 4: causal activation interventions with random-direction controls, cross-seed replication, and before/after transition-checkpoint analysis. Outcome: selective disruption of farming, no redirection to the goal — an instructive negative result for activation steering.
 
 ---
 
@@ -339,14 +340,77 @@ Reproduced across all 3 seeds with consistent patterns.
 
 ---
 
+## Phase 4 -- Causal Activation Interventions
+
+### Experiment: `phase4_probe_direction_interventions`
+
+**Date:** 2026-11-23
+**Initial hypothesis:** Subtracting the Phase 3 probe's farming direction from layer-2 activations at inference time will reduce reward farming; if the direction captures a genuinely farming-specific representation, goal completion should increase rather than merely degrade.
+
+**Direction construction:** For each flawed-reward seed, a fresh logistic probe was fitted in that network's own layer-2 raw activation space on matched states restricted to 30 training positions (150 states). Standardized coefficients were transformed back to raw coordinates (w_raw = w_std / scale), unit-normalized, and sign-verified (+direction = higher predicted farming). A contrastive mean-difference direction was fitted on the same states as an exploratory alternative. No direction was ever transferred between independently trained networks.
+
+**Strength selection:** Relative strengths {0, 0.05, 0.1, 0.25, 0.5, 1.0} × the network's typical layer-2 norm, swept on 16 development start positions. Selection rule (fixed in advance of looking at test data): smallest strength maximizing dev goal rate under subtraction. Selected: 0.05 (seed 42), 0.1 (123), 0.25 (456). Held-out evaluation used 16 disjoint test start positions — one deterministic greedy episode each, so rates are exhaustive fractions over those states.
+
+**Control design:** 20 fixed-seed random unit directions applied subtractively at the identical perturbation norm (norm matching verified in tests); probe-direction *addition* (sign symmetry check); projection removal h − (h·v)v (the state-dependent edit); no-intervention baseline; and the corrected-reward network under the same random perturbations (policy-fragility reference).
+
+**Held-out results:**
+
+| Seed | Baseline goal/hack | Subtract goal/hack | Add goal/hack | Project-out goal/hack | Random hack (n=20) |
+|---|---|---|---|---|---|
+| 42 | 0.00 / 1.00 | 0.00 / 0.00 | 0.12 / 0.00 | 0.00 / 1.00 | 0.92 ± 0.21 |
+| 123 | 0.00 / 1.00 | 0.06 / 0.00 | 0.00 / 0.00 | 0.00 / 1.00 | 0.51 ± 0.42 |
+| 456 | 0.00 / 1.00 | 0.06 / 0.00 | 0.12 / 0.00 | 0.00 / 1.00 | 0.20 ± 0.32 |
+
+**What happened, honestly:** The targeted edit abolished farming far below the norms at which random directions do (clearest at seed 42: targeted hack 0.00 vs random 0.92 at the same tiny norm of 2.4). But the agent does not go to the goal — it wanders until truncation, reward collapses from ~97.5 to ~0, and goal rates stay at random-control levels. Adding the direction works almost as "well" as subtracting it. And projection removal — the only edit that actually removes the per-state information the probe reads — changed nothing at all.
+
+**The mechanistic surprise (found while writing a correctness test):** fc3 is linear, so subtracting a constant vector at layer 2 shifts every state's Q-values by the same constant −α·W₃v. The intervention is literally a global per-action Q bias (seed 123: ≈ +0.8 Up, +1.4 Right, −2.6 Down, −4.4 Left). Reward farming requires a repeating movement loop; any sufficiently large global tilt in action preferences breaks the loop. The probe direction is special only in that fc3 maps it onto a strong action-preference tilt, so it disrupts farming at much smaller norms than random vectors. This reframes the whole experiment: constant-vector "activation steering" in this architecture cannot be state-sensitive representation surgery, and the state-sensitive variant we did run (projection removal) was causally inert.
+
+**Negative results preserved:**
+- No intervention, at any swept strength, in any seed, restored goal-seeking behavior (best observed goal rate: 0.12, vs 0.94–1.00 for actually goal-trained checkpoints).
+- Projection removal: no behavioral effect in any seed — the decodable farming signal along the probe direction is not causally necessary through that direction.
+- Contrastive direction: disrupts farming in seeds 123/456 but not 42, despite cosine similarity to the probe direction of only 0.13–0.40 — multiple unrelated directions produce the same disruption, as the global-bias account predicts.
+
+**Verdict under the pre-registered taxonomy:** *partial effect / behavioral disruption* — farming decreases selectively, goal completion does not increase. Not successful redirection.
+
+### Experiment: `phase4_transition_checkpoint_interventions`
+
+**Date:** 2026-11-23
+**Question:** Do the same interventions act differently before vs after the goal-to-exploit transition (seed 123, checkpoints 20k and 30k, behavior confirmed from the checkpoints themselves: within-run farming-label prevalence 0.000 vs 0.519)?
+
+**Caveat handled explicitly:** the 20k checkpoint produces no farming actions, so no within-checkpoint direction is fittable there (single-class labels). The direction was fitted at 30k in its own space; applying it to 20k is a cross-checkpoint transfer within one run.
+
+**Findings:**
+- 20k (goal-preferring, baseline goal 0.94): completely unaffected by the farming direction at rel ≤ 0.1 (goal stays 0.94; random controls degrade it to 0.72), collapses at rel ≥ 0.25 (goal 0.06). Generic fragility, no selective sensitivity.
+- 30k (freshly farming, baseline hack 1.00): robust to the targeted direction up to rel 0.5; only rel 1.0 partially breaks farming (hack 0.25, goal 0.06). Randoms at rel 0.1: hack 0.98.
+- The 100k checkpoint, by contrast, loses all farming at rel 0.05–0.1. **The longer the network trains past the transition, the more sensitive it becomes to this direction** — consistent with Phase 3's observation that layer-2 CKA keeps drifting and activation norms keep growing after the behavioral flip.
+
+**Fragility reference:** the corrected-reward network's goal rate under random layer-2 perturbations: 1.00 → 0.91 (rel 0.05) → 0.55 (0.1) → 0.25 (0.25) → 0.13 (0.5) → 0.05 (1.0). Both trained policies live close to a fragility cliff at moderate relative norms.
+
+**Scientific limitations:**
+- 16 held-out start states → 1/16 rate resolution; deterministic env means no sampling-based error bars apply, and none are implied.
+- Constant-vector edits cannot localize *where* in the state space the effect acts (they act everywhere identically, by construction).
+- We did not test layer-1 edits, per-state clamping, or weight-space analyses.
+
+**Visual artifacts:** `assets/figures/phase4_intervention_diagram.png` (conceptual), `phase4_strength_sweep.png`, `phase4_random_controls.png`, `phase4_behavior_comparison.png`, `phase4_q_value_shift.png`; `assets/gifs/phase4_original_policy.gif` and `phase4_intervened_policy.gif` (same start state (1,7), same checkpoint, actual recorded actions; the intervened GIF honestly shows wandering, not goal completion).
+
+**Next steps:** Phase 5 — the blog. The arc now ends on a scientifically defensible negative: the probe reads a real signal, the direction has a real selective causal effect, but the tested linear interventions found no isolable "reward-hacking knob" whose removal restores aligned behavior. (This does not establish that no such representation exists; it establishes that predictive features did not yield effective steering directions.)
+
+**Beginner-friendly framing notes for the blog:**
+- Analogy for the probe vs. intervention gap: a thermometer can *read* a fever very accurately, but heating or cooling the thermometer does not cure the patient. Phase 3 built an excellent thermometer; Phase 4 showed that adjusting it changes the reading, not the illness.
+- Analogy for the Q-bias equivalence: if the last step of a recipe is "add the same spoonful of salt to every dish," then changing that spoonful changes every dish identically. Because the output layer is linear, shifting the activations by a constant is exactly that spoonful — it cannot season one dish differently from another.
+- Explain "wandering" concretely: the agent stops circling the reward tile, but it has not learned where the goal is; it drifts and bumps into walls until time runs out. Show the GIF before explaining it.
+- Lead with the positive-looking number (farming 100% → 0%) and then immediately show the goal-completion number (0–12%) so the reader experiences the same "wait, that's not success" moment the experiment produced.
+
+---
+
 ## Open Research Questions
 
 - Does the DQN's three-seed consistency hold under different initial hyperparameters (e.g., a lower reward-tile bonus, or a goal bonus large enough to make the goal competitive even late in training)?
 - What does the Q-value gap between "move toward reward tile" and "move toward goal" look like over training — is there a clean crossover point that could later be linked to an internal representation?
 - Does the variation in *time-to-exploit* across seeds (5k vs. 10k vs. 30k steps) correlate with anything observable early in training (e.g., which tile the agent happens to visit first under random exploration)?
 - Phase 3 answered: hidden activations do predict farming better than raw position/time, but the distance baseline is nearly as strong. The interesting result is the within-run layer 2 restructuring, not the cross-model probe alone.
-- For Phase 4: does suppressing the probe's learned activation direction at layer 2 causally shift the agent toward goal-seeking? Or does it just break the network generically?
-- Can activation interventions at the transition checkpoint (seed 123, step 20k vs 30k) differentially affect farming vs goal-seeking behavior?
+- Phase 4 answered: suppressing the probe direction kills farming selectively (vs random controls) but never restores goal-seeking, and the effect is a global Q bias, not representation surgery; projecting the direction out per-state does nothing. Open: would a state-conditional edit (e.g., clamping only at reward-adjacent states) or a layer-1 edit behave differently?
+- Phase 4 answered for the transition checkpoints: the 20k goal policy is insensitive to the farming direction at small norms, and the 30k farming policy is far more robust than the 100k one. Open: *why* does continued training after convergence concentrate behavioral sensitivity onto the probe-readable direction — growing activation norms, shrinking Q-gaps elsewhere, or representational consolidation?
 
 ## Blog Narrative Notes
 
@@ -363,3 +427,8 @@ Reproduced across all 3 seeds with consistent patterns.
 - **Honest finding worth foregrounding:** the distance baseline achieves 0.95+ AUROC. This is *good science* to highlight, not a disappointment -- it means we're not overclaiming what the probe found. "The network learned to represent distances well" is a true and interesting finding; "the network has a secret reward-hacking module" would be overclaiming.
 - **The Q-value surprise:** Q-values are a *weaker* predictor of farming than hidden activations (0.88 vs 0.99 AUROC). This suggests the network's internal features contain farming-relevant structure that gets compressed in the final linear projection to Q-values. Worth a paragraph in the blog.
 - **Phase 4 setup line for the blog:** "We've seen that the network's hidden layer restructures when it discovers the exploit. But does that restructuring *matter* -- or is it just along for the ride? The only way to test that is to intervene: change the activations and see if the behavior changes."
+- **Phase 4 punchline for the blog:** "We could make the agent stop cheating. We could not make it do its job." The intervention reliably kills the farming loop at perturbation sizes where 20 random directions mostly don't -- and then the agent just wanders until time runs out.
+- **The best twist is mechanistic, not behavioral:** subtracting a constant vector before a linear layer is *identical* to adding a fixed bias to the four Q-values at every state. The celebrated "activation steering" edit was, in this architecture, provably a global action-preference tilt. The genuinely representational edit (projecting out the probe direction per-state) did nothing at all. This deserves its own blog section -- it is the difference between what steering experiments look like and what they are.
+- **Honest framing of the random controls:** random directions also break farming at larger norms, and they break the goal-following control network too (goal 1.00 -> 0.55 at rel 0.1). Both policies sit near a fragility cliff. The targeted direction's distinction is *efficiency* (works at rel 0.05 where randoms don't), not *semantic selectivity*.
+- **The within-run robustness gradient is a quiet gem:** the freshly-transitioned 30k policy shrugs off edits that obliterate the 100k policy's farming (rel 0.1 vs needing rel 1.0). Training past convergence apparently concentrates behavior onto the probe-readable direction. Good candidate for a final-figure caption.
+- **Blog structure suggestion for Phase 4:** lead with the GIF pair (farming vs wandering), then the strength sweep, then the "it's just a Q bias" reveal, then the projection-removal null, then the taxonomy verdict. End on why a negative result here is the correct scientific output, not a failure of the project.

@@ -90,10 +90,10 @@ Status is maintained at milestone level rather than as a session transcript.
 - [x] Phase 2: DQN training and behavioral evaluation — complete, 2026-11-23. DQN independently discovered reward hacking; reproduced across 3 seeds.
 - [x] Phase 2.5: corrected-reward (goal-only) DQN baseline — complete, 2026-11-23. Reliably reaches the goal with zero reward-tile visits; reproduced across 3 seeds.
 - [x] Phase 3: activation collection and linear probing — complete, 2026-11-23. Hidden activations linearly predict farming behavior; layer 2 representations restructure during the goal-to-exploit transition.
-- [ ] Phase 4: causal activation interventions — not started.
+- [x] Phase 4: causal activation interventions — complete, 2026-11-23. Probe-direction edits selectively suppress farming (vs norm-matched random controls) but do not restore goal completion; projection removal has no effect. Verdict: behavioral disruption, not redirection.
 - [ ] Phase 5: technical blog post and reproducibility review — not started.
 
-Current milestone: Phase 3 complete. Next: Phase 4 — causal activation interventions, using the activation directions and layer 2 representations identified in Phase 3.
+Current milestone: Phase 4 complete. Next: Phase 5 — technical blog post and reproducibility review, built from PROGRESS.md and the verified Phase 1–4 artifacts.
 
 ## 7. Experimental Decisions
 
@@ -120,6 +120,14 @@ Labeling every state from the flawed-reward DQN as "reward hacking" and every st
 ### 2026-11-23 — Use spatial train/test splits to prevent leakage
 
 Time-step records at the same grid position are highly correlated. Randomly splitting them would leak positional information across train/test sets. Instead, entire grid positions are held out as test data, ensuring the probe must generalize to unseen spatial locations.
+
+### 2026-11-23 — Interventions are defined per-network, in raw activation coordinates
+
+A probe fitted on standardized activations has its coefficients transformed back to raw coordinates (w_raw = w_std / scaler.scale_) and unit-normalized before use as an intervention direction; the sign convention (+direction = higher predicted farming) is verified against the fitting data. Directions are never transferred between independently trained networks. Direction fitting, strength selection, and final evaluation use disjoint spatial partitions of start states (30 train / 16 dev / 16 test positions, goal and reward tiles excluded).
+
+### 2026-11-23 — Constant-vector edits before a linear readout are global Q biases
+
+Because fc3 is linear, subtracting a constant vector alpha*v at the post-ReLU layer-2 output shifts every state's Q-values by the same constant, -alpha * W3 v. Such an edit is therefore a global action-preference bias, not a state-sensitive representational intervention. The state-sensitive variant is projection removal (h - (h.v)v), which is evaluated separately. This distinction is central to interpreting Phase 4.
 
 ### 2026-11-23 — CKA for within-run checkpoint comparison
 
@@ -327,6 +335,55 @@ python -m pytest tests/test_phase3.py -q   # 27 passed
 
 **Tests:** 27 new tests in `tests/test_phase3.py` (activation tensor dimensions, post-ReLU correctness, extraction preservation of predictions, matched-state dataset construction, spatial split no-leakage, probe evaluation, CKA properties, PCA shapes, reproducibility, real-checkpoint integration) -- 115 total across the full suite, all passing.
 
+### Phase 4 — Causal activation interventions (2026-11-23)
+
+**Setup.** Interventions edit the post-ReLU layer-2 activations through a temporary forward hook; weights are never modified, hooks are removed after each evaluation, and `alpha=0` reproduces baseline Q-values exactly (tested). For each flawed-reward seed, a probe direction was fitted in that network's own raw activation space on matched states restricted to 30 train positions (coefficients destandardized, unit-normalized, sign verified). Strengths are relative to the network's typical layer-2 norm (~43-50) and were selected on 16 dev start positions; all reported results below are from 16 disjoint held-out test start positions (one deterministic greedy episode per start state — rates are exhaustive fractions, not stochastic samples). Controls: 20 fixed-seed random unit directions at matched perturbation norms, probe-direction addition, projection removal, and a contrastive mean-difference direction.
+
+**Verified held-out results (per seed, at the dev-selected strength):**
+
+| Seed | Rel. strength | Baseline goal/hack | Probe subtract goal/hack | Probe add goal/hack | Projection removal goal/hack | Random hack (mean±std, n=20) |
+|---|---|---|---|---|---|---|
+| 42 | 0.05 | 0.00 / 1.00 | 0.00 / **0.00** | 0.12 / 0.00 | 0.00 / 1.00 | 0.92 ± 0.21 |
+| 123 | 0.10 | 0.00 / 1.00 | 0.06 / **0.00** | 0.00 / 0.00 | 0.00 / 1.00 | 0.51 ± 0.42 |
+| 456 | 0.25 | 0.00 / 1.00 | 0.06 / **0.00** | 0.12 / 0.00 | 0.00 / 1.00 | 0.20 ± 0.32 |
+
+Mean proxy reward under probe subtraction collapses from ~97.5 to ~0 (0.50 / 0.31 / −0.06); episodes still mostly run to the 100-step horizon with the agent wandering (greedy flip rate on matched states 0.36–0.63; ~6–9% of edited activation units pushed below zero — measured, not clipped).
+
+**Outcome classification (project taxonomy): partial effect / behavioral disruption, NOT successful redirection.**
+
+1. **Farming suppression is selective.** At the same perturbation norm where the probe direction drives hacking to 0.00, random directions leave substantial farming (0.92 mean at seed 42's tiny alpha of 2.4). The targeted direction is reliably outside the random-control distribution for farming disruption.
+2. **Goal completion is NOT restored.** Goal rates under targeted edits (0.00–0.12) are at or near random-control levels. The agent stops farming and wanders; reward collapses to roughly the step penalty.
+3. **Direction symmetry.** Adding the farming direction also abolishes farming (and in seeds 42/456 yields the same small goal rate as subtraction). A semantically meaningful "farming knob" should not act symmetrically; a global action bias in either direction breaking a movement loop does.
+4. **Projection removal has no behavioral effect** (hacking stays 1.00 in all seeds). This is the state-dependent edit that actually deletes the per-state component the probe reads. The farming signal that is *decodable* along the probe direction is therefore not *causally necessary* through that direction — a clean negative causal result.
+5. **Mechanism.** Subtracting a constant vector before the linear fc3 layer adds a fixed per-action Q bias at every state (verified analytically and in tests; for seed 123: roughly +0.8 Up, +1.4 Right, −2.6 Down, −4.4 Left). Breaking the farming loop therefore does not require state-sensitive representation surgery — a global action-preference tilt suffices, and the probe direction happens to encode an effective tilt at much smaller norms than random directions.
+6. **Contrastive direction** (cosine 0.13–0.40 to the probe direction) matches probe-subtraction behavior in seeds 123/456 but has no effect in seed 42 — further evidence that multiple quite different directions can produce the same disruption through the global bias mechanism.
+
+**Fragility control (corrected-reward DQN, seed 123, own activation space):** a farming direction is not identifiable from its own behavior (single-class labels — documented, not faked). Under random perturbations its goal rate degrades from 1.00 to 0.91 (rel 0.05), 0.55 (0.1), 0.25 (0.25), 0.13 (0.5), 0.05 (1.0). Both trained policies are fragile to generic layer-2 noise at moderate relative norms; the targeted effect on farming at rel 0.05–0.1 stands out against this backdrop.
+
+**Before/after transition (seed 123, checkpoints 20k vs 30k, direction fitted at 30k in its own space; no within-checkpoint direction exists at 20k because it produces no farming actions):**
+
+- 20k (goal-preferring; baseline goal 0.94): unaffected by the farming direction at rel ≤ 0.1 (goal stays 0.94, while randoms degrade it to 0.72 mean); collapses to 0.06 at rel ≥ 0.25 — generic disruption, no selective protection of goal behavior beyond small norms.
+- 30k (freshly farming; baseline hack 1.00): robust to targeted subtraction up to rel 0.5; only at rel 1.0 does hacking drop (to 0.25, goal 0.06). Contrast with the 100k checkpoint, where rel 0.05–0.1 abolished farming entirely. The long-converged policy is far more sensitive to this direction than the freshly transitioned one — consistent with Phase 3's finding that representations and activation magnitudes keep reorganizing after the behavioral flip.
+
+**Scientific conclusion.** The probe-identified direction has a real, selective, reproducible causal effect on farming behavior — but the effect is behavioral disruption through a state-independent Q bias, not redirection toward the intended task, and the state-dependent content along the direction is causally inert (projection removal changes nothing). We found no evidence of an isolable internal "reward-hacking representation" whose removal restores aligned behavior. This is a negative result for activation steering in this setting and is preserved as such.
+
+**Commands:**
+```bash
+python -m scripts.run_interventions          # Experiments 1-3
+python -m scripts.evaluate_interventions     # Experiment 4 (transition checkpoints)
+python -m scripts.visualize_phase4
+python -m pytest tests/test_phase4.py -q     # 21 passed
+```
+
+**Artifact paths:**
+- `configs/phase4_interventions.json` — strengths, partitions, seeds.
+- `results/phase4/intervention_results.json` — sweeps, held-out evaluations, random-control distributions, Q-value effects, direction provenance.
+- `results/phase4/transition_interventions.json` — before/after checkpoint comparison.
+- `assets/figures/phase4_intervention_diagram.png` (conceptual, labeled as such), `phase4_strength_sweep.png`, `phase4_random_controls.png`, `phase4_behavior_comparison.png`, `phase4_q_value_shift.png`.
+- `assets/gifs/phase4_original_policy.gif`, `phase4_intervened_policy.gif` — same start state (1,7), same checkpoint, actual recorded actions.
+
+**Tests:** 21 new tests in `tests/test_phase4.py` (hook lifecycle and exception safety, zero-strength equivalence, weight immutability, exact constant-Q-shift semantics, destandardization correctness, sign conventions, random-control reproducibility and norm matching, partition disjointness, rollout determinism, end-to-end mini evaluation) — 136 total across the full suite, all passing.
+
 ## 9. Known Problems and Next Steps
 
 ### Known problems
@@ -337,10 +394,13 @@ python -m pytest tests/test_phase3.py -q   # 27 passed
 - Probe accuracy does not establish a dedicated "reward-hacking representation." The farming label is defined using spatial criteria, and the network's learned features happen to represent spatial information linearly. A probe on any network that has learned the task geometry would likely perform similarly.
 - CKA changes during training are descriptive, not diagnostic. The layer 2 restructuring coincides with the behavioral transition, but causality is not established.
 - Within-run probes become viable only after farming behavior appears. The probe cannot measure a "pre-farming" signal because there are no farming actions to label before the transition.
+- Phase 4's constant-vector edits are equivalent to global per-action Q biases because the readout layer is linear; they cannot distinguish "removed a farming representation" from "tilted all action preferences." The one state-sensitive edit tested (projection removal) had no behavioral effect. More surgical interventions (per-state clamping, layer-1 edits, weight-space analysis) were not explored.
+- With 16 held-out start states per condition and a deterministic environment/policy, reported rates are exhaustive over those states but coarse-grained (1/16 resolution); no sampling-based uncertainty applies.
+- The dev-selected strength differs per seed (0.05/0.1/0.25); the qualitative pattern (farming suppressed, goal not restored) holds at every strength ≥ the threshold in the dev sweeps, but strength-transfer across seeds was not evaluated.
 
 ### Immediate next milestone
 
-**Phase 4:** Causal activation interventions. Use the activation directions identified by Phase 3 probes (particularly in hidden layer 2) to test whether modifying representations during inference changes the agent's behavior -- e.g., whether suppressing farming-associated activation directions shifts the agent toward goal-seeking. Include random-direction and magnitude-matched controls.
+**Phase 5:** Technical blog post and reproducibility review. The narrative arc is complete: a verified exploit (1), learned hacking (2), a behavioral control (2.5), correlational internal evidence (3), and a careful causal test ending in an instructive negative result (4). Review whether another researcher can reproduce every claim from the repository, then write the post from `PROGRESS.md`.
 
 ### Maintenance checklist
 

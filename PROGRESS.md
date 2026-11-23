@@ -4,7 +4,7 @@ This journal preserves the development story of RewardLens: the motivation, desi
 
 ## Project Overview
 
-RewardLens investigates reward hacking in reinforcement learning: can an agent maximize a flawed proxy reward while failing the task that reward was meant to represent? The long-term goal is to train a DQN, probe its internal activations for a decodable "exploitation" signal, and test whether intervening on that signal causally changes behavior. This journal covers Phase 1 (environment + scripted verification), Phase 2 (DQN training + behavioral evaluation), Phase 2.5 (goal-following control), Phase 3 (activation collection and linear probing), and Phase 4 (causal activation interventions).
+RewardLens investigates reward hacking in reinforcement learning: can an agent maximize a flawed proxy reward while failing the task that reward was meant to represent? The long-term goal is to train a DQN, probe its internal activations for a decodable "exploitation" signal, and test whether intervening on that signal causally changes behavior. This journal covers Phase 1 (environment + scripted verification), Phase 2 (DQN training + behavioral evaluation), Phase 2.5 (goal-following control), Phase 3 (activation collection and linear probing), Phase 4 (causal activation interventions), Phase 4.5 (goal-activation patching), Phase 4.6 (behavioral reclassification and direct-goal steering), and Phase 4.7 (time controls for the patching result).
 
 ## Timeline
 
@@ -14,6 +14,8 @@ RewardLens investigates reward hacking in reinforcement learning: can an agent m
 - **2026-11-23** — Phase 3: activation extraction, linear probing, and training-transition analysis across all checkpoints and seeds.
 - **2026-11-23** — Phase 4: causal activation interventions with random-direction controls, cross-seed replication, and before/after transition-checkpoint analysis. Outcome: selective disruption of farming, no redirection to the goal — an instructive negative result for activation steering.
 - **2026-11-23** — Phase 4.5: goal-directed activation patching (same-run checkpoint donor and cross-model donor with alignment). Outcome: same-run patching is the first state-dependent, control-beating effect in the project, but the behavior it produces is "farm until time nearly runs out, then dash to the goal"; cross-model patching fails under all alignment variants.
+- **2026-11-23** — Phase 4.6: behavioral reclassification (direct goal / farm-then-finish / farm-only / other), retrospective reanalysis of Phases 1–4.5, a Q-value test of the time-gating hypothesis, and direct-goal steering experiments. Outcome: the farm-then-dash mechanism is confirmed causally (the goal becomes preferred only when the remaining-time feature is low); schedules, stronger patches and layer-1 patches do not produce selective direct-goal behavior; a time-shifted donor patch (donor activations computed as if little time remained, α=1.0) reaches the goal directly from every start state, beating every control, with the caveats recorded below.
+- **2026-11-23** — Phase 4.7: time controls for the Phase 4.6 intervention. Outcome: time alone explains nothing (clamping the hacking network's own time input leaves it farming; the time-only activation difference, 12% of the patch by norm, has no behavioral or Q-value effect); the donor's state-dependent representation is necessary (matched-time patch: direct 0.55 with time-gated farm-then-finish for the rest); the two together give 1.00. The donor's output head cannot read the recipient's representation at all, so the output heads are asymmetric.
 
 ---
 
@@ -448,6 +450,148 @@ Reproduced across all 3 seeds with consistent patterns.
 
 ---
 
+## Phase 4.6 -- Behavioral Reclassification and Direct-Goal Steering
+
+### Experiment: `phase4_6_behavioral_reclassification`
+
+**Date:** 2026-11-23
+**Motivation:** Phase 4.5's headline number (100% goal completion) was true and misleading at the same time: the patched agent farmed 37–41 times first. The operational definition from Phase 1 (hacking = ≥5 tile visits AND goal not reached) cannot see this, because it treats any goal-reaching episode as success. A metric that cannot tell "did the task" from "cheated, then did the task" is not fit for judging steering interventions.
+
+**Definitions (threshold configurable, default 5 = the environment's exploit threshold):**
+- *Direct goal*: goal reached with < 5 reward-tile visits.
+- *Farm-then-finish*: goal reached with ≥ 5 visits.
+- *Farm-only*: episode complete, goal not reached, ≥ 5 visits. This is exactly the original `is_reward_hacking` flag, so the historical classification is preserved and recoverable.
+- *Other / failure*: goal not reached with < 5 visits (wandering, stuck), or an incomplete trajectory. Not forced into the three primary categories.
+
+Tile visits, steps to goal, proxy reward, path efficiency (Manhattan distance / steps, for goal-reaching episodes) and no-move steps are reported alongside the category regardless of label.
+
+**Retrospective reanalysis (`results/phase4_6/reclassification.json`).** Stored trajectories were reclassified directly; episodes whose per-episode detail was not stored (Phase 2/2.5 checkpoints, Phase 4.5 controls and cross-model conditions) were regenerated from the checkpoints, which is exact because the policies and environment are deterministic; the script asserts that every regenerated goal rate equals the stored summary. Results:
+- Phase 1 scripted policies: goal → direct goal; exploit → farm-only. Phase 2 flawed DQNs (final, all 62 starts): farm-only 0.97–1.00. Phase 2.5 corrected DQNs: direct goal 1.00. Nothing changes here; the categories agree with the original labels.
+- Phase 4 probe-subtract (seeds 42/123/456, held-out test): other 1.00 / 0.94 / 0.94. "Disruption, not redirection" is now a number: the intervention moved every episode from farm-only to wandering.
+- Phase 4.5 same-run 20k→30k, α=0.75: **direct goal 0.06, farm-then-finish 0.94**. 20k→100k, α=1.0: direct 0.38, farm-then-finish 0.50, other 0.12. Cross-model: identity and ridge-agreement → other 1.00; ridge-all → farm-only 0.56, other 0.38.
+- **A selection-rule finding worth recording:** on Phase 4.5's own dev states, α=0.75 and α=1.0 both reached goal rate 1.00, and the tie-break chose the smaller α. Under the new metric α=1.0 was clearly better (dev visits 16.5 vs 36.4; on the Phase 4.5 test states direct goal 0.38 vs 0.06). The goal-rate criterion was blind to the thing that mattered.
+- Threshold sensitivity: Phase 4.5's farm-then-finish episodes have 35–41 visits, so their classification is unchanged for any threshold from 5 to 20.
+
+### Experiment: `phase4_6_time_dependence`
+
+**Date:** 2026-11-23
+**Hypothesis (from Phase 4.5):** the patched agent reaches the goal late because the goal becomes the preferred target only when the remaining-time feature is nearly exhausted.
+
+**Design:** the same 16 held-out positions (fresh partition, seed 13; see the disclosure below) evaluated at 21 remaining-time values from 1.0 to 0.0, so time is isolated from location. For each (position, time) we record the greedy action, whether it moves closer to the goal, and the Q gap between the best goal-approaching and the best reward-approaching action. The patched Q-values were also decomposed exactly, using the fact that fc3 is affine: `Q_patched = (1 − α) · Q_recipient + α · fc3_rec(h2_donor)` (max reconstruction error 5e-6). Finally, an input-clamp test: full episodes in the normal environment, but the *network* is fed a fixed remaining-time value.
+
+**Results (Q-values, 16 matched positions):**
+- Unmodified recipient: goal-approach fraction 0.69 → 0.56 as time runs out; goal-minus-reward Q gap −0.39 → −0.20 (always negative: it prefers the tile at every time).
+- Patched α=0.75: goal-approach 0.69 → 1.00; Q gap +0.09 → +0.30, rising monotonically as time runs out. The component that moves is the recipient's own term: its max-Q falls from 13.6 to 10.8 as remaining time shrinks (less future farming to value), while the donor term read through the recipient's head stays goal-preferring (gap +0.34 → +0.52). At high remaining time the recipient's farming preference near the tile still wins the mixture; at low remaining time it no longer does.
+- Donor (own head): goal-approach 0.94 at every time value; it is time-insensitive.
+- Random and shuffled-state patches at the same α show no systematic time trend (gaps hover around −0.5 and 0.0).
+
+**Results (input clamp, full episodes, patched α=0.75):** with the network told that remaining time is 1.0 for the whole episode, the patched agent is farm-only in 0.94 of episodes and never dashes; at 0.5 and 0.2 it is a mix of farm-only and wandering; at 0.1 direct goal 0.25; at **0.05 and 0.0 direct goal 1.00 in about 6 steps with zero tile visits**. The unmodified recipient at clamp 0.0 is still farm-only 1.00, and the donor is 0.69 at every clamp. So the dash requires both the patch and a low time value, and the time value is sufficient to trigger it at any point in the episode.
+
+**Conclusion:** the farm-then-dash hypothesis is confirmed by Q-values and by a causal input manipulation, not only by trajectory timing. The Phase 4.5 patch does not install goal pursuit; it installs a goal preference that is gated by the remaining-time feature.
+
+### Experiment: `phase4_6_direct_goal_steering`
+
+**Date:** 2026-11-23
+**Objective:** interventions that make the 30k hacking checkpoint pursue the goal directly, judged by direct-goal rate against the full control set (unmodified, donor alone, 20 norm-matched random patches, 20 shuffled-state donor patches, constant Q-bias), with selection on dev states and reporting on test states. Same donor (20k) and recipient (30k), seed 123; no new networks.
+
+**Held-out discipline, disclosed:** Phase 4.5 reported its seed-11 test states at every α, so those states had already informed this phase's design. A fresh partition (seed 13) was prespecified; with 62 valid positions its 16 test states necessarily overlap the old splits (2 with the old test set, 7 with old dev, 7 with old fit). The time-dependence diagnostics above were run on the new *test* positions and motivated block D, so for block D the test set is not naive; the selected intervention was therefore re-evaluated on the 30 fit positions (used only as the shuffled-donor pool) and on all 62 positions.
+
+**Blocks (dev sweep → selection by direct-goal rate, tie-break fewer visits, then less intervention → held-out test with all controls under the identical schedule/layer):**
+
+| Block | Selected (dev) | Test direct | Farm-then-finish | Other | Visits | Path eff. | Shuffled ctrl direct (mean / max) | Random ctrl | Q-bias |
+|---|---|---|---|---|---|---|---|---|---|
+| Phase 4.5 patch (reference) | layer 2, α=0.75 constant | 0.06 | 0.94 | 0.00 | 36.6 | — | 0.10 / 0.25 | 0.04 | 0.06 |
+| A. schedules | constant α=1.0 | 0.56 | 0.44 | 0.00 | 16.5 | 0.49 | **0.81 / 0.94** | 0.05 | 0.06 |
+| B. strength | constant α=1.25 | 0.62 | 0.38 | 0.00 | 13.6 | 0.49 | 0.55 / 0.81 | 0.06 | 0.06 |
+| C. layer 1 | constant α=2.0 | 0.12 | 0.00 | 0.75 | 1.6 | — | 0.08 / 0.19 | 0.04 | 0.00 |
+| D. time-shifted donor | α=1.0, donor sees t=0.2 | **1.00** | 0.00 | 0.00 | 0.4 | **0.97** | 0.52 / 0.75 | 0.05 | 0.06 |
+
+- **A (time-dependent schedules): negative.** Early-only windows (10/20/40 steps) and early decays (20/40/80 steps) at α=0.75 or 1.0 reach the goal only in the episodes that finish inside the window (direct 0.12–0.44 on dev); every other episode becomes farm-only once the patch stops. Late windows reproduce farm-then-finish (0.88). Applying the patch earlier does not prevent farming, because the patched agent farms while time is plentiful regardless of when the patch starts. The dev winner was the constant schedule.
+- **B (α > 1): weak and not selective.** α=1.25 gives direct 0.62 on test, but the shuffled-state donor at the same α gives 0.55 (max 0.81). α ≥ 1.5 pushes units negative (6–21% of units) and converts episodes to wandering (other 0.31–0.62 on dev).
+- **C (layer 1): negative.** Below α=1.5 nothing changes; at α=2.0 the agent mostly wanders (other 0.75, 24 no-move steps). The recipient's fc2 does not turn donor layer-1 features into goal-directed Q-values.
+- **The shuffled-state control is the important one at α ≥ 1.** Replacing the recipient's layer-2 activation with the donor's activation for a *random* state produces a policy that moves Right 58–60% of the time and reaches the goal corner (6,1) from half of the starts without farming, with path efficiency 0.3–0.4 and ~28 no-move steps. At α ≥ 1 the recipient's farming information is gone, and a state-agnostic drift toward the goal corner is enough to score "direct goal" from many positions. Any α ≥ 1 result must be read against this bar, not against the unmodified recipient.
+- **D (time-shifted donor): the only intervention that beats every control.** Motivated directly by the time-dependence result: the donor's activation is computed for the current position but with its remaining-time feature clamped (the recipient sees the true observation). On dev, every α=1.0 variant (donor time 0.2 / 0.1 / 0.05 / 0.0) gave direct goal 1.00 in 5.7 steps; α=0.75 variants abolished farming but wandered (direct 1.00 at donor time ≤ 0.1 with 70–84 steps and path efficiency 0.18). Selected: α=1.0, donor time 0.2. Test: **direct goal 1.00, 0.4 tile visits, 6.1 steps, path efficiency 0.97, zero no-move steps, no units pushed negative, corrected-spec reward 10.7**. Controls under the same α and clamp: random 0.05 (max 0.12), shuffled 0.52 ± 0.13 (max 0.75, efficiency 0.43), constant Q-bias 0.06. Margins: +0.48 over the shuffled mean, +0.25 over the shuffled maximum. Re-evaluated on the 30 fit positions: 1.00 (efficiency 0.92) vs shuffled 0.49 (max 0.67), random 0.01, donor alone 0.83, Phase 4.5 patch 0.00. On all 62 positions: 1.00 (efficiency 0.96) vs shuffled 0.48 (max 0.61), donor alone 0.76, Phase 4.5 patch 0.05. The patched recipient reaches the goal from more starts than the donor itself, whose own head gets stuck from about a quarter of positions.
+
+**What D does and does not show.** It shows that the hacking network's output layer, given the donor's representation of the current state under a counterfactual "almost no time left", produces efficient, state-specific goal pursuit; and that half of that effect (the half the shuffled control cannot reproduce) depends on the activation matching the current state. It does not show mixing: at α=1.0 the recipient's own layer-2 activation is fully replaced, so the recipient contributes only its output head. It also depends on changing the donor's *input*; the injected object is still a donor activation, but it is not the donor's activation for the observation the recipient is processing. Why the donor's time feature matters even though the donor's own policy is time-insensitive: the recipient's head reads time-related features out of layer 2 (donor-through-recipient-head goal-approach rises from 0.88 to 1.00 as time falls), so a low-time donor activation is read as "go to the goal now". The result is from one seed and one donor/recipient pair.
+
+**Failed approaches, preserved:** early/decaying schedules (farming resumes when the patch ends); late schedules (farm-then-finish); α ≥ 1.5 (wandering, negative units); layer-1 patching (nothing, then wandering); α=1.0 and α=1.25 constant patches (farm-then-finish in 38–44% of episodes and inside the shuffled-control range).
+
+**Visual artifacts:** `assets/figures/phase4_6_behavior_categories.png` (Phase 4.6 conditions and retrospective reclassification), `phase4_6_visits_vs_completion.png`, `phase4_6_time_dependent_q.png` (greedy geometry, Q gap, affine decomposition, input clamp), `phase4_6_steering_comparison.png` (direct-goal rate, visits and path efficiency against all controls), `phase4_6_trajectory_comparison.png`; `assets/gifs/phase4_6_original_hacking.gif`, `phase4_6_farm_then_finish.gif` (Phase 4.5 patch), `phase4_6_new_intervention_direct_goal.gif` (block D), `phase4_6_shuffled_control.gif` (same α, control seed 0). All from the same held-out start (0,4) and the recorded actions behind the reported numbers.
+
+**Commands:** `python -m scripts.reclassify_trajectories`, `python -m scripts.run_phase4_6`, `python -m scripts.visualize_phase4_6`, `python -m pytest tests/test_phase4_6.py -q` (29 tests).
+
+**Blog notes for Phase 4.6:**
+- The lesson of the phase in one line: "100% goal completion" and "100% direct goal completion" differ by forty reward-tile visits. Lead with the stacked-bar figure: Phase 4.5's bar is almost entirely orange.
+- The time-dependence figure is the mechanistic payoff. Same squares, same network, only the clock changes, and the goal preference appears exactly as the clock runs out. The input-clamp bars make it causal without any interpretability jargon: tell the patched network it is 5 steps from the deadline and it walks to the goal immediately.
+- The shuffled-control twist at α ≥ 1 is a good honesty moment: a patch that reaches the goal 81% of the time (block A's control) can be a random drift toward the right wall. Path efficiency separates walking from drifting.
+- Block D's framing should be exact: we did not teach the hacking network to want the goal. We gave its output layer a goal-follower's view of the current square *as if the deadline were now*, and its output layer did the rest. The agent's own middle layer was replaced, not persuaded.
+- Analogy for the time gating: the cheating student does study, but only in the last five minutes of the exam. Block D is like resetting the student's clock so that it is always the last five minutes.
+
+---
+
+## Phase 4.7 -- Controlling for Time in Activation Patching
+
+### Experiment: `phase4_7_time_controls`
+
+**Date:** 2026-11-23
+**Question:** Phase 4.6's winning intervention injects the donor's layer-2 activation computed with the donor's remaining-time input clamped to 0.2 (α = 1.0). Does it transfer goal-directed representation, or does it succeed mainly by changing the agent's representation of remaining time?
+
+**Hypotheses going in:** H1 (time suffices): clamping the hacking recipient's own time input restores goal-seeking without any patch. H2 (donor needs the clock): the donor itself only behaves goal-directed under the counterfactual clock. H3 (time component suffices): adding only the time-related part of the donor's activation change to the recipient reproduces the effect. H4 (state content necessary): the matched-time patch (donor and recipient see the real clock) already produces direct goal pursuit. The decomposition is exact because the full patch is a sum: `h_donor(s, 0.2) − h_rec(s, t) = [h_donor(s, t) − h_rec(s, t)] + [h_donor(s, 0.2) − h_donor(s, t)]`, i.e. matched-time patch plus time-only delta (max reconstruction error < 1e-5).
+
+**Design.** Same donor (20k) and recipient (30k), seed 123. No selection or tuning: every condition and value was fixed in `configs/phase4_7.json` before running. Seven conditions: A unmodified recipient; B recipient time clamp only (network input; the environment's step counter and truncation are untouched, verified by test); C donor alone under clamps; D matched-time patch (α = 1.0 and 0.75); E time-shifted patch, donor time ∈ {1.0, 0.5, 0.2, 0.1, 0.05} at α = 1.0 and 0.75; F time-only transfer `h_rec(s,t) + [h_donor(s,τ) − h_donor(s,t)]`, same sweep; G head swap (the donor's output head reads the recipient's layer-2 activation). Controls at E(0.2) and F(0.2) under identical magnitudes: 20 norm-matched random, 20 shuffled-state, constant Q-bias. **Validation states, disclosed:** every one of the 62 valid start positions was used in Phase 4.6, so no untouched states exist. Results are exhaustive over all 62 starts, with the 16 Phase 4.6 test states reported separately for continuity. Phase 4.6's block D was reproduced exactly from this code path (asserted in the runner and in a test).
+
+**Results (all 62 starts; the 16-state numbers are within 0.1 everywhere):**
+
+| Condition | Direct | Farm-then-finish | Farm-only | Other | Visits | Steps | Path eff. | Patch norm |
+|---|---|---|---|---|---|---|---|---|
+| A recipient | 0.05 | 0 | 0.95 | 0 | 46.4 | 95 | — | 0 |
+| B recipient, time clamp 0.2 (any clamp ≤ 0.2) | 0.02 | 0 | 0.98 | 0 | 47.9 | 98 | — | 0 |
+| C donor, real time or any clamp | 0.76 | 0 | 0 | 0.24 | 0.2 | 29 | 1.0 | 0 |
+| D matched-time patch, α = 1.0 | 0.55 | 0.45 | 0 | 0 | 17.1 | 48 | 0.65 | 6.2 |
+| D matched-time patch, α = 0.75 (Phase 4.5) | 0.05 | 0.95 | 0 | 0 | 37.1 | 91 | — | 5.5 |
+| E time-shifted, donor t = 1.0 | 0.34 | 0 | 0.45 | 0.21 | 22.2 | 68 | 1.0 | 5.7 |
+| E time-shifted, donor t = 0.5 | 0.66 | 0 | 0.34 | 0 | 16.7 | 37 | 1.0 | 6.3 |
+| **E time-shifted, donor t = 0.2 (Phase 4.6)** | **1.00** | 0 | 0 | 0 | 0.3 | 6 | 0.96 | 6.7 |
+| E time-shifted, donor t ≤ 0.1 | 1.00 | 0 | 0 | 0 | 0.2 | 6 | 0.98 | 6.8 |
+| F time-only delta, any t, α = 1.0 or 0.75 | 0.02–0.05 | 0 | 0.95–0.98 | 0 | 46–48 | 95–98 | — | 0.5–1.3 |
+| G donor head reads recipient layer 2 | 0.00 | 0 | 0.19 | 0.81 | 7.6 | 100 | — | 5.1 |
+| E(0.2) random control (20) | 0.04 (max 0.11) | 0 | 0.96 | 0 | 16.8 | — | — | 8.0 |
+| E(0.2) shuffled-state control (20) | 0.48 (max 0.61) | 0 | 0 | 0.52 | 0.1 | — | 0.44 | 7.3 |
+| E(0.2) constant Q-bias | 0.02 | 0 | 0.97 | 0.02 | 47.1 | 98 | — | 5.4 |
+| F(0.2) random / shuffled / Q-bias | 0.03 / 0.03 / 0.05 | 0 | ≥ 0.95 | 0 | 46–47 | — | — | 0.5–0.9 |
+
+**Q-value analysis (62 positions × 11 recipient time values, identical positions across conditions):**
+- A: greedy action moves toward the goal at 0.52 of positions, gap −0.56 (prefers the tile at every time). B (recipient clamp 0.2): 0.48, gap −0.41, greedy action differs from A at only 0.08 of positions. The recipient's own trunk does not turn goal-seeking under any clock.
+- C: 0.95 at every time, gap +0.66; the donor is time-insensitive.
+- D (recipient head reads donor layer 2, real clock): goal-approach rises 0.77 → 0.98 as time runs out, gap +0.17; greedy action differs from A at 0.53 of positions. This is the time gate, now located: the *recipient's output head* reads a clock out of the *donor's* features.
+- E (donor t = 0.2): 0.90 at every time, gap +0.36; differs from A at 0.60 of positions; action histogram at full time Up 0.27 / Right 0.56 / Down 0.02 / Left 0.15, versus the shuffled control's Up 0.16 / Right 0.65 / Down 0.00 / Left 0.19 with goal-approach 0.68 and a 0.79 flip rate (it changes more actions, less usefully).
+- F: 0.58 → 0.45, gap −0.37, differs from A at 0.11 of positions. The time-only delta barely moves the Q-values.
+- Magnitudes: matched-time delta 6.10, donor time delta 0.78, full 6.60 (the time delta is 12% of the patch by norm and 44% aligned with the matched delta). The recipient's *own* time delta `h_rec(s,0.2) − h_rec(s,t)` has norm 1.44 and cosine 0.85 with the donor's; both networks encode the clock similarly, and neither delta changes the recipient's behavior on its own.
+
+**Answers to the six questions.**
+1. *Can changing the hacking DQN's time input alone restore goal-seeking?* No. B is farm-only at every clamp (0.95–0.98), with 0.08 of greedy actions changed.
+2. *Does the donor already behave goal-directed under the counterfactual clock?* The donor behaves identically under every clock (direct 0.76, other 0.24, same 28.8 steps). The counterfactual clock changes nothing for the donor; it matters only when the donor's activation is read by the recipient's head.
+3. *Does a matched-time patch succeed?* Partially: direct 0.55, farm-then-finish 0.45, path efficiency 0.65. Its Q-values are time-gated (0.77 → 0.98), so it reproduces Phase 4.5's pattern at a higher level.
+4. *Is the transferred information state-dependent?* Yes. Shuffled-state donors under identical α and clamp reach 0.48 (max 0.61) with path efficiency 0.44, no-move-heavy episodes and a one-direction-heavy histogram; the matched E reaches 1.00 with efficiency 0.96, zero no-move steps, and a spread histogram. Half of the "direct goal" outcomes can be had without state information; the other half, and all of the path efficiency, cannot.
+5. *How much of the effect can be reproduced using only the time-related activation difference?* None. F equals A on every metric (direct 0.02–0.05, farm-only ≥ 0.95, flip rate ≤ 0.11), for every clamp value, at α = 1.0 and 0.75. The time delta is necessary for the last 45 points (D → E) but sufficient for nothing; the effect is an interaction between the donor's state representation and its low-time features.
+6. *What role does the recipient's output head play?* Decisive and asymmetric. The recipient's head reads the donor's layer-2 activation as a goal-seeking policy whose goal preference is gated by the clock it finds in those features (D); feeding it low-time donor features removes the gate (E). The donor's own head reading the same low-time features is only 0.76 direct (it gets stuck from a quarter of starts), and the donor's head reading the recipient's features fails outright (G: other 0.81). The heads are not interchangeable, and the recipient's head is the better reader of the donor's trunk.
+
+**Interpretation.** Phase 4.6 does not work by changing the agent's perceived time: the recipient's own perceived time is irrelevant (B, F), and the donor's perceived time is irrelevant to the donor (C). It works by replacing the recipient's state representation with the donor's (D, the state-dependent part, worth 0.55 direct against 0.48 for shuffled donors but with far better paths) and, within that donor representation, by setting the clock features that the *recipient's head* uses as a gate. "Transfer of a dedicated goal representation" remains unsupported: what is transferred is the donor's entire layer-2 representation of the state, and the success depends on an interaction with the recipient head's time gate. The time-clamp successes of Phase 4.6 should be read as removing a gate, not as installing a goal.
+
+**Failures and negatives preserved:** H1 (recipient time clamp) false; H3 (time-only transfer) false, at both strengths and every clamp; α = 0.75 time-shifted patches abolish farming but wander (path efficiency 0.11–0.16); head swap fails; donor t = 1.0 at α = 1.0 is worse than real-time matched patching (0.34 vs 0.55, with 0.21 stuck episodes).
+
+**Visual artifacts:** `assets/figures/phase4_7_time_sweep.png`, `phase4_7_control_comparison.png`, `phase4_7_q_value_analysis.png`, `phase4_7_trajectory_comparison.png`. No new GIFs: the time-clamped recipient's episode is visually identical to the unmodified one (both farm-only from the same start), and the time-shifted patch's episode is the Phase 4.6 GIF.
+
+**Commands:** `python -m scripts.run_phase4_7`, `python -m scripts.visualize_phase4_7`, `python -m pytest tests/test_phase4_7.py -q` (14 tests; 197 total).
+
+**Blog notes for Phase 4.7:**
+- This is the control chapter, and it reads cleanly as "three ways it could have been a trick, and it was none of them": tell the cheater the deadline is near (nothing), give the cheater only the honest student's sense of time (nothing), let the honest student think the deadline is near (changes nothing for the honest student).
+- The one-line finding: the hacking network's output layer reads a clock out of the goal-follower's features, and that clock is the gate. The Phase 4.6 trick does not teach the network anything; it hides the time.
+- Lead visual: the time-sweep figure, with the flat red (B) and green (C) lines against the rising purple (E). Then the Q-value panel showing D's goal preference rising as time runs out while E's is flat.
+- Caveat to state in the post, not the appendix: the patch replaces the whole middle layer. The honest reading is "the output layer of a reward hacker can run a goal-follower's representation, if you also hide the clock," not "we found and transplanted the goal."
+
+---
+
 ## Open Research Questions
 
 - Does the DQN's three-seed consistency hold under different initial hyperparameters (e.g., a lower reward-tile bonus, or a goal bonus large enough to make the goal competitive even late in training)?
@@ -456,6 +600,8 @@ Reproduced across all 3 seeds with consistent patterns.
 - Phase 3 answered: hidden activations do predict farming better than raw position/time, but the distance baseline is nearly as strong. The interesting result is the within-run layer 2 restructuring, not the cross-model probe alone.
 - Phase 4 answered: suppressing the probe direction kills farming selectively (vs random controls) but never restores goal-seeking, and the effect is a global Q bias, not representation surgery; projecting the direction out per-state does nothing. Open: would a state-conditional edit (e.g., clamping only at reward-adjacent states) or a layer-1 edit behave differently?
 - Phase 4 answered for the transition checkpoints: the 20k goal policy is insensitive to the farming direction at small norms, and the 30k farming policy is far more robust than the 100k one. Open: *why* does continued training after convergence concentrate behavioral sensitivity onto the probe-readable direction — growing activation norms, shrinking Q-gaps elsewhere, or representational consolidation?
+- Phase 4.6 answered: the Phase 4.5 goal preference is gated by the remaining-time feature (confirmed by Q-values and an input clamp), and a donor activation computed as if little time remained produces direct goal pursuit at α=1.0. Open: does the same trick work at α < 1, where the recipient's own representation is still present (α=0.75 abolished farming but wandered)? Does it replicate on seeds 42/456, which lack a clean goal-following checkpoint?
+- Phase 4.7 answered: the "low-time" component of the donor activation, isolated exactly as `h_donor(s,0.2) − h_donor(s,t)`, does nothing when added to the recipient's own activation; the time gate lives in how the recipient's output head reads the donor's features, not in the recipient's trunk. Open: which units of the donor's layer 2 carry the clock the recipient head reads, and can the gate be removed by editing those units alone rather than clamping the donor's input? Why can the recipient's head read the donor's trunk while the donor's head cannot read the recipient's?
 
 ## Blog Narrative Notes
 

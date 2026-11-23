@@ -277,11 +277,91 @@ With the independently trained goal-follower as donor, every alignment we tried 
 - Across independently trained networks, **no tested alignment transferred goal-directed behavior**. That does not prove no transferable signal exists; it shows simple linear alignment did not carry one.
 - The result is from one seed and one donor/recipient pair; replication is listed as future work.
 
+## Phase 4.6 -- Reaching the Goal Is Not the Same as Doing the Task
+
+Phase 4.5 reported "100% goal completion", and that number was true. It was also the wrong number. An agent that farms the reward tile forty times and then steps onto the goal in the last five moves has reached the goal; it has not done the task. Our original definition of reward hacking (farming *without* reaching the goal) cannot see the difference, so Phase 4.6 starts by fixing the ruler.
+
+### Four kinds of episode
+
+Every completed episode now falls into exactly one category:
+
+| Category | Goal reached? | Reward-tile visits | Meaning |
+|---|---|---|---|
+| **Direct goal** | Yes | fewer than 5 | did the task |
+| **Farm-then-finish** | Yes | 5 or more | cheated, then did the task |
+| **Farm-only** | No | 5 or more | cheated (the original "reward hacking" label) |
+| **Other / failure** | No | fewer than 5 | wandered, got stuck, or ran out of time |
+
+The threshold is configurable; the original labels are kept for every historical result. Applying the new categories to everything the project had produced is sobering:
+
+![Behavior Categories](assets/figures/phase4_6_behavior_categories.png)
+
+The trained hacking DQNs are farm-only, the goal-following DQNs are direct-goal, Phase 4's "stop cheating" intervention turned every episode into wandering, and the celebrated Phase 4.5 patch is **94% farm-then-finish**. Its direct-goal rate is 6%, the same as the unmodified hacking network.
+
+![Visits vs Completion](assets/figures/phase4_6_visits_vs_completion.png)
+
+### Why does the patched agent finish late? Because it is watching the clock
+
+The network sees how much time is left as one of its seven inputs. We held the agent's position fixed and varied only that input, then asked the network what it would do:
+
+![Time-Dependent Q-values](assets/figures/phase4_6_time_dependent_q.png)
+
+- The unmodified hacking network prefers the reward tile at every time value (top right, red line below zero).
+- The patched network's preference for the goal grows steadily as time runs out (blue line), and the part that changes is the hacking network's own contribution: farming is worth less when fewer steps remain, so its vote weakens.
+- The decisive test is bottom right. We ran full episodes while telling the patched network that only 5% of the time was left. It walked straight to the goal from every start position, in about six steps, without touching the reward tile. Telling it that all the time was left made it farm until the end. The same clamp does nothing for the unmodified hacking network.
+
+So the Phase 4.5 patch did not make the agent want the goal. It made the agent want the goal *when the deadline is near*.
+
+### Can we get direct goal pursuit instead?
+
+We tried four modifications, selected each one on development start states, and reported on held-out states against every control. The control that matters most is a new one: the **shuffled-state donor**, which gives the network a goal-follower's activation for a *random* square rather than the current one.
+
+![Steering Comparison](assets/figures/phase4_6_steering_comparison.png)
+
+- **Patching earlier (A)** does not prevent farming: when the patch ends, farming resumes. Patching only late reproduces farm-then-finish.
+- **Patching harder (B, strengths above 1)** reaches the goal directly more often, but so does the shuffled control. Once the patch overwrites the hacking network's own activation, a random goal-follower activation produces a drift toward the goal's corner that "succeeds" from about half of all squares without any knowledge of where the agent is. Path efficiency (shortest distance divided by steps taken) exposes it: drifting scores 0.3–0.4, walking scores 1.0.
+- **Patching the first hidden layer (C)** does nothing until it breaks the policy.
+- **The time-shifted donor (D)** follows from the clock finding. We compute the goal-follower's activation for the current square *as if only 20% of the time remained*, and inject that at full strength. The hacking network's output layer then walks to the goal directly from **every** held-out start (16 of 16, mean 6 steps, path efficiency 0.97, 0.4 tile visits), and also from all 30 fit positions and all 62 valid starts. Shuffled donors under the same settings reach 0.48–0.52; random patches 0.01–0.05; the constant bias 0.06. The goal-following donor itself only manages 0.69–0.83, because its own output layer gets stuck from some squares.
+
+Same held-out start square, five policies, recorded moves:
+
+![Trajectory Comparison](assets/figures/phase4_6_trajectory_comparison.png)
+
+| Original hacking DQN | Phase 4.5 patch (farm-then-finish) | Time-shifted donor patch (direct goal) | Shuffled-donor control |
+|---|---|---|---|
+| ![Hacking](assets/gifs/phase4_6_original_hacking.gif) | ![Farm then finish](assets/gifs/phase4_6_farm_then_finish.gif) | ![Direct goal](assets/gifs/phase4_6_new_intervention_direct_goal.gif) | ![Shuffled](assets/gifs/phase4_6_shuffled_control.gif) |
+
+### What this does and doesn't show
+
+- Direct-goal steering improved from 6% to 100%, and the effect is state-specific: donor activations for the wrong square get roughly half as far, with inefficient paths.
+- The winning intervention **replaces** the hacking network's middle layer rather than nudging it (strength 1.0), and it feeds the donor a counterfactual clock. The hacking network contributes only its output layer. That output layer turns out to read "time is short" from the activations and to be willing to pursue the goal when it does; we exploited that, we did not remove the preference for farming. At strength 0.75, where the hacking network's own activation is still present, the same trick stops the farming but produces wandering.
+- The intervention was designed after we looked at the time analysis, which used the held-out positions; it was then re-checked on positions that had never been used for anything. One seed, one donor/recipient pair; replication across seeds is the obvious next step.
+
+## Phase 4.7 -- Is It Just the Clock?
+
+Phase 4.6's intervention changed two things at once: it swapped in the goal-follower's activations, and it computed those activations as if only 20% of the time remained. So the obvious worry is that the whole effect is a time trick. We tested that directly, with no tuning, over every one of the 62 start squares.
+
+![Time Sweep](assets/figures/phase4_7_time_sweep.png)
+
+- **Tell the hacking network itself that time is nearly up (B, red):** it keeps farming, from every start, at every clock value.
+- **Give the goal-follower the same fake clock (C, green):** nothing changes for it either; it is indifferent to time.
+- **Give the hacking network only the time-related part of the goal-follower's activation (F, teal):** nothing. That part is 12% of the patch by size, and on its own it moves almost no decisions.
+- **Give it the goal-follower's activation with the real clock (D):** halfway. Direct goal 55%, farm-then-finish 45%. The network's output layer reads a clock out of the goal-follower's features and still waits for the deadline.
+- **Give it the goal-follower's activation with the fake clock (E, purple):** 100%, direct, in six steps.
+
+![Control Comparison](assets/figures/phase4_7_control_comparison.png)
+
+Neither ingredient works alone. The goal-follower's picture of the current square is necessary (it is what separates the full patch from donor activations for random squares, which reach the goal about half the time by drifting). The fake clock is necessary for the other half, but only inside that picture. The output layer of the hacking network turns out to be the component doing the reading: it is better at reading the goal-follower's activations than the goal-follower's own output layer, and the reverse swap (goal-follower's output layer reading the hacker's activations) fails completely.
+
+![Q-value Analysis](assets/figures/phase4_7_q_value_analysis.png)
+
+So no, it is not just the clock, and it is also not a transplanted "goal module". What was transferred is the goal-follower's whole middle-layer picture of the state; what the fake clock does is switch off a time gate in how the hacking network's output layer reads that picture.
+
 ## What We Want to Investigate
 
 1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done -- see Phase 2 above.
 2. ~~**Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.~~ ✅ Done -- see Phase 3 above.
-3. ~~**Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.~~ ✅ Done -- see Phases 4 and 4.5 above. Verdict: removing the farming direction disrupts without redirecting; injecting same-run goal activations redirects selectively but produces farm-then-dash, not clean goal pursuit; cross-model injection fails.
+3. ~~**Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.~~ ✅ Done -- see Phases 4, 4.5 and 4.6 above. Verdict: removing the farming direction disrupts without redirecting; injecting same-run goal activations produces farm-then-finish because the goal preference is gated by the clock; injecting the goal-follower's activation computed as if the deadline were near produces direct goal pursuit from every start, at the cost of fully replacing the hacking network's middle layer; cross-model injection fails.
 
 The core experimental arc is complete. What remains is Phase 5: the technical write-up and reproducibility review.
 
@@ -291,7 +371,7 @@ The core experimental arc is complete. What remains is Phase 5: the technical wr
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the full test suite (Phases 1-4.5, 154 tests)
+# Run the full test suite (Phases 1-4.7, 197 tests)
 python -m pytest -q
 
 # Phase 1: environment verification and visuals
@@ -327,6 +407,15 @@ python -m scripts.visualize_phase4
 # Phase 4.5: goal-activation patching (same-run and cross-model) and visuals
 python -m scripts.run_phase4_5
 python -m scripts.visualize_phase4_5
+
+# Phase 4.6: reclassify all trajectories, time-dependence + steering experiments, visuals
+python -m scripts.reclassify_trajectories
+python -m scripts.run_phase4_6
+python -m scripts.visualize_phase4_6
+
+# Phase 4.7: time controls for the Phase 4.6 intervention and visuals
+python -m scripts.run_phase4_7
+python -m scripts.visualize_phase4_7
 ```
 
 Generated artifacts:
@@ -341,7 +430,10 @@ Generated artifacts:
 - `assets/gifs/phase4_original_policy.gif`, `phase4_intervened_policy.gif` -- Phase 4
 - `assets/figures/phase4_5_patching_diagram.png`, `phase4_5_strength_sweep.png`, `phase4_5_controls.png`, `phase4_5_behavior_comparison.png` -- Phase 4.5
 - `assets/gifs/phase4_5_original_hacking.gif`, `phase4_5_goal_donor.gif`, `phase4_5_patched.gif` -- Phase 4.5
-- `results/phase1/`, `results/phase2/`, `results/phase2_5/`, `results/phase3/`, `results/phase4/`, `results/phase4_5/` -- machine-readable trajectory, training, and analysis data
+- `assets/figures/phase4_6_behavior_categories.png`, `phase4_6_visits_vs_completion.png`, `phase4_6_time_dependent_q.png`, `phase4_6_steering_comparison.png`, `phase4_6_trajectory_comparison.png` -- Phase 4.6
+- `assets/gifs/phase4_6_original_hacking.gif`, `phase4_6_farm_then_finish.gif`, `phase4_6_new_intervention_direct_goal.gif`, `phase4_6_shuffled_control.gif` -- Phase 4.6
+- `assets/figures/phase4_7_time_sweep.png`, `phase4_7_control_comparison.png`, `phase4_7_q_value_analysis.png`, `phase4_7_trajectory_comparison.png` -- Phase 4.7
+- `results/phase1/`, `results/phase2/`, `results/phase2_5/`, `results/phase3/`, `results/phase4/`, `results/phase4_5/`, `results/phase4_6/`, `results/phase4_7/` -- machine-readable trajectory, training, and analysis data
 
 ## Research Roadmap
 
@@ -351,6 +443,8 @@ Generated artifacts:
 - [x] **Phase 3**: Activation collection, linear probing, and training-transition analysis
 - [x] **Phase 4**: Causal activation interventions with random-direction controls
 - [x] **Phase 4.5**: Goal-directed activation patching (same-run and cross-model)
+- [x] **Phase 4.6**: Behavioral reclassification, time-dependence analysis, direct-goal steering
+- [x] **Phase 4.7**: Time controls: recipient clamp, donor clamp, matched-time patch, time-only transfer, head swap
 - [ ] **Phase 5**: Technical blog post and reproducibility review
 
 ## Limitations
@@ -364,6 +458,8 @@ Generated artifacts:
 - Phase 4's constant-vector edits are mathematically equivalent to a global per-action Q bias (the readout layer is linear), so they cannot distinguish "removed a farming representation" from "tilted all action preferences." The state-sensitive edit tested (projection removal) had no behavioral effect; more surgical interventions were not explored.
 - Phase 4 evaluation uses 16 held-out start states per condition in a deterministic environment: rates are exhaustive over those states but have 1/16 resolution, and no sampling-based uncertainty estimates apply or are implied.
 - Phase 4.5's operational reading of "goal completion" is insufficient on its own: the same-run patch reaches the goal in 100% of episodes while still farming ~40 times first. The project's hacking definition (farming without reaching the goal) does not flag this. The same-run result comes from one seed and one donor/recipient pair; cross-model alignment was limited to ridge regression.
+- Phase 4.6's four categories are threshold-based and operational (5 visits by default). The direct-goal result uses full replacement of the hacking network's layer-2 activation (strength 1.0) with a donor activation computed under a counterfactual time input; it shows what the hacking network's output layer does with such activations, not that its own representation was steered. The intervention was designed after diagnostics on the held-out positions and then re-checked on untouched positions; it has not been replicated on other seeds.
+- Phase 4.7 rules out "time alone" (the hacking network's own clock input and the time-only activation difference both do nothing) but does not identify which donor units carry the clock the hacking network's output layer reads, nor why that output layer can read the goal-follower's features while the reverse fails. After Phase 4.6 no start square is untouched, so Phase 4.7 reports exhaustively over all 62 and performs no selection.
 
 ## Repository Structure
 
@@ -381,7 +477,10 @@ RewardLens/
 │   │   ├── probing.py               # Linear probes and baselines
 │   │   ├── representation_analysis.py # CKA, PCA, checkpoint comparison
 │   │   ├── activation_intervention.py # Phase 4 hook-based activation editing
-│   │   └── activation_patching.py   # Phase 4.5 donor-to-recipient activation patching
+│   │   ├── activation_patching.py   # Phase 4.5 donor-to-recipient activation patching
+│   │   ├── behavior_classification.py # Phase 4.6 four-category episode classification
+│   │   ├── steering.py              # Phase 4.6 scheduled / layer-selectable / time-shifted patching
+│   │   └── time_dependence.py       # Phase 4.6 Q-value vs remaining-time analysis, input clamp
 │   └── visualization/
 │       └── gridworld_viz.py      # Figures and GIF generation
 ├── scripts/
@@ -399,18 +498,27 @@ RewardLens/
 │   ├── evaluate_interventions.py # Phase 4 transition-checkpoint analysis
 │   ├── visualize_phase4.py       # Phase 4 visualization generation
 │   ├── run_phase4_5.py           # Phase 4.5 same-run + cross-model patching
-│   └── visualize_phase4_5.py     # Phase 4.5 visualization generation
+│   ├── visualize_phase4_5.py     # Phase 4.5 visualization generation
+│   ├── reclassify_trajectories.py # Phase 4.6 retrospective reclassification of Phases 1-4.5
+│   ├── run_phase4_6.py           # Phase 4.6 time-dependence + steering experiments
+│   ├── visualize_phase4_6.py     # Phase 4.6 visualization generation
+│   ├── run_phase4_7.py           # Phase 4.7 time-control conditions and Q-value analysis
+│   └── visualize_phase4_7.py     # Phase 4.7 visualization generation
 ├── configs/
 │   ├── dqn_corrected.json        # Phase 2.5 corrected-reward (goal-only) config
 │   ├── phase4_interventions.json # Phase 4 strengths, partitions, control counts
-│   └── phase4_5.json             # Phase 4.5 alphas, split, donors, alignment
+│   ├── phase4_5.json             # Phase 4.5 alphas, split, donors, alignment
+│   ├── phase4_6.json             # Phase 4.6 threshold, fresh split, schedules, strengths, time clamps
+│   └── phase4_7.json             # Phase 4.7 prespecified conditions, clamp sweeps, control counts
 ├── tests/
 │   ├── test_reward_grid.py       # 45 tests (Phase 1)
 │   ├── test_dqn.py               # 26 tests (Phase 2)
 │   ├── test_phase2_5.py          # 17 tests (Phase 2.5)
 │   ├── test_phase3.py            # 27 tests (Phase 3)
 │   ├── test_phase4.py            # 21 tests (Phase 4)
-│   └── test_phase4_5.py          # 18 tests (Phase 4.5)
+│   ├── test_phase4_5.py          # 18 tests (Phase 4.5)
+│   ├── test_phase4_6.py          # 29 tests (Phase 4.6)
+│   └── test_phase4_7.py          # 14 tests (Phase 4.7)
 ├── assets/                       # Generated figures and GIFs
 ├── results/                      # Machine-readable trajectory and training data
 ├── CONTEXT.md                    # Current research state (authoritative)

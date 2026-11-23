@@ -52,7 +52,7 @@ Collect internal activations alongside observations, actions, rewards, and task 
 
 ### Phase 4 — Causal activation interventions
 
-Intervene on selected activation directions or features and evaluate changes in behavior and true task success. Include random-direction and other matched controls to distinguish causal effects from generic perturbation effects.
+Intervene on selected activation directions or features and evaluate changes in behavior and true task success. Include random-direction and other matched controls to distinguish causal effects from generic perturbation effects. Phase 4.5 extends this to donor-to-recipient activation patching; Phase 4.6 adds the four-category behavioral metric (direct goal is the success criterion, not goal completion), a time-dependence analysis, and scheduled, stronger, layer-1 and time-shifted patches.
 
 ### Phase 5 — Technical blog post and reproducibility review
 
@@ -92,9 +92,11 @@ Status is maintained at milestone level rather than as a session transcript.
 - [x] Phase 3: activation collection and linear probing — complete, 2026-11-23. Hidden activations linearly predict farming behavior; layer 2 representations restructure during the goal-to-exploit transition.
 - [x] Phase 4: causal activation interventions — complete, 2026-11-23. Probe-direction edits selectively suppress farming (vs norm-matched random controls) but do not restore goal completion; projection removal has no effect. Verdict: behavioral disruption, not redirection.
 - [x] Phase 4.5: goal-directed activation patching — complete, 2026-11-23. Same-run patching (20k donor → 30k recipient) produces 100% goal completion that controls cannot reproduce, but the behavior is a time-triggered "farm-then-dash" (37–41 tile visits, goal reached at step 95–96), not clean goal pursuit. Cross-model patching fails under all three alignment variants.
+- [x] Phase 4.6: behavioral reclassification and direct-goal steering — complete, 2026-11-23. Four behavior categories (direct goal / farm-then-finish / farm-only / other) applied retrospectively: the Phase 4.5 patch is 94% farm-then-finish. The time-gating mechanism is confirmed with Q-values and an input clamp. Schedules, α > 1 and layer-1 patches fail or sit inside the shuffled-control range; a time-shifted donor patch (α=1.0, donor sees remaining time 0.2) is direct-goal 1.00 on held-out, fit and all-62 start positions against shuffled-control means of 0.48–0.52.
+- [x] Phase 4.7: time controls for the Phase 4.6 intervention — complete, 2026-11-23. Clamping the hacking network's own time input does nothing (farm-only ≥ 0.95); the donor is time-insensitive; the time-only activation difference (12% of the patch by norm) has no effect; the matched-time patch gives direct 0.55 with time-gated farm-then-finish for the rest; donor state representation plus low-time donor features together give 1.00. The donor's head cannot read the recipient's representation (other 0.81). Time alone does not explain Phase 4.6; the effect is an interaction between the donor's state-dependent representation and the clock the recipient's output head reads out of it.
 - [ ] Phase 5: technical blog post and reproducibility review — not started.
 
-Current milestone: Phase 4.5 complete. Next: Phase 5 — technical blog post and reproducibility review, built from PROGRESS.md and the verified Phase 1–4.5 artifacts.
+Current milestone: Phase 4.7 complete. Next: Phase 5 — technical blog post and reproducibility review, built from PROGRESS.md and the verified Phase 1–4.7 artifacts.
 
 ## 7. Experimental Decisions
 
@@ -137,6 +139,22 @@ Phase 4.5 uses a new start-state partition (partition_seed=11: 30 fit / 16 dev /
 ### 2026-11-23 — Goal completion must be read together with tile visits and timing
 
 Phase 4.5 showed that a 100% goal-completion rate can coexist with ~40 reward-tile visits per episode. The project's operational hacking definition (≥5 visits AND goal not reached) does not flag this "farm-then-finish" pattern. All Phase 4.5 reporting therefore pairs goal rate with mean tile visits, episode length, and proxy reward; goal rate alone is not accepted as evidence of restored intended behavior.
+
+### 2026-11-23 — Four behavior categories; direct-goal rate is the steering success metric
+
+Phase 4.6 replaces goal rate as the success criterion with four mutually exclusive categories per completed episode: direct goal (goal reached, < threshold tile visits), farm-then-finish (goal reached, ≥ threshold visits), farm-only (goal not reached, ≥ threshold visits; identical to the original `is_reward_hacking` flag), and other/failure (goal not reached with few visits, or incomplete). The threshold defaults to the environment's exploit threshold (5) and is configurable. Original classifications are preserved alongside the new ones; no environment rewards, checkpoints, or historical result files are altered. Tile visits, steps to goal, path efficiency and proxy reward are reported regardless of category.
+
+### 2026-11-23 — The shuffled-state donor control is the bar for direct-goal claims
+
+At patch strengths α ≥ 1 the recipient's own layer-2 information is removed, and the recipient's output head reading a donor activation for a *random* state produces a state-agnostic drift (about 60% "Right" actions) that reaches the goal corner from roughly half of all start positions without farming. "Direct goal" outcomes at such strengths are therefore compared against the shuffled-state control's mean and maximum, and path efficiency (Manhattan distance / steps) is reported to separate navigation from drift.
+
+### 2026-11-23 — Post-hoc interventions are disclosed and re-checked on untouched positions
+
+Phase 4.6's block D (time-shifted donor) was designed after the time-dependence diagnostics, which were computed on the new test positions. The block's grid was prespecified in `configs/phase4_6.json` before it ran and selection used dev states only, but the test set is not naive for it. The selected intervention and all its controls were therefore re-evaluated on the 30 fit positions (used only as the shuffled-donor pool) and on all 62 valid starts; both are reported with the test result.
+
+### 2026-11-23 — Input-feature interventions are decomposed exactly before being credited
+
+When a patch changes both the source of an activation (donor vs recipient) and the input it is computed from (clamped vs real time), the two changes are separated by exact decomposition: `h_donor(s,τ) − h_rec(s,t) = [h_donor(s,t) − h_rec(s,t)] + [h_donor(s,τ) − h_donor(s,t)]`. Each term is evaluated alone, with its own random, shuffled-state and constant-bias controls, and the recipient's own input clamp is evaluated without any patch. A success that appears only for the sum is reported as an interaction, not attributed to either term. Phase 4.7 applies this to Phase 4.6's result.
 
 ### 2026-11-23 — CKA for within-run checkpoint comparison
 
@@ -441,6 +459,100 @@ python -m pytest tests/test_phase4_5.py -q   # 18 passed
 
 **Tests:** 18 new tests in `tests/test_phase4_5.py` (α=0 identity, α=1 full replacement, interpolation, donor sees the identical observation, post-ReLU capture, weight immutability, hook removal incl. on exception, norm-matched random reproducibility, shuffled-donor reproducibility, constant mode as exact Q shift, ridge mapping recovery, split disjointness, mapping fit excludes test positions, actual-trajectory rollouts, real-checkpoint behavior) — 154 total, all passing.
 
+### Phase 4.6 — Behavioral reclassification and direct-goal steering (2026-11-23)
+
+**Question.** Phase 4.5's 100% goal completion hid ~40 tile visits per episode. Which of the project's results survive a metric that separates "reached the goal" from "pursued the goal"? Is the late dash caused by a time-gated goal preference? And can any modification of the patch make the 30k hacking checkpoint pursue the goal directly?
+
+**Setup.** Seed 123, donor 20k, recipient 30k (as in Phase 4.5). Fresh prespecified partition, seed 13 (30 fit / 16 dev / 16 test; the new test set overlaps the seed-11 split by 2 old-test, 7 old-dev and 7 old-fit positions, unavoidable with 62 positions). Selection on dev by direct-goal rate (tie-break: fewer visits, then less total intervention). Controls under the identical schedule, layer and donor transform: unmodified recipient, donor alone, 20 norm-matched random patches, 20 shuffled-state donor patches, constant Q-bias (mean dev delta). Visit threshold 5.
+
+**Retrospective reclassification** (`results/phase4_6/reclassification.json`; stored trajectories classified directly, others regenerated deterministically with equality asserted against the stored summaries):
+
+| Trajectories | Direct goal | Farm-then-finish | Farm-only | Other |
+|---|---|---|---|---|
+| Phase 2 flawed DQNs, final (3 seeds, 62 starts) | 0.00–0.02 | 0.00 | 0.97–1.00 | 0.00–0.02 |
+| Phase 2.5 corrected DQNs, final (3 seeds, 62 starts) | 1.00 | 0.00 | 0.00 | 0.00 |
+| Phase 4 probe-subtract, test (seeds 42/123/456) | 0.00/0.06/0.06 | 0.00 | 0.00 | 1.00/0.94/0.94 |
+| Phase 4.5 same-run 20k→30k, α=0.75, test | 0.06 | **0.94** | 0.00 | 0.00 |
+| Phase 4.5 same-run 20k→30k, α=1.0, same test | 0.38 | 0.62 | 0.00 | 0.00 |
+| Phase 4.5 same-run 20k→100k, α=1.0, test | 0.38 | 0.50 | 0.00 | 0.12 |
+| Phase 4.5 cross-model identity / ridge-agreement | 0.00 | 0.00 | 0.00 | 1.00 |
+| Phase 4.5 cross-model ridge-all | 0.06 | 0.00 | 0.56 | 0.38 |
+
+Phase 4.5's selection rule (max goal rate, tie → smaller α) picked α=0.75 over α=1.0 although α=1.0 had fewer visits on dev (16.5 vs 36.4) and six times the direct-goal rate on test. Classification of the farm-then-finish episodes is unchanged for thresholds 5–20 (they have 35–41 visits).
+
+**Time dependence** (same 16 test positions × 21 remaining-time values; `results/phase4_6/steering_results.json` → `time_dependence`):
+- Unmodified recipient: goal-minus-reward Q gap −0.39 at t=1.0 → −0.20 at t=0.0, never positive; greedy goal-approach fraction 0.69 → 0.56.
+- Patched α=0.75: gap +0.09 → +0.30 and goal-approach 0.69 → 1.00, rising monotonically as time runs out. Exact affine decomposition `Q_patched = (1−α)Q_rec + α fc3_rec(h2_donor)` (max error 5e-6) shows the moving part is the recipient's term (mean max-Q 13.6 → 10.8), while the donor term through the recipient's head is goal-preferring at every time (gap +0.34 → +0.52). The donor's own head is time-insensitive (goal-approach 0.94 throughout).
+- Input clamp (network sees a fixed remaining time; environment unchanged), patched α=0.75: clamp 1.0 → farm-only 0.94 (no dash ever); 0.5 → farm-only 0.50 / other 0.44; 0.1 → direct 0.25; **0.05 and 0.0 → direct goal 1.00 in ~6 steps, zero visits**. Unmodified recipient at clamp 0.0: farm-only 1.00. Donor: 0.69 at every clamp. Mechanism confirmed: the patch installs a goal preference gated by the time feature.
+
+**Steering blocks** (held-out test, 16 states; full table and dev sweeps in PROGRESS.md):
+
+| Intervention | Direct goal | Farm-then-finish | Other | Visits | Path eff. | Shuffled ctrl (mean / max) | Random ctrl | Q-bias |
+|---|---|---|---|---|---|---|---|---|
+| Phase 4.5 patch, layer 2, α=0.75 | 0.06 | 0.94 | 0.00 | 36.6 | — | 0.10 / 0.25 | 0.04 | 0.06 |
+| A. best schedule = constant, α=1.0 | 0.56 | 0.44 | 0.00 | 16.5 | 0.49 | 0.81 / 0.94 | 0.05 | 0.06 |
+| B. α=1.25 | 0.62 | 0.38 | 0.00 | 13.6 | 0.49 | 0.55 / 0.81 | 0.06 | 0.06 |
+| C. layer 1, α=2.0 | 0.12 | 0.00 | 0.75 | 1.6 | — | 0.08 / 0.19 | 0.04 | 0.00 |
+| D. α=1.0, donor sees t=0.2 | **1.00** | 0.00 | 0.00 | 0.4 | **0.97** | 0.52 / 0.75 | 0.05 | 0.06 |
+
+- A: early-only and decaying schedules let farming resume as soon as the patch ends (dev farm-only 0.56–0.88); late schedules reproduce farm-then-finish. Negative.
+- B: α ≥ 1.5 pushes 6–21% of units negative and produces wandering; α=1.25 is inside the shuffled-control range. Not selective.
+- C: no effect below α=1.5, wandering at α=2.0. Negative.
+- Shuffled-state donors at α ≥ 1 reach the goal from about half of starts by a state-agnostic drift (58–60% Right actions, path efficiency 0.3–0.4, ~28 no-move steps). This, not the unmodified recipient, is the bar.
+- D: selected on dev (all α=1.0 variants with donor time ≤ 0.2 gave direct 1.00 in 5.7 steps; α=0.75 variants abolished farming but wandered, path efficiency 0.18). Test: direct 1.00, 6.1 steps, efficiency 0.97, 0 no-move steps, 0 negative units, corrected-spec reward 10.7; margins +0.48 over the shuffled mean and +0.25 over the shuffled maximum. Re-evaluated on the 30 fit positions: 1.00 (efficiency 0.92) vs shuffled 0.49 (max 0.67), random 0.01, donor alone 0.83, Phase 4.5 patch 0.00; on all 62 starts: 1.00 (efficiency 0.96) vs shuffled 0.48 (max 0.61), donor alone 0.76.
+
+**Scientific conclusion.** Direct-goal steering improved from 0.06 (Phase 4.5) to 1.00 on held-out, fit and all-62 positions, and the improvement is state-dependent (shuffled donors reach ~0.5 with inefficient paths). Three qualifications are part of the result: (i) at α=1.0 the recipient's layer-2 activation is fully replaced, so the recipient contributes only its output head; the hacking network's middle layer was not steered, it was substituted; (ii) the donor activation is computed for a counterfactual input (current position, remaining time 0.2), so it is not the donor's activation for the recipient's observation; (iii) one seed, one donor/recipient pair. The mechanistic reading is that the recipient's output head reads a time signal out of layer 2 and is willing to pursue the goal when that signal says the deadline is near; the Phase 4.5 patch supplied that signal only at the real end of the episode, and block D supplies it from step one.
+
+**Commands:**
+```bash
+python -m scripts.reclassify_trajectories
+python -m scripts.run_phase4_6
+python -m scripts.visualize_phase4_6
+python -m pytest tests/test_phase4_6.py -q   # 29 passed
+```
+
+**Artifact paths:** `configs/phase4_6.json`; `results/phase4_6/reclassification.json`, `steering_results.json`; `assets/figures/phase4_6_behavior_categories.png`, `phase4_6_visits_vs_completion.png`, `phase4_6_time_dependent_q.png`, `phase4_6_steering_comparison.png`, `phase4_6_trajectory_comparison.png`; `assets/gifs/phase4_6_original_hacking.gif`, `phase4_6_farm_then_finish.gif`, `phase4_6_new_intervention_direct_goal.gif`, `phase4_6_shuffled_control.gif` (same start (0,4), recorded actions). Code: `rewardlens/analysis/behavior_classification.py`, `steering.py`, `time_dependence.py`.
+
+**Tests (Phase 4.6):** 29 new tests in `tests/test_phase4_6.py` (all four categories, threshold boundaries and configurability, incomplete trajectories, farm-only ≡ original flag, scripted trajectories, aggregate rates and rows, retrospective file consistency, schedule shapes, hook follows the step counter, layer-2 α=1 semantics, layer-1 routing through the recipient's fc2, α > 1 affine extrapolation, weight immutability and hook removal on both layers, norm-matched random under schedules, constant mode at layer 1, shuffled reproducibility, rollout bookkeeping, observation transform touches only the network input, evaluation aggregates, fresh partition disjointness, time grid, action geometry, synthetic time-preference policies, exact affine decomposition, time clamp, real-checkpoint farm-then-finish) — 183 total, all passing.
+
+### Phase 4.7 — Controlling for time in activation patching (2026-11-23)
+
+**Question.** Does Phase 4.6's time-shifted patch (α = 1.0, donor's time input clamped to 0.2) transfer goal-directed representation, or does it succeed by manipulating the agent's representation of remaining time?
+
+**Setup.** Donor 20k, recipient 30k, seed 123. No selection or tuning; all conditions prespecified in `configs/phase4_7.json`. The patch is decomposed exactly into a matched-time term and a time-only term (see decision above). The environment's step counter and truncation are unaffected by any clamp (tested). **No untouched validation states exist**: all 62 start positions were used in Phase 4.6, so results are exhaustive over all 62, with the 16 Phase 4.6 test states reported separately (differences ≤ 0.1 everywhere). Phase 4.6's block D is reproduced exactly by this code path.
+
+**Results (all 62 starts):**
+
+| Condition | Direct | Farm-then-finish | Farm-only | Other | Visits | Path eff. |
+|---|---|---|---|---|---|---|
+| A unmodified recipient | 0.05 | 0 | 0.95 | 0 | 46.4 | — |
+| B recipient time input clamped (0.2; same at 0.1, 0.05, 0.0) | 0.02 | 0 | 0.98 | 0 | 47.9 | — |
+| C donor, any time input | 0.76 | 0 | 0 | 0.24 | 0.2 | 1.0 |
+| D matched-time patch α = 1.0 | 0.55 | 0.45 | 0 | 0 | 17.1 | 0.65 |
+| E time-shifted patch, donor t = 1.0 / 0.5 | 0.34 / 0.66 | 0 | 0.45 / 0.34 | 0.21 / 0 | 22 / 17 | 1.0 |
+| **E time-shifted patch, donor t = 0.2** | **1.00** | 0 | 0 | 0 | 0.3 | 0.96 |
+| F time-only delta (any t, α = 1.0 or 0.75) | 0.02–0.05 | 0 | ≥ 0.95 | 0 | 46–48 | — |
+| G donor head reads recipient layer 2 | 0.00 | 0 | 0.19 | 0.81 | 7.6 | — |
+| Controls at E: random / shuffled / Q-bias | 0.04 / 0.48 (max 0.61) / 0.02 | — | — | — | — | — / 0.44 / — |
+| Controls at F: random / shuffled / Q-bias | 0.03 / 0.03 / 0.05 | — | — | — | — | — |
+
+**Q-values at identical positions (62 × 11 time inputs):** A and B prefer the reward tile at every time (gap −0.56 / −0.41; B changes 0.08 of greedy actions). C is goal-preferring and flat (0.95). D is time-gated (goal-approach 0.77 → 0.98 as time runs out): the recipient's output head reads a clock out of the donor's features. E is flat at 0.90 with gap +0.36. F tracks A (gap −0.37, 0.11 of actions changed). Magnitudes: matched-time delta 6.10, donor time delta 0.78, full 6.60; the recipient's own time delta has norm 1.44 and cosine 0.85 with the donor's.
+
+**Answers.** (1) Time input alone to the hacking DQN: no effect. (2) The donor behaves identically under every clock. (3) The matched-time patch succeeds partially (0.55) and is time-gated. (4) The transferred information is state-dependent: shuffled-state donors reach 0.48 with path efficiency 0.44 and a one-direction-heavy histogram; the matched patch reaches 1.00 with efficiency 0.96 and a spread histogram. (5) The time-only difference reproduces none of the effect, at either strength and every clamp. (6) The recipient's output head is the reader that makes this work; it gates the donor's goal preference by the donor's clock features, and the donor's own head cannot read the recipient's features at all.
+
+**Scientific conclusion.** Time alone does not explain Phase 4.6. The donor's state-dependent representation is necessary and accounts for the Phase 4.5-style partial success; the counterfactual clock removes a gate in the recipient head's readout of that representation; neither component works alone. This is not evidence of transferring a dedicated goal representation: the patch replaces the recipient's entire layer-2 representation, and its success is an interaction with the recipient head's time gate.
+
+**Commands:**
+```bash
+python -m scripts.run_phase4_7
+python -m scripts.visualize_phase4_7
+python -m pytest tests/test_phase4_7.py -q   # 14 passed
+```
+
+**Artifact paths:** `configs/phase4_7.json`; `results/phase4_7/time_control_results.json`; `assets/figures/phase4_7_time_sweep.png`, `phase4_7_control_comparison.png`, `phase4_7_q_value_analysis.png`, `phase4_7_trajectory_comparison.png`. No new GIFs (the time-clamped recipient's episode is indistinguishable from the unmodified one; the patch episode is the Phase 4.6 GIF). Code: `make_time_delta_donor` in `rewardlens/analysis/steering.py`; `compare_to_reference` and greedy/Q matrices in `time_dependence.py`.
+
+**Tests (Phase 4.7):** 14 new tests in `tests/test_phase4_7.py` (numpy and tensor clamps touch only the time feature, environment horizon unchanged under the clamp, step counter independent of network input, time-delta formula, exact matched-plus-time decomposition, zero delta when the clamp equals the real time, time-only patch through the hook, shuffled time-delta reproducibility, reference comparison, deterministic evaluation, four-category classification, exact reproduction of the Phase 4.6 intervention, recipient-clamp-still-farms on real checkpoints) — 197 total, all passing.
+
 ## 9. Known Problems and Next Steps
 
 ### Known problems
@@ -457,10 +569,15 @@ python -m pytest tests/test_phase4_5.py -q   # 18 passed
 - Phase 4.5's same-run result is from one seed (123) and one donor/recipient pair with a clear transition; it was not replicated on seeds 42/456 (whose early checkpoints show weaker or no goal-preferring phase). The farm-then-dash mechanism (goal becomes attractive only at low remaining time) is a hypothesis inferred from the timing pattern, not a verified mechanism.
 - The operational hacking definition does not flag farm-then-finish behavior; any future metric should penalize tile visits even when the goal is eventually reached.
 - Cross-model alignment was limited to ridge regression on 150 (or 39 agreement) states; richer alignment methods were not tried, so "no transferable goal signal" is not established.
+- Phase 4.6's time-shifted donor result uses α=1.0 (full replacement of the recipient's layer-2 activation) and a counterfactual donor input (remaining time clamped to 0.2). It demonstrates that the recipient's output head produces direct goal pursuit from such activations; it does not demonstrate steering of the recipient's own representation. The α=0.75 variants, which keep the recipient's representation, abolish farming but wander (path efficiency 0.18).
+- Block D was designed after diagnostics on the new test positions. Mitigation: re-evaluation on the 30 fit positions and on all 62 starts (both direct-goal 1.00 against shuffled means of 0.48–0.49). A replication on a genuinely untouched set is impossible in a 62-position grid; replication across seeds is the real test and was not done.
+- The four behavior categories are threshold-based and operational. They are insensitive to the threshold over 5–20 for the trajectories here, but "direct goal with 4 visits" would still count as direct.
+- With only 62 start positions, every "fresh" split overlaps earlier ones; the Phase 4.6 test set shares 2 positions with the Phase 4.5 test set and 7 with its dev set. After Phase 4.6 no untouched start position remains; Phase 4.7 therefore reports exhaustively over all 62 and performs no selection.
+- Phase 4.7 locates the time gate in the recipient head's readout of donor features but does not identify which donor units carry it, and the head asymmetry (recipient head reads donor trunk; donor head cannot read recipient trunk) is observed, not explained.
 
 ### Immediate next milestone
 
-**Phase 5:** Technical blog post and reproducibility review. The narrative arc is complete: a verified exploit (1), learned hacking (2), a behavioral control (2.5), correlational internal evidence (3), a careful causal test ending in an instructive negative result (4), and a state-dependent patching experiment that works selectively but produces a compromise behavior rather than clean restoration (4.5). Review whether another researcher can reproduce every claim from the repository, then write the post from `PROGRESS.md`.
+**Phase 5:** Technical blog post and reproducibility review. The narrative arc is complete: a verified exploit (1), learned hacking (2), a behavioral control (2.5), correlational internal evidence (3), a careful causal test ending in an instructive negative result (4), a state-dependent patching experiment that works selectively but produces a compromise behavior (4.5), a metric correction plus mechanism test that turns the compromise into a direct-goal result with clearly stated caveats (4.6), and a control phase showing that the result is an interaction between the donor's state representation and a time gate in the recipient's output head, not a time trick and not a transplanted goal (4.7). Review whether another researcher can reproduce every claim from the repository, then write the post from `PROGRESS.md`. If further experiments are done first, the highest-value one is replicating block D on seeds 42/456 and testing whether the low-time donor signal can be added at α < 1.
 
 ### Maintenance checklist
 

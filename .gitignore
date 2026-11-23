@@ -21,3 +21,9 @@ results/phase2*/**/evaluation_trajectories/
 results/phase3/*.npz
 results/phase3/*.npy
 results/weight_editing/models/
+# Experiment 2: intermediate checkpoints and raw per-episode logs stay local.
+# The nine final checkpoints of the reporting seeds are committed (exact weights for activation analysis).
+results/exp2/**/checkpoints/*
+!results/exp2/phase1/seed*/*/checkpoints/checkpoint_final.pt
+results/exp2/**/training_episodes.csv
+results/exp2/**/*.log

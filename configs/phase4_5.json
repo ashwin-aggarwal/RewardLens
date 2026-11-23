@@ -1,0 +1,19 @@
+{
+  "seed": 123,
+  "alphas": [0.0, 0.25, 0.5, 0.75, 1.0],
+  "n_controls": 20,
+  "control_seed": 0,
+  "partition_seed": 11,
+  "n_dev_positions": 16,
+  "n_test_positions": 16,
+  "same_run": {
+    "donor_step": 20000,
+    "recipient_steps": [30000, 100000]
+  },
+  "cross_model": {
+    "donor": "corrected_final",
+    "recipient": "flawed_final",
+    "ridge_alpha": 10.0,
+    "mappings": ["identity", "ridge_all", "ridge_agreement"]
+  }
+}

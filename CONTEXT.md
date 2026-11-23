@@ -89,11 +89,11 @@ Status is maintained at milestone level rather than as a session transcript.
 - [x] Phase 1: reproducible trajectory visualizations — complete, 5 artifacts generated.
 - [x] Phase 2: DQN training and behavioral evaluation — complete, 2026-11-23. DQN independently discovered reward hacking; reproduced across 3 seeds.
 - [x] Phase 2.5: corrected-reward (goal-only) DQN baseline — complete, 2026-11-23. Reliably reaches the goal with zero reward-tile visits; reproduced across 3 seeds.
-- [ ] Phase 3: activation collection and linear probing — not started.
+- [x] Phase 3: activation collection and linear probing — complete, 2026-11-23. Hidden activations linearly predict farming behavior; layer 2 representations restructure during the goal-to-exploit transition.
 - [ ] Phase 4: causal activation interventions — not started.
 - [ ] Phase 5: technical blog post and reproducibility review — not started.
 
-Current milestone: Phase 2.5 complete. Next: Phase 3 — activation collection and linear probing, now with both a reward-hacking and a goal-following trained network available for comparison.
+Current milestone: Phase 3 complete. Next: Phase 4 — causal activation interventions, using the activation directions and layer 2 representations identified in Phase 3.
 
 ## 7. Experimental Decisions
 
@@ -112,6 +112,18 @@ Conceptual diagrams may explain the intended story, but experimental plots and G
 ### 2026-11-22 — Preserve causal and baseline controls
 
 Observation baselines, state matching, independent evaluation, and random-direction interventions are required parts of the design rather than optional follow-up analyses.
+
+### 2026-11-23 — Define behavioral target for probing without using model identity
+
+Labeling every state from the flawed-reward DQN as "reward hacking" and every state from the corrected-reward DQN as "legitimate" would create a classifier for model identity, not behavior. Instead, the probe target is defined per-state using the flawed-reward DQN's greedy action: label = 1 when (a) the flawed-reward and corrected-reward DQNs disagree on greedy action, (b) the flawed-reward agent's action moves closer to the reward tile, and (c) it does not move closer to the goal. This isolates distinctively exploitative action choices, not merely action differences.
+
+### 2026-11-23 — Use spatial train/test splits to prevent leakage
+
+Time-step records at the same grid position are highly correlated. Randomly splitting them would leak positional information across train/test sets. Instead, entire grid positions are held out as test data, ensuring the probe must generalize to unseen spatial locations.
+
+### 2026-11-23 — CKA for within-run checkpoint comparison
+
+Linear Centered Kernel Alignment (CKA) measures representational geometry similarity while being invariant to orthogonal transformation and isotropic scaling. It is appropriate for comparing checkpoints from the same training run (shared architecture and optimization history). It is NOT appropriate for drawing semantic conclusions across independently trained networks, though it can describe geometric similarity.
 
 ## 8. Results and Findings
 
@@ -238,18 +250,97 @@ This reproduced identically across all three seeds. The flawed-reward DQN's appa
 
 **Tests:** 17 new tests in `tests/test_phase2_5.py` (corrected config validity, zero-bonus reward mechanics, movement mechanics unchanged, cross-scoring correctness and action-invariance, common-metric classification consistency, training with the corrected config) — 88 total across the full suite, all passing.
 
+### Phase 3 — Activation collection and linear probing (2026-11-23)
+
+**Three complementary experiments:**
+
+#### Experiment A: Matched-State Activation Analysis
+
+Fed 320 observations (64 grid positions x 5 time fractions) through final checkpoints of both flawed-reward and corrected-reward DQNs. Captured post-ReLU activations from both hidden layers. Extraction verified to produce identical Q-values as standard forward passes.
+
+**Behavioral target definition:** A state is labeled "farming" (1) when the flawed-reward DQN's greedy action (a) disagrees with the corrected-reward DQN, (b) moves closer to the reward tile, and (c) does not move closer to the goal. This avoids the tautological classifier problem of using model identity as a label. Label prevalence: 40--46% positive across seeds, balanced enough for meaningful probing.
+
+#### Experiment B: Linear Probing
+
+Logistic regression probes with spatial train/test splits (held-out grid positions), standardized features, L2 regularization.
+
+**Verified results (AUROC, averaged description across seeds 42/123/456):**
+
+| Feature Set | AUROC Range | Balanced Accuracy Range |
+|---|---|---|
+| Position + Time | 0.59--0.69 | 0.63--0.71 |
+| Raw Observation | 0.59--0.69 | 0.63--0.71 |
+| Distances (goal/reward) | 0.95--0.99 | 0.80--0.96 |
+| Combined Observable | 0.97--0.98 | 0.83--0.96 |
+| Q-values | 0.88--0.94 | 0.65--0.80 |
+| Hidden Layer 1 | 0.94--0.99 | 0.88--0.97 |
+| Hidden Layer 2 | 0.98--1.00 | 0.92--0.96 |
+| Hidden 1 + 2 | 0.96--0.99 | 0.91--0.97 |
+
+**Interpretation:** Hidden activations (especially layer 2) are strong linear predictors of farming behavior, outperforming position/time and raw observation baselines substantially. However, the **distances baseline** (goal/reward Manhattan distances) also achieves high AUROC (0.95--0.99), which is expected: the farming label is partly defined by spatial proximity to the reward tile. This means the activation probes demonstrate that the network has learned useful spatial features, but the improvement over the best observable baselines is modest and seed-dependent, not a dramatic gap.
+
+**Key limitation:** For a feedforward DQN, activations are deterministic functions of the input observation. Higher probe accuracy on activations vs. raw observations means the network has learned a useful *feature transform* of the input, not that activations contain fundamentally new information. The distance baseline's strong performance confirms this -- the relevant spatial information is available in the observation; the network has learned to represent it in a linearly accessible form.
+
+#### Experiment C: Training-Transition Analysis
+
+Loaded all 11 checkpoints (10k--100k steps + final) for each flawed-reward seed. Extracted activations on the same 320 matched observations at every checkpoint.
+
+**Key findings:**
+
+1. **Layer 2 representations restructure during the behavioral transition.** Linear CKA between the first checkpoint and later ones shows layer 1 remaining stable (~0.97) while layer 2 drops substantially (e.g., seed 123: 1.00 at 10k -> 0.53 at 30k -> 0.34 at 100k). The sharpest CKA drop coincides with the behavioral flip from goal-seeking to farming.
+
+2. **Policy direction flips cleanly.** At goal-following checkpoints, ~30--40% of greedy actions point toward the goal and ~0% toward the reward. After the transition, 0% point toward the goal and ~45--52% toward the reward.
+
+3. **Within-run probes are strong.** Once farming behavior appears, hidden layer 2 probes for the farming label achieve AUROC 0.93--1.00, stable across the remaining training. Before the transition, the label is not viable (no farming actions exist to predict).
+
+4. **Activation magnitude grows.** Mean L2 norm of layer 2 activations increases roughly monotonically during training (from ~10 to ~45), reflecting increasing network confidence in its action-value estimates.
+
+5. **Seed 123 is the most informative transition.** It has the longest goal-preferring phase (checkpoints 10k--20k goal-following, 25k transitional, 30k+ full exploitation), providing the clearest before/after comparison within a single run.
+
+**Scientific conclusion:** Internal representations, particularly in hidden layer 2, undergo measurable restructuring that is temporally aligned with the behavioral transition from goal-seeking to reward farming. This restructuring is consistent across all three training seeds, though the timing varies. Within-run probes demonstrate that the network's learned features become increasingly aligned with farming-relevant spatial features during training.
+
+**What this does NOT establish:**
+- Probe accuracy does not prove a dedicated "reward-hacking representation." The network may simply be learning to represent spatial distances in a linearly accessible way, which a probe can then decode.
+- CKA changes reflect representational geometry shifts, not necessarily semantic changes. The same CKA drop could accompany any significant behavioral change, not specifically reward hacking.
+- No causal claim can be made: observing that activations predict behavior does not mean activations cause it. That is Phase 4's question.
+
+**Commands:**
+```bash
+python -m scripts.collect_activations --checkpoint final
+python -m scripts.probe_activations
+python -m scripts.analyze_training_transition
+python -m scripts.visualize_phase3
+python -m pytest tests/test_phase3.py -q   # 27 passed
+```
+
+**Artifact paths:**
+- `results/phase3/probe_results.json` -- probe AUROC/accuracy for all feature sets and seeds.
+- `results/phase3/transition_analysis.json` -- per-checkpoint CKA, policy behavior, sparsity, within-run probes.
+- `results/phase3/collection_summary.json`, `matched_observations.npy`, `observation_metadata.json`.
+- `results/phase3/activations_*.npz` (gitignored) -- raw activation arrays.
+- `results/phase3/transition_pca_seed*.npz` (gitignored) -- PCA projections for visualization.
+- `assets/figures/phase3_activation_overview.png` -- DQN architecture diagram with capture points.
+- `assets/figures/phase3_activation_heatmaps.png` -- representative hidden-layer activations at matched states.
+- `assets/figures/phase3_probe_comparison.png` -- probe vs baseline performance comparison.
+- `assets/figures/phase3_representation_projection.png` -- PCA of hidden activations.
+- `assets/figures/phase3_activation_evolution.png` -- six-panel training-transition analysis.
+
+**Tests:** 27 new tests in `tests/test_phase3.py` (activation tensor dimensions, post-ReLU correctness, extraction preservation of predictions, matched-state dataset construction, spatial split no-leakage, probe evaluation, CKA properties, PCA shapes, reproducibility, real-checkpoint integration) -- 115 total across the full suite, all passing.
+
 ## 9. Known Problems and Next Steps
 
 ### Known problems
 
 - Three seeds is a preliminary stability check for one configuration, not broad evidence of generality.
-- No claim about internal DQN representations can be made yet — Phase 2 and 2.5 are behavioral only.
-- The "time to discover the exploit" varies substantially by seed (5k–30k steps) despite a deterministic environment; the cause (exploration trajectory vs. network initialization) is not yet investigated.
-- The flawed-reward and corrected-reward DQNs are separately trained networks; any future activation differences between them conflate training-objective differences with any specific "reward-hacking" representation. Within-run checkpoint comparisons (early vs. late in the same flawed-reward training run) are a necessary complementary control for Phase 3, not a substitute for this cross-condition comparison or vice versa.
+- The "time to discover the exploit" varies substantially by seed (5k--30k steps) despite a deterministic environment; the cause (exploration trajectory vs. network initialization) is not yet investigated.
+- The distance baseline achieves high AUROC (0.95--0.99), so the activation probe advantage is modest. The network has learned useful features, but the probe result alone does not demonstrate information beyond what the observation provides.
+- Probe accuracy does not establish a dedicated "reward-hacking representation." The farming label is defined using spatial criteria, and the network's learned features happen to represent spatial information linearly. A probe on any network that has learned the task geometry would likely perform similarly.
+- CKA changes during training are descriptive, not diagnostic. The layer 2 restructuring coincides with the behavioral transition, but causality is not established.
+- Within-run probes become viable only after farming behavior appears. The probe cannot measure a "pre-farming" signal because there are no farming actions to label before the transition.
 
 ### Immediate next milestone
 
-**Phase 3:** Collect internal activations from both the flawed-reward and corrected-reward trained DQNs (checkpoints in `results/phase2/` and `results/phase2_5/`) alongside observations, actions, and the reward-hacking label. Fit linear probes and compare against observation-based baselines and state-matched controls, per the scientific controls in Section 4.
+**Phase 4:** Causal activation interventions. Use the activation directions identified by Phase 3 probes (particularly in hidden layer 2) to test whether modifying representations during inference changes the agent's behavior -- e.g., whether suppressing farming-associated activation directions shifts the agent toward goal-seeking. Include random-direction and magnitude-matched controls.
 
 ### Maintenance checklist
 

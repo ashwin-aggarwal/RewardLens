@@ -4,13 +4,14 @@ This journal preserves the development story of RewardLens: the motivation, desi
 
 ## Project Overview
 
-RewardLens investigates reward hacking in reinforcement learning: can an agent maximize a flawed proxy reward while failing the task that reward was meant to represent? The long-term goal is to train a DQN, probe its internal activations for a decodable "exploitation" signal, and test whether intervening on that signal causally changes behavior. This journal currently covers Phase 1 (environment + scripted verification) and Phase 2 (DQN training + behavioral evaluation).
+RewardLens investigates reward hacking in reinforcement learning: can an agent maximize a flawed proxy reward while failing the task that reward was meant to represent? The long-term goal is to train a DQN, probe its internal activations for a decodable "exploitation" signal, and test whether intervening on that signal causally changes behavior. This journal currently covers Phase 1 (environment + scripted verification), Phase 2 (DQN training + behavioral evaluation), Phase 2.5 (goal-following control), and Phase 3 (activation collection and linear probing).
 
 ## Timeline
 
 - **2026-11-22/23** — Phase 1: environment implementation and scripted-policy verification.
 - **2026-11-23** — Phase 2: discounted-return sanity check, DQN implementation, baseline training (3 seeds), behavioral evaluation, visualization.
 - **2026-11-23** — Phase 2.5: corrected-reward (goal-only) DQN baseline (3 seeds) and cross-scored comparison against the flawed-reward DQN.
+- **2026-11-23** — Phase 3: activation extraction, linear probing, and training-transition analysis across all checkpoints and seeds.
 
 ---
 
@@ -254,12 +255,98 @@ All three seeds converge to the exact Phase 1 scripted-goal-policy outcome, to t
 
 ---
 
+## Phase 3 -- Activation Collection and Linear Probing
+
+### Experiment: `phase3_matched_state_activation_analysis`
+
+**Date:** 2026-11-23
+**Research question:** Do hidden-layer activations in the flawed-reward DQN contain linearly accessible information about reward-farming behavior, beyond what observable state features provide?
+
+**Methodology:**
+- Constructed a matched-state dataset of 320 observations (8x8 grid positions x 5 time fractions).
+- Fed identical observations through final checkpoints of both flawed-reward and corrected-reward DQNs for all 3 seeds.
+- Captured post-ReLU activations from both hidden layers (128 units each) via explicit forward pass.
+- Verified that extraction produces identical Q-values as standard forward passes.
+
+**Behavioral target construction:** A state is labeled "farming" (1) when ALL of: (a) the two DQNs disagree on greedy action, (b) the flawed-reward agent's action moves closer to the reward tile (Manhattan distance), (c) the flawed-reward agent's action does NOT move closer to the goal. This avoids the tautological problem of using model identity as a label. Label prevalence ranged 40--46% positive across seeds -- well-balanced.
+
+**Probe setup:** Logistic regression (L2, C=1.0, solver=lbfgs). Features standardized on training set. Spatial train/test split (held-out grid positions, ~25% held out) to prevent positional leakage.
+
+**Results (seed 42, representative):**
+
+| Feature Set | AUROC | Balanced Accuracy |
+|---|---|---|
+| Position + Time | 0.670 | 0.708 |
+| Raw Observation (7-dim) | 0.670 | 0.708 |
+| Distances (goal+reward) | 0.965 | 0.867 |
+| Combined Observable (5-dim) | 0.982 | 0.926 |
+| Q-values (4-dim) | 0.924 | 0.803 |
+| Hidden Layer 1 (128-dim) | 0.940 | 0.877 |
+| Hidden Layer 2 (128-dim) | 0.989 | 0.925 |
+| Hidden 1 + 2 (256-dim) | 0.956 | 0.913 |
+
+Reproduced across all 3 seeds with consistent patterns.
+
+**Surprises:**
+- The **distance baseline** (just Manhattan distances to goal and reward) achieves 0.95--0.99 AUROC. This was expected in hindsight -- the farming label is partly spatial -- but it means the activation probe advantage over observables is modest.
+- Q-values are surprisingly *weaker* than hidden activations (AUROC 0.88--0.94 vs 0.94--1.00). This suggests the hidden layers encode useful features that the final Q-value projection compresses or loses.
+- Position + time and raw observation perform identically -- the extra observation features (goal/reward positions, normalized) beyond agent position don't help a linear probe on their own because they're constant across all observations.
+
+**Scientific limitations:**
+- For a feedforward DQN, activations are a deterministic function of the input. Higher probe accuracy means useful learned features, not new information.
+- The farming label definition uses spatial criteria, so a network that has learned spatial relationships will naturally do well.
+- The probe result is consistent with the network simply learning a good feature representation of distances, which is what a well-trained DQN *should* do.
+
+**Visual artifacts:** `assets/figures/phase3_activation_heatmaps.png`, `phase3_probe_comparison.png`, `phase3_representation_projection.png`.
+
+### Experiment: `phase3_training_transition_analysis`
+
+**Date:** 2026-11-23
+**Research question:** What internal representational changes accompany the behavioral transition from goal-seeking to reward farming within a single training run?
+
+**Methodology:**
+- Loaded all 11 checkpoints (10k, 20k, ..., 100k, final) for each of the 3 flawed-reward seeds.
+- Extracted activations on the same 320 matched observations at every checkpoint.
+- Computed linear CKA between each checkpoint and the first (reference), tracking representation similarity over training.
+- Classified greedy actions per checkpoint by whether they move toward goal, toward reward, both, or neither.
+- Ran within-run probes at each checkpoint using the same farming label definition.
+
+**Key findings:**
+
+1. **Layer 2 restructures sharply; layer 1 stays stable.** CKA vs first checkpoint:
+   - Layer 1: remains 0.97--1.00 throughout training across all seeds.
+   - Layer 2: drops from 1.00 to 0.34--0.53 by 100k steps, with the sharpest drop coinciding with the behavioral transition.
+   - Seed 123 (longest transition): Layer 2 CKA drops from 0.87 at 20k (still goal-following) to 0.53 at 30k (exploitation begins). This is the clearest single data point.
+
+2. **Policy direction flips cleanly.** At goal-following checkpoints: ~30--40% of actions move toward goal, ~0% toward reward. After transition: 0% toward goal, ~45--52% toward reward.
+
+3. **Within-run probes are strong (AUROC 0.93--1.00) once farming appears.** Before the transition, there are no farming actions to label, so the probe target has only one class.
+
+4. **L2 norm grows monotonically** (~10 at 10k to ~45 at 100k), reflecting increasing action-value magnitude.
+
+**Most informative seed:** 123. Its long goal-preferring phase (checkpoints 10k--20k) followed by a clean transition (25k--30k) provides the best within-run contrast.
+
+**What this does establish:** Internal representations, particularly in hidden layer 2, undergo measurable restructuring that is temporally aligned with the behavioral transition. This is consistent across seeds despite different transition timings.
+
+**What this does NOT establish:**
+- The CKA drop could accompany any significant behavioral change, not specifically reward hacking.
+- Probe accuracy during the exploitative phase doesn't tell us what the probe would have looked like *before* the transition if farming labels had been available.
+- No causal direction: we observe correlation between representational change and behavioral change, not which drives the other.
+
+**Visual artifacts:** `assets/figures/phase3_activation_evolution.png` (six-panel: policy direction, CKA evolution, sparsity, within-run probes, cross-condition CKA, L2 norms).
+
+**Next steps:** Phase 4 should use the activation directions identified by layer 2 probes to test whether suppressing farming-associated directions shifts the agent toward goal-seeking during inference. The transition checkpoints (especially seed 123, steps 20k and 30k) provide natural "before" and "after" networks for intervention comparison.
+
+---
+
 ## Open Research Questions
 
 - Does the DQN's three-seed consistency hold under different initial hyperparameters (e.g., a lower reward-tile bonus, or a goal bonus large enough to make the goal competitive even late in training)?
 - What does the Q-value gap between "move toward reward tile" and "move toward goal" look like over training — is there a clean crossover point that could later be linked to an internal representation?
 - Does the variation in *time-to-exploit* across seeds (5k vs. 10k vs. 30k steps) correlate with anything observable early in training (e.g., which tile the agent happens to visit first under random exploration)?
-- For Phase 3: will a linear probe on hidden-layer activations predict "is currently farming" above what's decodable from the raw observation alone (which already contains agent/reward-tile positions)?
+- Phase 3 answered: hidden activations do predict farming better than raw position/time, but the distance baseline is nearly as strong. The interesting result is the within-run layer 2 restructuring, not the cross-model probe alone.
+- For Phase 4: does suppressing the probe's learned activation direction at layer 2 causally shift the agent toward goal-seeking? Or does it just break the network generically?
+- Can activation interventions at the transition checkpoint (seed 123, step 20k vs 30k) differentially affect farming vs goal-seeking behavior?
 
 ## Blog Narrative Notes
 
@@ -271,4 +358,8 @@ All three seeds converge to the exact Phase 1 scripted-goal-policy outcome, to t
 - **Limitation to foreground, not bury:** none of this says anything yet about *why*, mechanistically, the network prefers farming once it discovers it. That's exactly the gap Phase 3 (activation probing) is meant to address.
 - **A one-line gut-punch for the blog:** "the reward-hacking agent's entire 97-point lead evaporates to −1 the moment you take away the one thing it was actually good at." The cross-scoring result makes the loophole viscerally obvious without any technical explanation required.
 - **Clean visual contrast:** the goal-completion-rate and reward-hacking-rate curves for the two conditions are near-mirror images of each other once both converge — one flatlines at 1.0/0.0, the other at 0.0/1.0. Worth a shared-axis overlay in the blog as a single memorable chart.
-- **Caveat worth stating plainly in the blog, not just the appendix:** these are two separately trained networks, so "their brains differ" claims need the within-run early-vs-late checkpoint comparison (Phase 3) to mean anything mechanistic — the cross-condition comparison alone only shows a behavioral/outcome difference, which we already knew from the training curves.
+- **Caveat worth stating plainly in the blog, not just the appendix:** these are two separately trained networks, so "their brains differ" claims need the within-run early-vs-late checkpoint comparison (Phase 3) to mean anything mechanistic -- the cross-condition comparison alone only shows a behavioral/outcome difference, which we already knew from the training curves.
+- **Phase 3 delivered the strongest blog visual yet:** the six-panel training-transition figure shows policy direction, CKA, sparsity, probe accuracy, cross-condition CKA, and activation magnitude all evolving together. The CKA layer 2 cliff at the behavioral transition point is the kind of clean, grounded result that makes a blog section work.
+- **Honest finding worth foregrounding:** the distance baseline achieves 0.95+ AUROC. This is *good science* to highlight, not a disappointment -- it means we're not overclaiming what the probe found. "The network learned to represent distances well" is a true and interesting finding; "the network has a secret reward-hacking module" would be overclaiming.
+- **The Q-value surprise:** Q-values are a *weaker* predictor of farming than hidden activations (0.88 vs 0.99 AUROC). This suggests the network's internal features contain farming-relevant structure that gets compressed in the final linear projection to Q-values. Worth a paragraph in the blog.
+- **Phase 4 setup line for the blog:** "We've seen that the network's hidden layer restructures when it discovers the exploit. But does that restructuring *matter* -- or is it just along for the ride? The only way to test that is to intervene: change the activations and see if the behavior changes."

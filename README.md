@@ -139,13 +139,61 @@ The goal-completion and reward-hacking rates for the two conditions converge to 
 
 **Important caveat:** these are two *separately trained* networks. A future difference in their internal activations (Phase 3) could reflect general differences in what each network learned to do, not necessarily a specific, isolable "reward-hacking representation." Comparing early vs. late checkpoints *within* the same flawed-reward training run — where the network itself transitions from goal-seeking to exploiting — is a necessary complementary analysis, not something this cross-condition comparison alone can establish.
 
+## Phase 3 -- Looking Inside the Network
+
+Behavior tells us *what* the agent does. But what's happening inside the network when it farms the reward tile instead of going to the goal? Phase 3 opens the box.
+
+### What are neural activations?
+
+Each observation (the agent's view of the grid) passes through two hidden layers before the network produces Q-values. Each hidden layer is 128 units, and each unit either fires (positive value) or stays silent (zero, after the ReLU activation function). The pattern of firing across all 128 units is the **activation** -- a snapshot of what the network is "thinking" at that moment.
+
+![Activation Overview](assets/figures/phase3_activation_overview.png)
+
+We capture these activations at the two red-ringed layers, then ask: can a simple linear classifier (logistic regression) predict whether the agent is farming the reward tile, using only these internal activations?
+
+### Why compare matched states?
+
+The flawed-reward DQN and the corrected-reward DQN see **exactly the same observations** -- we constructed 320 states covering every grid position at multiple time points and fed them through both networks. This rules out the possibility that differences in behavior are simply because the two agents saw different inputs.
+
+![Activation Heatmaps](assets/figures/phase3_activation_heatmaps.png)
+
+*Important: these are independently trained networks. Their neuron indices are not aligned -- neuron 42 in the flawed-reward DQN and neuron 42 in the corrected-reward DQN learned independently and may compute entirely different things.*
+
+### What does the probe find?
+
+We defined "reward farming" carefully: a state is labeled as farming only when (1) the two DQNs disagree on what to do, (2) the flawed-reward agent moves toward the reward tile, and (3) it does not move toward the goal. This avoids the trivial classifier problem of just detecting which network produced the activation.
+
+![Probe Comparison](assets/figures/phase3_probe_comparison.png)
+
+Hidden activations (orange/red bars) outperform raw position and time features (gray bars) at predicting farming behavior. But the **distance baseline** -- just Manhattan distances to the goal and reward tile -- also does remarkably well (AUROC 0.95+). This is honest: the network has learned to represent spatial distances in a linearly accessible way, which is what a well-trained DQN *should* do. The probe result shows the network learned useful features, not that it contains fundamentally new information unavailable from the observation.
+
+### The most revealing analysis: watching the transition happen
+
+The strongest Phase 3 result comes from looking *within* a single training run. We loaded every checkpoint from training and tracked how the network's representations changed as it shifted from goal-seeking to reward farming.
+
+![Training Transition](assets/figures/phase3_activation_evolution.png)
+
+**Key finding: Hidden layer 2 restructures sharply when the agent discovers the exploit.**
+
+We measure this using CKA (Centered Kernel Alignment), which compares the geometry of representation spaces across checkpoints. Layer 1 stays almost perfectly stable (~0.97 CKA) throughout training. But layer 2 drops substantially -- from 1.0 to as low as 0.34 -- with the sharpest drop aligning precisely with the behavioral transition from goal-seeking to farming.
+
+This tells us: the network's *early* internal representation (the first hidden layer) doesn't change much. The *later* representation (the second hidden layer, closer to the action output) is where the restructuring happens. And it happens right when the behavior flips.
+
+### What probing alone cannot tell us
+
+A probe demonstrates that internal features are *correlated* with farming behavior. It does not demonstrate that they *cause* it. The CKA drop is temporally aligned with the behavioral transition, but correlation is not causation. To test whether these representations actually matter -- whether changing them changes the behavior -- we need Phase 4: causal activation interventions.
+
+![Representation Projection](assets/figures/phase3_representation_projection.png)
+
+*PCA projections of hidden layer 2 for each model, colored by distance to the reward tile. These are descriptive -- 2D separation does not prove a dedicated "farming feature."*
+
 ## What We Want to Investigate
 
-1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done — see Phase 2 above.
-2. **Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.
+1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done -- see Phase 2 above.
+2. ~~**Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.~~ ✅ Done -- see Phase 3 above.
 3. **Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.
 
-Steps 2 and 3 are planned but not yet implemented. Phase 3 now has both a reward-hacking network and a goal-following control network to compare, plus early/late checkpoints within the original flawed-reward run.
+Step 3 is planned but not yet implemented. Phase 3 identified hidden layer 2 as the site of representational restructuring during the goal-to-exploit transition, and linear probes on layer 2 activations achieve near-perfect AUROC. Phase 4 will test whether the probe's learned direction is causally meaningful.
 
 ## Reproduce the Experiment
 
@@ -153,7 +201,7 @@ Steps 2 and 3 are planned but not yet implemented. Phase 3 now has both a reward
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the full test suite (Phase 1 + Phase 2 + Phase 2.5)
+# Run the full test suite (Phase 1 + Phase 2 + Phase 2.5 + Phase 3)
 python -m pytest -q
 
 # Phase 1: environment verification and visuals
@@ -174,6 +222,12 @@ python -m scripts.train_dqn --config configs/dqn_corrected.json
 # Phase 2.5: cross-score both models and generate comparison visuals
 python -m scripts.evaluate_phase2_5
 python -m scripts.visualize_phase2_5
+
+# Phase 3: collect activations, run probes, analyze training transition, generate visuals
+python -m scripts.collect_activations --checkpoint final
+python -m scripts.probe_activations
+python -m scripts.analyze_training_transition
+python -m scripts.visualize_phase3
 ```
 
 Generated artifacts:
@@ -183,14 +237,15 @@ Generated artifacts:
 - `assets/gifs/phase2_trained_dqn.gif` — Phase 2
 - `assets/figures/phase2_5_policy_comparison.png`, `phase2_5_training_comparison.png` — Phase 2.5
 - `assets/gifs/phase2_5_goal_dqn.gif` — Phase 2.5
-- `results/phase1/`, `results/phase2/`, `results/phase2_5/` — machine-readable trajectory and training data
+- `assets/figures/phase3_activation_overview.png`, `phase3_activation_heatmaps.png`, `phase3_probe_comparison.png`, `phase3_representation_projection.png`, `phase3_activation_evolution.png` -- Phase 3
+- `results/phase1/`, `results/phase2/`, `results/phase2_5/`, `results/phase3/` -- machine-readable trajectory, training, and analysis data
 
 ## Research Roadmap
 
 - [x] **Phase 1**: Environment implementation, scripted exploit verification, visualizations
 - [x] **Phase 2**: DQN training and behavioral evaluation
 - [x] **Phase 2.5**: Corrected-reward (goal-only) DQN baseline and cross-condition comparison
-- [ ] **Phase 3**: Activation collection and linear probing
+- [x] **Phase 3**: Activation collection, linear probing, and training-transition analysis
 - [ ] **Phase 4**: Causal activation interventions
 - [ ] **Phase 5**: Technical blog post and reproducibility review
 
@@ -199,8 +254,9 @@ Generated artifacts:
 - The reward-hacking classification uses an operational threshold (≥5 reward-tile visits without reaching the goal). This is a research definition, not a universal detection method.
 - The environment is deliberately minimal. Real-world reward hacking involves far more complex dynamics.
 - Phase 2's three seeds are a preliminary stability check for one configuration, not statistical evidence of generality across environments, architectures, or hyperparameters.
-- The Phase 2.5 comparison is between two *separately trained* networks. Any future activation difference could reflect general differences in what each network learned, not necessarily a dedicated reward-hacking representation — within-run checkpoint comparisons are a necessary complementary control for Phase 3.
-- Internal activation analysis requires probing a trained network. No claims about DQN *representations* — only external behavior — can be made until Phase 3.
+- The Phase 2.5 comparison is between two *separately trained* networks. Activation differences between them conflate training-objective differences with any specific "reward-hacking" representation -- the within-run checkpoint analysis (Phase 3) is the more informative comparison.
+- Phase 3 probes show high accuracy, but the distance baseline (Manhattan distances to goal and reward tile) achieves AUROC 0.95+. The activation probe advantage is modest and the result is consistent with the network learning a good spatial feature transform, not a dedicated "farming module."
+- CKA changes during training describe representational geometry shifts, not semantic content. The layer 2 restructuring coincides with the behavioral transition, but causality is not established -- that requires Phase 4 interventions.
 
 ## Repository Structure
 
@@ -213,6 +269,10 @@ RewardLens/
 │   │   └── trajectory.py         # Trajectory recording
 │   ├── agents/
 │   │   └── dqn.py                # Q-network, replay buffer, checkpointing
+│   ├── analysis/
+│   │   ├── activation_extraction.py  # Post-ReLU activation capture
+│   │   ├── probing.py               # Linear probes and baselines
+│   │   └── representation_analysis.py # CKA, PCA, checkpoint comparison
 │   └── visualization/
 │       └── gridworld_viz.py      # Figures and GIF generation
 ├── scripts/
@@ -221,13 +281,18 @@ RewardLens/
 │   ├── train_dqn.py              # Phase 2/2.5 DQN training + evaluation (config-driven)
 │   ├── visualize_phase2.py       # Phase 2 visualization generation
 │   ├── evaluate_phase2_5.py      # Phase 2.5 cross-condition scoring
-│   └── visualize_phase2_5.py     # Phase 2.5 visualization generation
+│   ├── visualize_phase2_5.py     # Phase 2.5 visualization generation
+│   ├── collect_activations.py    # Phase 3 activation extraction
+│   ├── probe_activations.py      # Phase 3 linear probing (Experiment B)
+│   ├── analyze_training_transition.py  # Phase 3 checkpoint analysis (Experiment C)
+│   └── visualize_phase3.py       # Phase 3 visualization generation
 ├── configs/
 │   └── dqn_corrected.json        # Phase 2.5 corrected-reward (goal-only) config
 ├── tests/
 │   ├── test_reward_grid.py       # 45 tests (Phase 1)
 │   ├── test_dqn.py               # 26 tests (Phase 2)
-│   └── test_phase2_5.py          # 17 tests (Phase 2.5)
+│   ├── test_phase2_5.py          # 17 tests (Phase 2.5)
+│   └── test_phase3.py            # 27 tests (Phase 3)
 ├── assets/                       # Generated figures and GIFs
 ├── results/                      # Machine-readable trajectory and training data
 ├── CONTEXT.md                    # Current research state (authoritative)

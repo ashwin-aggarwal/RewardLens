@@ -1,0 +1,50 @@
+{
+  "seed": 123,
+  "donor_step": 20000,
+  "recipient_step": 30000,
+  "visit_threshold": 5,
+  "threshold_sensitivity": [1, 2, 3, 5, 8, 10, 20],
+  "partition_seed": 13,
+  "previous_partition_seed": 11,
+  "n_dev_positions": 16,
+  "n_test_positions": 16,
+  "n_controls": 20,
+  "control_seed": 0,
+  "phase4_5_alpha": 0.75,
+  "time_fractions": [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.0],
+  "time_clamps": [1.0, 0.5, 0.2, 0.1, 0.05, 0.0],
+  "blocks": {
+    "A_schedules": {
+      "layer": 2,
+      "alphas": [0.75, 1.0],
+      "schedules": [
+        {"name": "constant"},
+        {"name": "early_window", "n_steps": 10},
+        {"name": "early_window", "n_steps": 20},
+        {"name": "early_window", "n_steps": 40},
+        {"name": "early_decay", "n_steps": 20},
+        {"name": "early_decay", "n_steps": 40},
+        {"name": "early_decay", "n_steps": 80},
+        {"name": "late_window", "start_step": 60},
+        {"name": "late_window", "start_step": 80}
+      ]
+    },
+    "B_strength": {
+      "layer": 2,
+      "alphas": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0],
+      "schedules": [{"name": "constant"}]
+    },
+    "C_layer1": {
+      "layer": 1,
+      "alphas": [0.25, 0.5, 0.75, 1.0, 1.5, 2.0],
+      "schedules": [{"name": "constant"}]
+    },
+    "D_time_shifted_donor": {
+      "layer": 2,
+      "alphas": [0.75, 1.0],
+      "donor_time_clamps": [0.2, 0.1, 0.05, 0.0],
+      "schedules": [{"name": "constant"}],
+      "note": "Added after the time-dependence analysis showed that the patched agent's goal preference is gated by the remaining-time feature. The donor's activation is computed with its time feature clamped; the recipient sees the true observation."
+    }
+  }
+}

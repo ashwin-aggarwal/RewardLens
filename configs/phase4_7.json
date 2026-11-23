@@ -1,0 +1,18 @@
+{
+  "seed": 123,
+  "donor_step": 20000,
+  "recipient_step": 30000,
+  "visit_threshold": 5,
+  "phase4_6_partition_seed": 13,
+  "n_dev_positions": 16,
+  "n_test_positions": 16,
+  "n_controls": 20,
+  "control_seed": 0,
+  "phase4_6_alpha": 1.0,
+  "phase4_6_donor_time": 0.2,
+  "phase4_5_alpha": 0.75,
+  "clamp_sweep": [1.0, 0.5, 0.2, 0.1, 0.05, 0.0],
+  "donor_time_sweep": [1.0, 0.5, 0.2, 0.1, 0.05],
+  "time_fractions_q": [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0],
+  "note": "No selection or tuning is performed in Phase 4.7. All conditions and values are fixed here before running. Every one of the 62 valid start positions was used in Phase 4.6 (held-out test, fit-position check, or all-62 check), so no untouched validation states exist; results are reported exhaustively over all 62 starts, with the Phase 4.6 test states shown separately for continuity."
+}

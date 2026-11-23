@@ -1,0 +1,22 @@
+{
+  "0.95": {
+    "goal_return": 6.2222,
+    "exploit_return": 18.1926,
+    "exploit_favored": true
+  },
+  "0.99": {
+    "goal_return": 9.0396,
+    "exploit_return": 61.0814,
+    "exploit_favored": true
+  },
+  "0.995": {
+    "goal_return": 9.4611,
+    "exploit_return": 76.2551,
+    "exploit_favored": true
+  },
+  "1.0": {
+    "goal_return": 9.9,
+    "exploit_return": 97.0,
+    "exploit_favored": true
+  }
+}

@@ -88,11 +88,12 @@ Status is maintained at milestone level rather than as a session transcript.
 - [x] Phase 1: scripted exploit verification — complete, all assertions pass.
 - [x] Phase 1: reproducible trajectory visualizations — complete, 5 artifacts generated.
 - [x] Phase 2: DQN training and behavioral evaluation — complete, 2026-11-23. DQN independently discovered reward hacking; reproduced across 3 seeds.
+- [x] Phase 2.5: corrected-reward (goal-only) DQN baseline — complete, 2026-11-23. Reliably reaches the goal with zero reward-tile visits; reproduced across 3 seeds.
 - [ ] Phase 3: activation collection and linear probing — not started.
 - [ ] Phase 4: causal activation interventions — not started.
 - [ ] Phase 5: technical blog post and reproducibility review — not started.
 
-Current milestone: Phase 2 complete. Next: Phase 3 — activation collection and linear probing.
+Current milestone: Phase 2.5 complete. Next: Phase 3 — activation collection and linear probing, now with both a reward-hacking and a goal-following trained network available for comparison.
 
 ## 7. Experimental Decisions
 
@@ -195,17 +196,60 @@ All three seeds converge to the identical final policy behavior. They differ in 
 
 **Tests:** 26 new tests in `tests/test_dqn.py` (network, replay buffer, TD update, epsilon schedule, checkpointing, evaluation, integration) plus the existing 45 in `tests/test_reward_grid.py` — 71 total, all passing (`python -m pytest -q`).
 
+### Phase 2.5 — Corrected-reward (goal-only) DQN baseline (2026-11-23)
+
+**Motivation:** Phase 3 will compare internal activations across agents. A single flawed-reward DQN alone cannot support that comparison — differences could reflect anything about that one network. A DQN trained on a *corrected* reward function (identical environment, identical architecture and hyperparameters, only `reward_tile_bonus` set to 0 instead of 2.0) provides a genuine goal-following control.
+
+**Configuration:** `configs/dqn_corrected.json` — identical to the Phase 2 baseline config in every field except `reward_tile_bonus: 0.0`, `experiment_id`, and `output_dir`. Reused the existing `scripts/train_dqn.py` pipeline unmodified (`python -m scripts.train_dqn --config configs/dqn_corrected.json`); no training code was duplicated.
+
+**Training:** 100,000 steps, seeds 42/123/456, CPU, ~10–12s wall-clock per run (faster than Phase 2 since the agent converges to a short 10-step path rather than running the full 100-step horizon).
+
+**Verified results (final greedy evaluation, all three seeds, identical to two decimal places):**
+
+| Metric | Corrected-Reward DQN |
+|---|---:|
+| Native reward | +9.90 |
+| Goal reached | True |
+| Reward-tile visits | 0 |
+| Episode steps | 10 |
+| Reward hacking | False |
+
+This matches the Phase 1 scripted goal policy's performance exactly. The corrected-reward DQN reliably learned the intended task on the first attempt across all three seeds — no diagnosis or hyperparameter changes were needed.
+
+**Cross-condition evaluation (`scripts/evaluate_phase2_5.py`):** Native reward totals are not directly comparable across the two DQNs since they optimize different reward functions. Instead, each model's exact recorded action sequence was replayed through a fresh environment under the *other* model's reward spec (same positions/actions, different scoring only), reusing `record_episode` with no reward-logic duplication:
+
+| Model | Native Reward | Scored Under the Other Spec | Goal Reached | Reward-Tile Visits | Reward Hacking |
+|---|---:|---:|---:|---:|---:|
+| Flawed-reward DQN | +97.00 | **−1.00** (under corrected reward) | False | 49 | True |
+| Corrected-reward DQN | +9.90 | **+9.90** (under flawed reward) | True | 0 | False |
+
+This reproduced identically across all three seeds. The flawed-reward DQN's apparent "+97.00" success collapses to −1.00 (pure step penalty, no progress at all) once the exploit payout is removed — its entire measured performance was the loophole. The corrected-reward DQN's score is unchanged under either spec, since its learned policy never engages the reward tile at all. Full results: `results/phase2_5/comparison.json`.
+
+**Scientific conclusion:** The corrected reward function produces a reliably goal-following policy, and the flawed-reward policy's measured success is entirely attributable to the proxy-reward loophole rather than any genuine task progress. As expected, this comparison is between two *separately trained* networks — any future difference in internal activations between them may reflect differences in training objective and learned task generally, not necessarily a dedicated "reward-hacking representation." That distinction must be controlled for explicitly in Phase 3 (e.g., via state-matched inputs and comparisons against early/late checkpoints from the *same* flawed-reward run, not only across the two conditions).
+
+**Artifact paths:**
+
+- `configs/dqn_corrected.json`
+- `results/phase2_5/goal_seed{42,123,456}/` — config, training/evaluation CSVs, checkpoints (gitignored), run metadata, final greedy trajectory (gitignored), per seed.
+- `results/phase2_5/comparison.json` — cross-scored comparison for all three seeds.
+- `assets/gifs/phase2_5_goal_dqn.gif`
+- `assets/figures/phase2_5_policy_comparison.png`, `phase2_5_training_comparison.png`
+- Full narrative: `PROGRESS.md`.
+
+**Tests:** 17 new tests in `tests/test_phase2_5.py` (corrected config validity, zero-bonus reward mechanics, movement mechanics unchanged, cross-scoring correctness and action-invariance, common-metric classification consistency, training with the corrected config) — 88 total across the full suite, all passing.
+
 ## 9. Known Problems and Next Steps
 
 ### Known problems
 
 - Three seeds is a preliminary stability check for one configuration, not broad evidence of generality.
-- No claim about internal DQN representations can be made yet — Phase 2 is behavioral only.
+- No claim about internal DQN representations can be made yet — Phase 2 and 2.5 are behavioral only.
 - The "time to discover the exploit" varies substantially by seed (5k–30k steps) despite a deterministic environment; the cause (exploration trajectory vs. network initialization) is not yet investigated.
+- The flawed-reward and corrected-reward DQNs are separately trained networks; any future activation differences between them conflate training-objective differences with any specific "reward-hacking" representation. Within-run checkpoint comparisons (early vs. late in the same flawed-reward training run) are a necessary complementary control for Phase 3, not a substitute for this cross-condition comparison or vice versa.
 
 ### Immediate next milestone
 
-**Phase 3:** Collect internal activations from the trained DQN (checkpoints in `results/phase2/`) alongside observations, actions, and the reward-hacking label. Fit linear probes and compare against observation-based baselines and state-matched controls, per the scientific controls in Section 4.
+**Phase 3:** Collect internal activations from both the flawed-reward and corrected-reward trained DQNs (checkpoints in `results/phase2/` and `results/phase2_5/`) alongside observations, actions, and the reward-hacking label. Fit linear probes and compare against observation-based baselines and state-matched controls, per the scientific controls in Section 4.
 
 ### Maintenance checklist
 

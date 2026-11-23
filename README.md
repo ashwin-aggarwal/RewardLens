@@ -114,13 +114,38 @@ This result reproduced identically (97.00 reward, 49 visits, goal never reached)
 
 **Does not establish:** generality beyond this environment/architecture, *why* the network's internal computations favor exploitation once discovered, or anything about causal manipulation of that preference. Those are Phase 3 and Phase 4 questions.
 
+## Phase 2.5 — A Goal-Following Control
+
+Phase 2 showed a DQN *can* learn to exploit the loophole. But is that DQN/environment combination just bad at reaching the goal in general? To rule that out, we trained a second DQN — identical in every way (grid, observation, architecture, hyperparameters, seeds) except for one change: the reward-tile bonus is set to **0** instead of +2. Nothing else differs.
+
+![Policy Comparison](assets/figures/phase2_5_policy_comparison.png)
+
+With the loophole's payout removed, the agent reliably learns to walk straight to the goal — matching the Phase 1 scripted goal policy exactly, across all three seeds.
+
+![Goal DQN](assets/gifs/phase2_5_goal_dqn.gif)
+
+**The critical control — can we even compare these two numbers?** No, not directly: the two DQNs optimize *different* reward functions, so "+97.00 vs. +9.90" alone proves nothing. Instead, we took each DQN's exact recorded action sequence and replayed it through the *other* model's reward specification — same actions, same positions, only the scoring changes:
+
+| Model | Native Reward | Scored Under the Other Reward Spec |
+|---|---:|---:|
+| Flawed-reward DQN | +97.00 | **−1.00** |
+| Corrected-reward DQN | +9.90 | **+9.90** |
+
+Strip away the exploit's payout, and the flawed-reward agent's entire "success" evaporates to −1.00 — pure step penalty, zero task progress. The corrected-reward agent's score doesn't move at all, because it never touches the reward tile in the first place.
+
+![Training Comparison](assets/figures/phase2_5_training_comparison.png)
+
+The goal-completion and reward-hacking rates for the two conditions converge to almost perfect mirror images of each other — one settles at (goal: 100%, hacking: 0%), the other at (goal: 0%, hacking: 100%).
+
+**Important caveat:** these are two *separately trained* networks. A future difference in their internal activations (Phase 3) could reflect general differences in what each network learned to do, not necessarily a specific, isolable "reward-hacking representation." Comparing early vs. late checkpoints *within* the same flawed-reward training run — where the network itself transitions from goal-seeking to exploiting — is a necessary complementary analysis, not something this cross-condition comparison alone can establish.
+
 ## What We Want to Investigate
 
 1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done — see Phase 2 above.
 2. **Probe its internal activations** to test whether reward-hacking behavior is predictable from hidden-layer features beyond what the observation alone provides.
 3. **Intervene on selected activations** during inference to test whether modifying internal representations causally changes the agent's behavior.
 
-Steps 2 and 3 are planned but not yet implemented.
+Steps 2 and 3 are planned but not yet implemented. Phase 3 now has both a reward-hacking network and a goal-following control network to compare, plus early/late checkpoints within the original flawed-reward run.
 
 ## Reproduce the Experiment
 
@@ -128,7 +153,7 @@ Steps 2 and 3 are planned but not yet implemented.
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the full test suite (Phase 1 + Phase 2)
+# Run the full test suite (Phase 1 + Phase 2 + Phase 2.5)
 python -m pytest -q
 
 # Phase 1: environment verification and visuals
@@ -137,11 +162,18 @@ python -m scripts.verify_environment
 # Phase 2: discounted-return sanity check
 python -m scripts.discounted_returns
 
-# Phase 2: train the baseline DQN (one seed shown; repeat with --seed 123 / 456)
+# Phase 2: train the baseline (flawed-reward) DQN (one seed shown; repeat with --seed 123 / 456)
 python -m scripts.train_dqn --experiment-id baseline_seed42 --seed 42 --device cpu
 
 # Phase 2: generate all visuals from the trained run
 python -m scripts.visualize_phase2 --run-dir results/phase2/baseline_seed42
+
+# Phase 2.5: train the corrected-reward (goal-only) DQN
+python -m scripts.train_dqn --config configs/dqn_corrected.json
+
+# Phase 2.5: cross-score both models and generate comparison visuals
+python -m scripts.evaluate_phase2_5
+python -m scripts.visualize_phase2_5
 ```
 
 Generated artifacts:
@@ -149,12 +181,15 @@ Generated artifacts:
 - `assets/gifs/goal_policy.gif`, `exploit_policy.gif` — Phase 1
 - `assets/figures/phase2_discounted_return.png`, `phase2_dqn_architecture.png`, `phase2_training_curves.png`, `phase2_evaluation_progress.png`, `phase2_scripted_vs_learned.png` — Phase 2
 - `assets/gifs/phase2_trained_dqn.gif` — Phase 2
-- `results/phase1/`, `results/phase2/` — machine-readable trajectory and training data
+- `assets/figures/phase2_5_policy_comparison.png`, `phase2_5_training_comparison.png` — Phase 2.5
+- `assets/gifs/phase2_5_goal_dqn.gif` — Phase 2.5
+- `results/phase1/`, `results/phase2/`, `results/phase2_5/` — machine-readable trajectory and training data
 
 ## Research Roadmap
 
 - [x] **Phase 1**: Environment implementation, scripted exploit verification, visualizations
 - [x] **Phase 2**: DQN training and behavioral evaluation
+- [x] **Phase 2.5**: Corrected-reward (goal-only) DQN baseline and cross-condition comparison
 - [ ] **Phase 3**: Activation collection and linear probing
 - [ ] **Phase 4**: Causal activation interventions
 - [ ] **Phase 5**: Technical blog post and reproducibility review
@@ -164,7 +199,8 @@ Generated artifacts:
 - The reward-hacking classification uses an operational threshold (≥5 reward-tile visits without reaching the goal). This is a research definition, not a universal detection method.
 - The environment is deliberately minimal. Real-world reward hacking involves far more complex dynamics.
 - Phase 2's three seeds are a preliminary stability check for one configuration, not statistical evidence of generality across environments, architectures, or hyperparameters.
-- Internal activation analysis requires probing a trained network. No claims about DQN *representations* — only its external behavior — can be made until Phase 3.
+- The Phase 2.5 comparison is between two *separately trained* networks. Any future activation difference could reflect general differences in what each network learned, not necessarily a dedicated reward-hacking representation — within-run checkpoint comparisons are a necessary complementary control for Phase 3.
+- Internal activation analysis requires probing a trained network. No claims about DQN *representations* — only external behavior — can be made until Phase 3.
 
 ## Repository Structure
 
@@ -182,11 +218,16 @@ RewardLens/
 ├── scripts/
 │   ├── verify_environment.py     # Phase 1 verification
 │   ├── discounted_returns.py     # Phase 2 discounted-return sanity check
-│   ├── train_dqn.py              # Phase 2 DQN training + evaluation
-│   └── visualize_phase2.py       # Phase 2 visualization generation
+│   ├── train_dqn.py              # Phase 2/2.5 DQN training + evaluation (config-driven)
+│   ├── visualize_phase2.py       # Phase 2 visualization generation
+│   ├── evaluate_phase2_5.py      # Phase 2.5 cross-condition scoring
+│   └── visualize_phase2_5.py     # Phase 2.5 visualization generation
+├── configs/
+│   └── dqn_corrected.json        # Phase 2.5 corrected-reward (goal-only) config
 ├── tests/
 │   ├── test_reward_grid.py       # 45 tests (Phase 1)
-│   └── test_dqn.py               # 26 tests (Phase 2)
+│   ├── test_dqn.py               # 26 tests (Phase 2)
+│   └── test_phase2_5.py          # 17 tests (Phase 2.5)
 ├── assets/                       # Generated figures and GIFs
 ├── results/                      # Machine-readable trajectory and training data
 ├── CONTEXT.md                    # Current research state (authoritative)

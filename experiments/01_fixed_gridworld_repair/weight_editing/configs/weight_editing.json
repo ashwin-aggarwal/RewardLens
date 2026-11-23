@@ -1,0 +1,26 @@
+{
+  "primary_seed": 123,
+  "donor_step": 20000,
+  "recipient_step": 30000,
+  "donor_time": 0.2,
+  "pca_rank": 8,
+  "visit_threshold": 5,
+  "partition_seed": 13,
+  "n_dev_positions": 16,
+  "n_test_positions": 16,
+  "basis_fit_time_fractions": [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.0],
+  "train_time_fractions": [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0],
+  "heldout_time_fractions": [0.95, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15, 0.05],
+  "data": "training observations = (train positions x train time fractions) plus states visited by the unmodified recipient, the donor-dependent PCA patch and the donor from all 62 starts, restricted to train positions and excluding held-out time fractions. Validation: dev positions x all 21 times (position holdout) and train positions x held-out times (time holdout).",
+  "ranks": [1, 2, 4, 8, 16],
+  "train": {"steps": 3000, "lr": 0.003, "weight_decay_lambda": 0.0001},
+  "training_seeds": [0, 1, 2],
+  "n_random_perturbations": 10,
+  "success_threshold_direct_goal": 0.95,
+  "minimum_rank_rule": "smallest rank whose mean direct-goal rate over the three training seeds is >= 0.95 on all 62 starts (exploratory: every start was analyzed in earlier phases)",
+  "transfer": {
+    "seeds": [42, 456],
+    "pair_rule": "recipient = first checkpoint with farm-only >= 0.90 on all 62 starts; donor = latest earlier checkpoint with the highest direct-goal rate (from results/phase4_6/reclassification.json). Applied to all seeds; seed 123 gives 20k -> 30k.",
+    "methods": [["lowrank", "act"], ["lowrank", "q"], ["l2_full", "q"], ["full", "q"]]
+  }
+}

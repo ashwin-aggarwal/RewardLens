@@ -16,3 +16,5 @@ env/
 *.log
 results/phase1/*.json
 results/phase1/*.csv
+results/phase2/**/checkpoints/
+results/phase2/**/evaluation_trajectories/

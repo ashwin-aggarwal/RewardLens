@@ -16,6 +16,7 @@ RewardLens investigates reward hacking in reinforcement learning: can an agent m
 - **2026-11-23** — Phase 4.5: goal-directed activation patching (same-run checkpoint donor and cross-model donor with alignment). Outcome: same-run patching is the first state-dependent, control-beating effect in the project, but the behavior it produces is "farm until time nearly runs out, then dash to the goal"; cross-model patching fails under all alignment variants.
 - **2026-11-23** — Phase 4.6: behavioral reclassification (direct goal / farm-then-finish / farm-only / other), retrospective reanalysis of Phases 1–4.5, a Q-value test of the time-gating hypothesis, and direct-goal steering experiments. Outcome: the farm-then-dash mechanism is confirmed causally (the goal becomes preferred only when the remaining-time feature is low); schedules, stronger patches and layer-1 patches do not produce selective direct-goal behavior; a time-shifted donor patch (donor activations computed as if little time remained, α=1.0) reaches the goal directly from every start state, beating every control, with the caveats recorded below.
 - **2026-11-23** — Phase 4.7: time controls for the Phase 4.6 intervention. Outcome: time alone explains nothing (clamping the hacking network's own time input leaves it farming; the time-only activation difference, 12% of the patch by norm, has no behavioral or Q-value effect); the donor's state-dependent representation is necessary (matched-time patch: direct 0.55 with time-gated farm-then-finish for the rest); the two together give 1.00. The donor's output head cannot read the recipient's representation at all, so the output heads are asymmetric.
+- **2026-11-23** — Phase 4.8 (extension, branch `experiment/sparse-patching`): sparse causal activation patching. Outcome: the Phase 4.7 effect is distributed across layer 2; no subset of ≤ 32 units works under activation-difference, causal-ablation or greedy selection, the 64 units that differ between the networks reproduce the full effect against random and shuffled controls, and single units are necessary without being jointly sufficient.
 
 ---
 
@@ -589,6 +590,33 @@ Tile visits, steps to goal, proxy reward, path efficiency (Manhattan distance / 
 - The one-line finding: the hacking network's output layer reads a clock out of the goal-follower's features, and that clock is the gate. The Phase 4.6 trick does not teach the network anything; it hides the time.
 - Lead visual: the time-sweep figure, with the flat red (B) and green (C) lines against the rising purple (E). Then the Q-value panel showing D's goal preference rising as time runs out while E's is flat.
 - Caveat to state in the post, not the appendix: the patch replaces the whole middle layer. The honest reading is "the output layer of a reward hacker can run a goal-follower's representation, if you also hide the clock," not "we found and transplanted the goal."
+
+---
+
+## Phase 4.8 (extension, branch `experiment/sparse-patching`) -- Sparse Causal Activation Patching
+
+### Experiment: `sparse_patching`
+
+**Date:** 2026-11-23. Full report: `experiments/sparse_patching/README.md`.
+**Question:** does the Phase 4.7 full-layer patch (donor 20k at remaining time 0.2 → recipient 30k, α = 1, direct goal 1.00 on all 62 starts) depend on a small subset of the 128 layer-2 units, or on a distributed representation?
+
+**Hypotheses going in:** H1 (localized): a subset of ≤ 16 units chosen by activation difference or causal ablation reproduces the full effect and beats random subsets. H2 (distributed): no small subset works and performance rises only near the full layer. H3: units that are individually necessary (ablation) are also jointly sufficient.
+
+**Design:** masked replacement `h_rec + mask·(h_donor(s') − h_rec)` through the existing Phase 4.6 hook; k ∈ {1,…,128} plus a prespecified fine sweep for method A at {40, 48, 56}. Selection on the 16 dev positions only (seed-13 partition); evaluation on the disjoint 46 others, disclosed as exploratory since every position was analyzed in Phases 4.6–4.7. Methods: A activation difference; B single-unit ablation from the full patch (128 evaluations); C greedy forward selection from a 31-unit pool (376 of 600 budgeted evaluations used). Controls per size: 20 random subsets, constant Q-bias with the same mean delta; 20 shuffled-state donors for subsets with eval direct-goal ≥ 0.75; knockout curves. Best subset chosen on dev only.
+
+**Results (46 evaluation starts):** no method reaches direct goal above 0.24 at k ≤ 32 (A: 0.00–0.02; B: 0.00–0.11; C: 0.00–0.02); random subsets are 0.01–0.02. At k = 64, A reaches **1.00** (5.5 steps, path efficiency 1.0, 0.2 visits; 1.00 on all 62) against random 0.05 (max 0.30), constant Q-bias 0.02 and shuffled-state donors 0.50 (max 0.63, efficiency 0.45). B at k = 64 reaches 0.24 (farm-only 0.50). Fine sweep for A: k = 40 → 0.00, 48 → 0.02, 56 → 0.09 (farming abolished, 0.91 wandering), 64 → 1.00; the jump coincides with the magnitude ranking reaching the ablation-necessary units (43, 67, 30 at ranks 57–64; unit 43 has a mean difference of 0.28 against 1.01 for the top unit). The 64 A-units are essentially all units that differ at all between the networks on dev states (68 of 128 have nonzero mean difference).
+
+**Failures, preserved:** H1 false under all three methods. H3 false: six single units are each necessary (restoring any one drops dev direct goal 1.00 → 0.12; restoring unit 43 alone drops eval from 1.00 to 0.11), but the 22 hurting units together, or the top-64 by ablation rank, do not suffice (0.11–0.24). Greedy selection never found a first unit that raised dev direct goal above the unmodified 0.12; its tie-break suppressed farming (visits 42 → 5) and produced wandering. Knockout: removing the 8 largest-difference units costs nothing, 16 keeps 0.89 with inefficient paths, 32 collapses to wandering.
+
+**Decisions:** selection strictly on dev; "best" defined on dev (smallest k with dev direct goal ≥ 0.95) and then reported on eval; the fine sweep was added after the coarse run showed the 32 → 64 jump, which is disclosed as a second pass over the same evaluation positions; no direction-level (non-unit) masks, to keep the question about units.
+
+**Interpretation:** the effect is distributed across layer 2 (H2). Strong single-unit necessity together with no small sufficient set is what a jointly-read representation looks like. This is not evidence for or against a compact structure in another basis, and a working small subset would not have shown a "goal circuit" either.
+
+**Visual artifacts:** `assets/figures/sparse_patching_sparsity_vs_success.png`, `sparse_patching_neuron_importance.png`, `sparse_patching_sparse_vs_random.png`, `sparse_patching_trajectory_comparison.png`; `assets/gifs/sparse_patching_best_sparse.gif` (64-unit patch from (0,4): visually identical to the full-patch episode).
+
+**Commands:** `python -m scripts.run_sparse_patching`, `python -m scripts.visualize_sparse_patching --gif`, `python -m pytest tests/test_sparse_patching.py -q` (15 tests; 212 total on the branch).
+
+**Blog notes:** the natural follow-up question to Phase 4.7 ("fine, but how much of the layer is doing it?") has a clean, slightly deflating answer: half of it, and specifically the half that differs. The necessity-without-sufficiency result is the teachable part: single units whose removal breaks everything, and yet no small set that builds anything.
 
 ---
 

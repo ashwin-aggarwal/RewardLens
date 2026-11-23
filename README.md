@@ -357,6 +357,12 @@ Neither ingredient works alone. The goal-follower's picture of the current squar
 
 So no, it is not just the clock, and it is also not a transplanted "goal module". What was transferred is the goal-follower's whole middle-layer picture of the state; what the fake clock does is switch off a time gate in how the hacking network's output layer reads that picture.
 
+## Extension: Sparse Patching (experimental branch)
+
+Does the Phase 4.7 patch need all 128 layer-2 units, or a few? A self-contained extension on the `experiment/sparse-patching` branch replaces only a chosen subset of units and compares three ways of choosing them against random subsets of the same size. Short answer: the effect is distributed. Nothing at 32 units or fewer works; the 64 units that differ between the two networks reproduce the full result, individual units can be necessary without being sufficient, and greedy selection cannot build a small subset. Full report, figures and reproduction commands: [experiments/sparse_patching/README.md](experiments/sparse_patching/README.md).
+
+![Sparsity vs Success](assets/figures/sparse_patching_sparsity_vs_success.png)
+
 ## What We Want to Investigate
 
 1. ~~**Train a DQN agent** and determine whether it independently discovers the exploit.~~ ✅ Done -- see Phase 2 above.

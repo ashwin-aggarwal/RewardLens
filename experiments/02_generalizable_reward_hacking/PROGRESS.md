@@ -299,10 +299,10 @@ Unmodified: pretrained and good 1.00 direct goal in every seed; hacking 0.08 / 0
 
 ### 1. Checkpoints
 
-- Source: the fork-stage checkpoints written by `scripts.exp2_train` in Phase 1, every 10k steps from 0 to 400k, for the good and hacking branch of seeds 42, 123 and 456. 41 per branch, 246 files, 37 MB. Nothing was retrained.
+- Source: the fork-stage checkpoints written by `scripts.exp2_train` in Phase 1, every 10k steps from 0 to 400k, for the good and hacking branch of seeds 42, 123 and 456. 41 per branch, 246 files, 73 MB. Nothing was retrained.
 - Integrity (`results/exp2/phase3/checkpoint_registry.json`): each file's stored step, reward mode and seed match its path; steps strictly increase; step 0 of both branches has the weights of the seed's committed pretrained checkpoint; step 400k has the weights of the committed final checkpoint; no two checkpoints of a trajectory share weights. All 246 passed.
 - Behavior recomputed from the checkpoints matches the development farming rates logged during Phase 1 training exactly (largest difference 0.0 in every seed).
-- What is kept: the 246 files stay local and gitignored. The registry lists a file hash and a weights hash for each. `python -m scripts.exp2_train --all-seeds` regenerates them in about 9 minutes; in Phase 1 a rerun reproduced earlier checkpoints bit for bit on this machine, and the registry hashes let anyone check that. The 12 checkpoints the decision-level analysis loads (both branches at the last step before onset and at completion, per seed; `required_checkpoints.json`, 1.8 MB) are un-ignored in `.gitignore` and committed; the other 234 stay local.
+- What is kept: the 246 files stay local and gitignored. The registry lists a file hash and a weights hash for each. `python -m scripts.exp2_train --all-seeds` regenerates them in about 9 minutes; in Phase 1 a rerun reproduced earlier checkpoints bit for bit on this machine, and the registry hashes let anyone check that. The 12 checkpoints the decision-level analysis loads (both branches at the last step before onset and at completion, per seed; `required_checkpoints.json`, 3.6 MB) are un-ignored in `.gitignore` and committed; the other 234 stay local.
 
 ### 2. Methods
 
@@ -529,7 +529,7 @@ Over the 15 main pairs, Spearman ρ with the layer-2 patch's advantage over the 
 
 - `python -m scripts.exp2_run_phase4`: about 3.3 minutes on CPU. A second run gave a byte-identical `patching_results.json`. Visualization with the GIF: under a minute.
 - Results (`results/exp2/phase4/`, about 400 KB): `patching_results.json`, `required_checkpoints.json` (24 checkpoint files with hashes), `gif_episode.json`.
-- Checkpoints: Phase 4 loads 24 files. 15 are committed (the 12 Phase 3 decision-pair checkpoints and the committed pretrained and final checkpoints, which have the same weights as the step-0 and step-400k trajectory files). The 9 hacking checkpoints 10k, 20k and 50k before completion were gitignored during the run and were committed with Phase 4 (1.4 MB, hashes verified against `results/exp2/phase4/required_checkpoints.json`), so all 24 are now in the repository.
+- Checkpoints: Phase 4 loads 24 files. 15 are committed (the 12 Phase 3 decision-pair checkpoints and the committed pretrained and final checkpoints, which have the same weights as the step-0 and step-400k trajectory files). The 9 hacking checkpoints 10k, 20k and 50k before completion were gitignored during the run and were committed with Phase 4 (2.7 MB, hashes verified against `results/exp2/phase4/required_checkpoints.json`), so all 24 are now in the repository.
 - Figures: `assets/figures/exp2_phase4_{gap,matched_vs_shuffled,compatibility,actions}.png`. GIF: `assets/gifs/exp2_phase4_patch_comparison.gif` (seed 42, development layout 7: first layout by the Phase 2 rule on which the completion checkpoint farms).
 - Tests: `tests/test_exp2_phase4.py` (25).
 

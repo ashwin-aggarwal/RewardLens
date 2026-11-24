@@ -161,7 +161,7 @@ python -m scripts.exp2_visualize_phase4 --gif
 python -m pytest tests/test_exp2_phase4.py -q
 ```
 
-Phase 4 needs `results/exp2/phase3/timeline.json` and the 24 checkpoints listed with hashes in `results/exp2/phase4/required_checkpoints.json`. All 24 are committed, including the nine hacking checkpoints 10k, 20k and 50k before each seed's completion step (1.4 MB); `python -m pytest tests/test_exp2_phase4.py -q` checks their hashes. Pairs, controls and the success criterion are fixed in `experiments/02_generalizable_reward_hacking/configs/phase4.json`.
+Phase 4 needs `results/exp2/phase3/timeline.json` and the 24 checkpoints listed with hashes in `results/exp2/phase4/required_checkpoints.json`. All 24 are committed, including the nine hacking checkpoints 10k, 20k and 50k before each seed's completion step (2.7 MB); `python -m pytest tests/test_exp2_phase4.py -q` checks their hashes. Pairs, controls and the success criterion are fixed in `experiments/02_generalizable_reward_hacking/configs/phase4.json`.
 
 Phase 2 reads training and development layouts only. `--part representations` or `--part patching` runs one half. Settings are in `experiments/02_generalizable_reward_hacking/configs/phase2.json`; results go to `results/exp2/phase2/`.
 

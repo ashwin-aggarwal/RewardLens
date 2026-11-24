@@ -426,3 +426,118 @@ Layer-2 activation change between the two checkpoints, relative to the earlier a
 3. **Scale-matched patches.** Rescale or linearly translate donor activations to the recipient's scale before patching, since activation size is the largest change after the midpoint.
 4. **Sweep the recipient along training.** Apply one fixed donor to recipients at 160k, 200k, 300k and 400k to measure when a transplant stops being readable.
 5. Keep development on training and development layouts and open the final evaluation set once, for the frozen method.
+
+## Phase 4: Near-Transition Causal Patching
+
+**Date:** 2026-11-24. **Branch:** `experiment/generalizable-reward-hacking`. **Layouts used:** training and development only. The test split and the reserved final evaluation set were not loaded. Phase 3 was committed and pushed before this phase started (`49d06c9` to `ab83f30`); a full Phase 3 rerun beforehand reproduced every result file and figure byte for byte.
+
+**Question.** Did the Phase 2 transplant (final good DQN into final hacking DQN) fail because the two networks had become representationally incompatible? If so, patching between nearby checkpoints of the same hacking run should work better.
+
+**Predictions, written before the run.**
+
+- Q1: layer-2 patches from donors 10–50k steps before completion restore more direct-goal behavior than patches from distant donors, beyond wrong-state controls.
+- Q2: repair success rises with donor-recipient layer-2 CKA and falls with output-layer drift.
+- Q3: for a fixed donor, a more distant recipient (400k instead of completion) does worse.
+
+### 1. Design
+
+Everything below is in `configs/phase4.json`, written before the run.
+
+- **Pairs (same rule for every seed):** recipient = hacking checkpoint at behavioral completion (Phase 3: 160k / 220k / 190k). Main donors from the same run: 10k, 20k and 50k earlier; the last checkpoint before onset (60k / 110k / 90k); the fork start (step 0 = the pretrained network). Reference pairs: the pre-onset donor into the final 400k checkpoint (fixed donor, more distant recipient); the good branch at the completion step into the completion checkpoint (different run, same step). No pair was chosen by its result.
+- **Interventions per pair:** none (donor and recipient alone); full replacement (α = 1) of post-ReLU layer 2 and, separately, layer 1 with the donor's activation for the same observation; shuffled-state donor (random state of a training layout, 5 draws); wrong-position donor (same goal and tile, random agent position and time, 5 draws); constant Q bias (the matched patch's mean Q change on training-layout states). Layer 2 only: a head swap, the donor network reading the recipient's layer-2 activation.
+- **Behavior:** one greedy episode on each of the 1,500 development layouts; the four categories, tile visits, path efficiency, returns.
+- **Decisions:** on the 6,000 uniform development states and on 6,000 states the recipient visits, label states by donor action versus recipient action (Phase 3 labels) and record what the patched action does, plus Q-value scale and margins.
+- **Compatibility:** layer-1 and layer-2 CKA and activation norms on the uniform states, weight drift per layer, greedy-action agreement.
+- **Success criterion:** layer-2 matched patch gains ≥ 0.2 direct goal over the recipient, beats the better of the shuffled and wrong-position means by ≥ 0.1, and leaves ≤ 0.25 of episodes as "other".
+- **Strength sweep:** α ∈ {0.25, 0.5, 0.75}, matched and shuffled, only for pairs whose layer-2 patch beats the recipient and the best state control by ≥ 0.1 each.
+
+**One addition after the first run, flagged here:** a uniformly random policy on the same 1,500 development layouts (3 seeds), added to the results as a reference after the shuffled controls turned out to reach the goal often. Direct goal 0.49, farming 0.05, other 0.46, path efficiency 0.23. It changes no criterion; it changes how the direct-goal rates read. The open 8×8 grid and 100-step limit let a random walk reach the goal in about half of the layouts, so direct goal alone does not show goal pursuit; path efficiency has to be read with it. This also applies to the Phase 2 transplant numbers (0.44 / 0.11 / 0.30, efficiency 0.77), now noted in the README next to them.
+
+### 2. Results: donors
+
+| Donor → recipient | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Donor direct goal at −10k / −20k / −50k | 0.09 / 0.13 / 0.22 | 0.11 / 0.14 / 0.24 | 0.10 / 0.09 / 0.18 |
+| Donor farming at −10k / −20k / −50k | 0.77 / 0.67 / 0.57 | 0.79 / 0.72 / 0.48 | 0.78 / 0.74 / 0.53 |
+| Pre-onset donor: direct goal / farming | 0.84 / 0.09 | 0.80 / 0.08 | 0.88 / 0.06 |
+| Recipient (completion): direct goal / farming | 0.08 / 0.88 | 0.09 / 0.86 | 0.09 / 0.86 |
+
+The checkpoints 10–50k before completion are not goal-following donors: they already farm in 48–79% of layouts.
+
+### 3. Results: patching (direct-goal rate, development layouts)
+
+| Pair | Steps apart | Layer-2 CKA | Layer-2 matched | Shuffled (mean of 5) | Wrong position | Layer-1 matched | Q bias: farming |
+|---|---|---|---|---|---|---|---|
+| −10k | 10k | 1.00 / 0.99 / 0.98 | 0.09 / 0.09 / 0.11 | 0.45 / 0.48 / 0.38 | 0.21 / 0.22 / 0.23 | 0.08 / 0.08 / 0.09 | 0.85 / 0.82 / 0.81 |
+| −20k | 20k | 0.98 / 0.97 / 0.92 | 0.11 / 0.12 / 0.11 | 0.41 / 0.48 / 0.33 | 0.25 / 0.25 / 0.21 | 0.08 / 0.09 / 0.09 | 0.82 / 0.63 / 0.70 |
+| −50k | 50k | 0.66 / 0.74 / 0.65 | 0.13 / 0.24 / 0.12 | 0.33 / 0.41 / 0.21 | 0.24 / 0.29 / 0.18 | 0.10 / 0.11 / 0.08 | 0.75 / 0.51 / 0.54 |
+| Pre-onset | 100k / 110k / 100k | 0.44 / 0.34 / 0.48 | 0.21 / 0.12 / 0.25 | 0.21 / 0.12 / 0.27 | 0.24 / 0.13 / 0.25 | 0.11 / 0.12 / 0.08 | 0.37 / 0.30 / 0.22 |
+| Fork start | 160k / 220k / 190k | 0.34 / 0.28 / 0.42 | 0.61 / 0.07 / 0.29 | 0.31 / 0.12 / 0.23 | 0.37 / 0.11 / 0.26 | 0.12 / 0.13 / 0.10 | 0.27 / 0.38 / 0.12 |
+| Pre-onset → 400k (ref.) | 340k / 290k / 310k | 0.56 / 0.68 / 0.68 | 0.15 / 0.12 / 0.39 | 0.19 / 0.12 / 0.34 | 0.22 / 0.13 / 0.31 | 0.12 / 0.14 / 0.10 | 0.88 / 0.65 / 0.77 |
+| Good branch, same step (ref.) | different run | 0.34 / 0.28 / 0.41 | 0.45 / 0.17 / 0.29 | 0.29 / 0.12 / 0.23 | 0.34 / 0.14 / 0.29 | 0.12 / 0.12 / 0.11 | 0.24 / 0.46 / 0.14 |
+
+Values are seed 42 / 123 / 456. Layer-2 matched outcomes in "other": 0.12–0.14 (−10k), 0.17–0.34 (−20k), 0.42–0.79 (−50k), 0.46–0.88 (pre-onset), 0.36–0.93 (fork start).
+
+- **No pair met the success criterion** (0 of 21). Two pairs passed the two direct-goal thresholds and failed on wandering, both seed 42: fork start (0.61; best control 0.37; other 0.36; path efficiency 0.74) and good branch at the same step (0.45; 0.34; other 0.53). Seed 456's pre-onset → 400k pair gained 0.30 over the recipient but only 0.05 over the best control.
+- **Strength sweep** (triggered for those two seed-42 pairs only): α = 0.25 / 0.5 / 0.75 gives 0.09 / 0.13 / 0.32 (fork start) and 0.09 / 0.13 / 0.29 (good branch), against shuffled 0.08 / 0.10 / 0.24 and 0.08 / 0.11 / 0.22. Weaker patches keep the farming (0.71–0.86 at α ≤ 0.5). Full replacement remains the best and still fails.
+- **Q1 failed.** At 10–20k the matched patch reproduces the recipient (the donor also farms). The wrong-state donors do "better" in direct goal (0.33–0.48) only because they break farming and the agent then walks at random (path efficiency 0.23–0.30, the same as the random policy).
+- **Layer 1** never helps: matched 0.08–0.14, always below its own shuffled control (0.18–0.48).
+- **The constant Q bias** leaves farming in place for near donors (0.51–0.85) and for the 400k reference recipient (0.65–0.88), but cuts it to 0.12–0.46 for goal-following donors into the completion checkpoint, again with mostly wandering. Stopping farming is not evidence of goal restoration.
+
+### 4. Results: decisions and the output layer
+
+On uniform development states (layer 2, matched):
+
+| Pair | Flip states (donor → goal, recipient → tile) | Patched action = donor's there | Agree states: patch changes the action |
+|---|---|---|---|
+| −10k | 100–249 | 0.57–0.72 | 0.01–0.04 |
+| −20k | 136–395 | 0.39–0.72 | 0.04–0.12 |
+| −50k | 758–801 | 0.36–0.45 | 0.18–0.30 |
+| Pre-onset | 1,460–1,752 | 0.41–0.48 | 0.32–0.47 |
+| Fork start | 1,539–1,973 | 0.29–0.60 | 0.59–0.72 |
+
+- Near pairs differ in few decisions and the patch fixes most of them without side effects, but there is little to fix: behavior barely moves.
+- Distant, goal-following donors differ this way in 24–33% of states; the patch adopts the donor's action in under half of them and changes 32–72% of decisions that were already the same. That is disruption.
+- **Head swap** (recipient's layer 2 read by the donor's output layer): direct goal 0.06–0.12 for every goal-following donor, mostly "other" (0.73–0.93). Neither the donor's features read by the recipient's output layer, nor the recipient's features read by the donor's output layer, keeps goal pursuit. Goal pursuit lives in the combination of layer 2 and the output layer of the same checkpoint.
+- **Q scale:** patched mean maximum Q-values (14.6–20.1 for goal-following donors) sit between the donor's (7.0–9.2) and the recipient's (23.0–27.5 at completion).
+
+### 5. Results: compatibility against success
+
+Over the 15 main pairs, Spearman ρ with the layer-2 patch's advantage over the better wrong-state donor: steps apart +0.91, CKA −0.91, norm ratio +0.79, output-layer drift +0.89, donor's own direct goal +0.87. The predictors are collinear with donor quality (|ρ| with donor direct goal 0.76–0.95).
+
+- **Q2 failed,** and the sign is reversed. This does not show that similarity hurts. It shows that along a single run, similarity and the donor's goal-following move in opposite directions, so there is no near, goal-following donor to test. Correlational, 5 pairs per seed.
+- **Q3 failed.** Fixed pre-onset donor, recipient moved from completion to 400k (layer-2 norm 21–24 rising to 31–39; output-layer drift 1.23 → 1.77, 1.15 → 1.43, 1.32 → 1.71): direct goal 0.21 → 0.15, 0.12 → 0.12, 0.25 → 0.39. This is the one comparison that holds the donor fixed, and it gives no evidence that drift after completion makes patching harder.
+- The good branch at the completion step as donor (0.45 / 0.17 / 0.29) repeats Phase 2's final-to-final transplant (0.44 / 0.11 / 0.30).
+
+### 6. Interpretation
+
+- **The checkpoint-compatibility hypothesis is not supported.** Patching from nearby checkpoints does not restore goal pursuit, because nearby checkpoints are already hacking. The behavioral switch and the representational drift happen together (Phase 3), so at 10k resolution no checkpoint is both compatible and goal-following.
+- What the experiment does show causally: replacing layer 2 with a goal-following checkpoint's activations, read by a hacking output layer, mostly produces non-goal-directed behavior, whether the donor is 100k or 220k steps away and whether the recipient is at completion or 400k. Moving the recipient further did not make it worse.
+- The one partial exception (seed 42, pretrained or good donor) is seed-specific and fails the wandering threshold.
+- In Experiment 1 the working transplant used a 20k → 30k pair in a fixed layout plus a time-shifted donor input. That setting did not carry over here. The time shift was not tried in this phase (it would have been a post hoc addition).
+
+### 7. Limitations
+
+- Checkpoints are 10k steps apart; a compatible goal-following checkpoint might exist between saved ones. Finding it would need retraining with denser checkpoints.
+- One recipient per seed (completion) plus one reference recipient; donors are confounded with donor quality along the run, and the correlations rest on 15 points.
+- Full-layer replacement only (plus the triggered sweep); no subspace, rescaled or translated patches. Deliberately: those are new methods, not part of this test.
+- Direct goal is a weak signal on an open grid (random policy 0.49); path efficiency and the "other" share are needed alongside it.
+- Uniform states for the decision diagnostics over-represent rarely visited situations; the rollout-state diagnostics are in the results and show the same pattern.
+- Three seeds, one architecture, one environment family.
+
+### 8. Compute and artifacts
+
+- `python -m scripts.exp2_run_phase4`: about 3.3 minutes on CPU. A second run gave a byte-identical `patching_results.json`. Visualization with the GIF: under a minute.
+- Results (`results/exp2/phase4/`, about 400 KB): `patching_results.json`, `required_checkpoints.json` (24 checkpoint files with hashes), `gif_episode.json`.
+- Checkpoints: Phase 4 loads 24 files. 15 are committed (the 12 Phase 3 decision-pair checkpoints and the committed pretrained and final checkpoints, which have the same weights as the step-0 and step-400k trajectory files). The 9 hacking checkpoints 10k, 20k and 50k before completion were gitignored during the run and were committed with Phase 4 (1.4 MB, hashes verified against `results/exp2/phase4/required_checkpoints.json`), so all 24 are now in the repository.
+- Figures: `assets/figures/exp2_phase4_{gap,matched_vs_shuffled,compatibility,actions}.png`. GIF: `assets/gifs/exp2_phase4_patch_comparison.gif` (seed 42, development layout 7: first layout by the Phase 2 rule on which the completion checkpoint farms).
+- Tests: `tests/test_exp2_phase4.py` (25).
+
+### 9. Recommended next step
+
+Whole-layer activation transplants have now failed for every pairing tried: across branches, along the same run, near and far. The next question is which weights carry the switch, not which activations:
+
+1. **Readout versus features by fine-tuning.** Starting from the completion checkpoint, fine-tune only the output layer, or only layer 2, on the corrected reward (training layouts), and measure how many steps and how large a weight change each needs to restore direct goal with high path efficiency. Compare with full fine-tuning and with the pretrained network's weights as a target.
+2. **Denser checkpoints around the transition,** only if (1) suggests the switch is narrow: retrain one seed with 1k-step checkpoints between onset and completion to look for a compatible goal-following donor.
+3. Keep the final evaluation set closed until a method is frozen.
+

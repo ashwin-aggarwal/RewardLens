@@ -2,7 +2,7 @@
 
 **Long-term question:** can we identify internal representations associated with reward hacking and use them to restore goal-directed behavior in environments the agent and the intervention have never seen?
 
-**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant) and Phase 3 (how hacking emerges during training) complete. No repair method works yet.**
+**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant), Phase 3 (how hacking emerges during training) and Phase 4 (near-transition patching) complete. No repair method works yet.**
 
 > **Phase 1 in one paragraph.** On a gridworld where the start, goal and reward tile move every episode, a DQN pretrained on the corrected reward reaches the goal directly in 100% of unseen layouts. Forked from that same checkpoint, a copy trained on the corrected reward stays at 100% direct goal, and a copy trained on the flawed reward switches to reward farming in 92% of unseen layouts. Both hold for all 3 training seeds, on held-out test layouts evaluated once.
 
@@ -103,6 +103,8 @@ Layer 1 changed less (hacking vs pretrained CKA 0.88 / 0.76 / 0.90).
 
 *Seed 42, first eligible development layout; the patched outcome was not selected.*
 
+*Added in Phase 4:* a uniformly random policy reaches the goal directly in 0.49 of these development layouts, with path efficiency 0.23, because the grid is open and episodes last 100 steps. The matched transplant's direct-goal rates above are below that, although its paths are more efficient (0.77).
+
 **Why this differs from Experiment 1.** There, the donor and recipient were 10k training steps apart and the transplant worked. Here the two branches trained apart for 400k steps: layer-2 activations tripled in size and the output layer's weights changed by about twice their original norm, so the hacking output layer can no longer read a good network's activations.
 
 ## Phase 3: how the hacking emerges during training
@@ -163,6 +165,50 @@ The layer-2 trajectory is close to one-dimensional (95–96% of its variance on 
 - Hacking branches of different seeds become dissimilar while they transition at different times (layer-2 CKA falls to 0.27–0.50) and similar again by the end (0.77–0.86). Good branches stay at 0.84–0.93.
 - The direction fitted to flipped decisions is not shared: its scores on identical states correlate 0.74, −0.05 and −0.33 between seed pairs.
 
+## Phase 4: does patching work between nearby checkpoints?
+
+**Question:** did the Phase 2 transplant fail because the two networks had drifted too far apart? If so, patching between checkpoints of the *same* hacking run, a few training steps apart, should work better.
+
+**Design (fixed in [configs/phase4.json](configs/phase4.json) before the run):** for each seed, the recipient is the hacking checkpoint at behavioral completion. Donors are checkpoints of the same run 10k, 20k and 50k steps earlier, the last checkpoint before onset, and the fork start. Each pair is tested with full layer-2 and layer-1 replacement, a shuffled-state donor, a wrong-position donor and a constant Q-value bias, on the 1,500 development layouts. To count as goal restoration a patch had to gain ≥ 0.2 direct goal over the recipient, beat the better wrong-state donor by ≥ 0.1, and leave ≤ 25% of episodes wandering.
+
+**No pair met the criterion, in any seed.**
+
+![Gap](../../assets/figures/exp2_phase4_gap.png)
+
+**1. Nearby donors are compatible but are already hacking.** The behavioral switch and the representational drift happen together, so no checkpoint is both close to the recipient and goal-following.
+
+| Donor (recipient = completion checkpoint) | Steps apart | Layer-2 CKA with recipient | Donor's own direct goal | Layer-2 patch: direct goal | Better wrong-state donor |
+|---|---|---|---|---|---|
+| 10k earlier | 10k | 0.98–1.00 | 0.09–0.11 | 0.09–0.11 | 0.38–0.48 |
+| 20k earlier | 20k | 0.92–0.98 | 0.09–0.14 | 0.11–0.12 | 0.33–0.48 |
+| 50k earlier | 50k | 0.65–0.74 | 0.18–0.24 | 0.12–0.24 | 0.21–0.41 |
+| Last before onset | 100–110k | 0.34–0.48 | 0.80–0.88 | 0.21 / 0.12 / 0.25 | 0.24 / 0.13 / 0.27 |
+| Fork start (pretrained) | 160–220k | 0.28–0.42 | 1.00 | **0.61** / 0.07 / 0.29 | 0.37 / 0.12 / 0.26 |
+
+Per-seed values are in seed order 42 / 123 / 456. A uniformly random policy reaches the goal directly in 0.49 of these layouts.
+
+**2. Matched donors do not beat wrong-state donors where it matters.** At small gaps the matched patch reproduces the recipient's farming, while wrong-state donors break it and the agent wanders like a random walk (direct goal 0.33–0.48, path efficiency 0.23–0.30). For goal-following donors the matched patch is within 0.05 of the wrong-state donors in seeds 123 and 456. Seed 42 is the exception: the fork-start donor gives 0.61 against 0.37 (efficiency 0.74), and the good branch at the same step gives 0.45 against 0.34. Both still leave 36% and 53% of episodes wandering, so both fail the criterion.
+
+![Matched vs shuffled](../../assets/figures/exp2_phase4_matched_vs_shuffled.png)
+
+**3. Compatibility, as measured, does not predict repair.** Across the 15 main pairs, the patch's advantage over wrong-state donors goes *down* as donor and recipient become more similar (Spearman ρ −0.91 with CKA). This is not evidence that similarity hurts: steps apart, CKA, head drift and the donor's own goal-following move together along the run (|ρ| ≥ 0.76), and the advantage tracks donor quality (ρ +0.87). Similar donors simply have nothing to give.
+
+![Compatibility](../../assets/figures/exp2_phase4_compatibility.png)
+
+**4. More drift after completion does not make it worse.** Holding the pre-onset donor fixed and moving the recipient from completion to 400k (layer-2 activation norm 21–24 rising to 31–39) changes the result by −0.06 / 0.00 / +0.14. The good branch at the completion step as donor gives 0.45 / 0.17 / 0.29, close to Phase 2's final-to-final transplant (0.44 / 0.11 / 0.30). Whatever blocks the transplant is already in place at completion.
+
+**5. The patch disrupts rather than restores, decision by decision.** On uniform development states where the donor heads for the goal and the recipient for the tile, the layer-2 patch takes the donor's action in 29–60% of cases. Where donor and recipient already agree, it changes the action in 32–72% of cases for goal-following donors. The output layer reads the transplanted activations, but not the way the donor's own output layer does. Swapping the other way (recipient features into the donor's output layer) gives 0.06–0.12 direct goal. Neither half on its own carries goal pursuit across the transition.
+
+![Actions](../../assets/figures/exp2_phase4_actions.png)
+
+| Hacking recipient (160k) | Pre-onset donor (60k) | Recipient + donor's layer 2 |
+|---|---|---|
+| ![Comparison](../../assets/gifs/exp2_phase4_patch_comparison.gif) | | |
+
+*Seed 42, first development layout (by the Phase 2 rule) where the recipient farms: 49 tile entries; donor reaches the goal in 6 steps; patched recipient stops farming and wanders for 100 steps.*
+
+**Answer:** the hypothesis is not supported. Near the transition there is no compatible goal-following donor to patch from, and the strength sweep that ran for the two triggering pairs (seed 42) only weakened the patch (α 0.75: 0.29–0.32). The Phase 2 failure is better explained by goal pursuit and representation changing together than by drift afterwards.
+
 ## What kind of generalization this is
 
 **Experiment 2 currently shows generalization to unseen combinations of positions. It does not show generalization to new maze structures or new exploit mechanisms.**
@@ -195,7 +241,7 @@ The final evaluation set ([manifest](layouts/final_eval_manifest.json)) was gene
 
 The nine final checkpoints are committed: for each seed (42, 123, 456), the pretrained network and the good and hacking networks that were forked from it. `results/exp2/phase1/checkpoints.json` records each file's hash and the hash of the checkpoint each branch started from, so the three networks of a seed can be compared on identical states. `rewardlens.exp2.checkpoints.load_triplet(seed)` loads and verifies them. Raw per-episode training logs are kept locally and not committed.
 
-Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 37 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (1.8 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`).
+Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 37 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (1.8 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`). Phase 4 adds nine more (1.4 MB): the hacking checkpoints 10k, 20k and 50k before each seed's completion step (`results/exp2/phase4/required_checkpoints.json`).
 
 ## What to keep in mind
 
@@ -208,12 +254,12 @@ Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 37 MB
 
 | Document | Contents |
 |---|---|
-| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 and Phase 3 methods and negative results |
+| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 to Phase 4 methods and negative results |
 | [configs/](configs/) | `environment.json` (environment and layout split), `training.json` (DQN, budgets, tuning log) |
 | [SETUP.md](../../SETUP.md) | Commands to regenerate everything |
 
-Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/`, `results/exp2/phase2/`, `results/exp2/phase3/`. Tests: `tests/test_exp2_phase1.py`, `tests/test_exp2_phase2.py`, `tests/test_exp2_phase3.py`. Settings: `configs/phase2.json`, `configs/phase3.json`.
+Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/` to `results/exp2/phase4/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase4.py`. Settings: `configs/phase2.json` to `configs/phase4.json`.
 
 ## Next
 
-Phase 4 (not started): causal interventions, informed by Phase 3. Candidates, in order: transplant between the two hacking-branch checkpoints on either side of the transition (the earlier one, at 60k / 110k / 90k steps, still has layer-2 similarity 0.76–0.93 to the fork start); test whether the later output layer or the later hidden layers carry the flipped decisions by swapping them one at a time; rescale or translate activations before patching, since activation size is the largest change. All development stays on training and development layouts; the reserved final evaluation set is opened once, for the frozen method.
+Phase 5 (not started). Whole-layer activation transplants have now failed across every pairing tried. The recommended next step is to stop transplanting activations and instead ask which weights carry the switch: fine-tune only the output layer, or only layer 2, of the completion checkpoint back toward goal-following on training layouts, and measure how few steps and which parameters it takes, with the same controls. All development stays on training and development layouts; the reserved final evaluation set is opened once, for a frozen method.

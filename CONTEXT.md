@@ -93,7 +93,15 @@ Experiment 2, Phase 3 (tracking the emergence of hacking): complete 2026-11-23; 
 - Decision level (last checkpoint before onset against the completion checkpoint, identical states; uniform and rollout states kept separate): the later checkpoint picks the tile over the goal in 24–29% of uniform states. Layer-2 change is about as large as the activation at every state and no larger at flipped decisions (Cohen's d −0.16 to +0.17, the same after controlling for position, distances and time). State features predict the flips with AUROC 0.94–0.99; Q-values and the size of the activation change add nothing. A single direction scores 0.52–0.67. Negative result, kept.
 - Across seeds: same order of events, up to 60k steps apart; flipped states overlap well above chance (17–19% against 7–8%); same-step layer-2 CKA between hacking branches dips to 0.27–0.50 mid-transition and recovers to 0.77–0.86; the flip direction is not shared (score correlations 0.74, −0.05, −0.33).
 - Decision: transition thresholds, the decision pair and the controls were fixed in `configs/phase3.json` before the run; no early-warning or causal claim is made.
-- Next: Phase 4 (causal interventions), not started. Candidates: transplant across the transition within the hacking branch; swap hidden layers and output layer between the two checkpoints; scale-matched patches; sweep the recipient along training.
+- Next at the time: Phase 4 (below).
+
+Experiment 2, Phase 4 (near-transition causal patching): complete 2026-11-24, uncommitted. Training and development layouts only; design fixed in `configs/phase4.json` before the run; details in the Experiment 2 `PROGRESS.md`.
+- Question: did the Phase 2 transplant fail because the networks had drifted apart? Recipient: hacking checkpoint at completion. Donors from the same run 10k, 20k, 50k earlier, the last pre-onset checkpoint, the fork start; references: pre-onset donor into 400k, good branch at the same step. Full layer-2 and layer-1 replacement against shuffled-state, wrong-position and constant-Q-bias controls.
+- Result: 0 of 21 pairs met the preregistered goal-restoration criterion. Donors 10–50k back are compatible (layer-2 CKA 0.65–1.00) but already farm (48–79%), so the patch reproduces farming. Goal-following donors (pre-onset 0.80–0.88 direct goal, fork start 1.00) are already distant (CKA 0.28–0.48) and the patch mostly produces wandering, within 0.05 of wrong-state donors except seed 42 (fork start 0.61 against 0.37, still 36% wandering).
+- Holding the pre-onset donor fixed and moving the recipient from completion to 400k did not make patching worse (−0.06 / 0.00 / +0.14). Layer 1 never helps. Head swap (recipient features, donor output layer) gives 0.06–0.12.
+- New baseline: a uniformly random policy reaches the goal directly in 0.49 of development layouts (path efficiency 0.23). Direct goal alone is a weak signal on this open grid; earlier transplant numbers (Phase 2: 0.44 / 0.11 / 0.30) are below it, though more efficient.
+- Decision: the checkpoint-compatibility hypothesis is not supported. Behavior and representation change together, so no compatible goal-following donor exists at 10k checkpoint spacing.
+- Next: Phase 5, not started. Recommended: ask which weights carry the switch by fine-tuning only the output layer or only layer 2 of the completion checkpoint on the corrected reward, against full fine-tuning.
 
 ## 4. Scientific Controls
 
@@ -141,7 +149,7 @@ Status is maintained at milestone level rather than as a session transcript.
   - Transfer to seeds 42 and 456 fails because the runtime patch itself fails there (0.10, 0.03).
   - Interpretation: behavioral imitation of a patch through a compact edit, not discovery of the reward-hacking mechanism. Details: `experiments/01_fixed_gridworld_repair/weight_editing/README.md`.
 
-Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 committed and pushed there (`7effa21`); Phase 3 committed and pushed there (2026-11-24).
+Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 committed and pushed there (`7effa21`); Phase 3 committed and pushed there (`ab83f30`, 2026-11-24); Phase 4 complete there, uncommitted.
 
 Documentation layout (revised 2026-11-23, on `experiment/weight-editing`): the root README is a short landing page listing experiments. Experiment 1 lives in `experiments/01_fixed_gridworld_repair/`: `README.md` (research report), `METHODS.md` (shared methods and limitations), `PROGRESS.md` (the full chronological journal, moved from the root, including the archived phase-by-phase README), and one folder per extension (`sparse_patching/`, `low_rank_patching/`, `weight_editing/`) with its report and config. The root `PROGRESS.md` is a short index. `SETUP.md` holds all installation and reproduction commands. Code, scripts, results and assets stay at their shared top-level locations; only the three runner config paths changed. The edited-model checkpoint `results/weight_editing/models/` is gitignored like the training checkpoints and regenerated by `scripts.run_weight_editing`. `requirements.txt` lists `torch` and `scikit-learn`, which the code always required but the file originally omitted.
 
@@ -624,7 +632,7 @@ python -m pytest tests/test_phase4_7.py -q   # 14 passed
 
 ### Immediate next milestone
 
-Review Phase 3, then Phase 4 (not started): causal interventions informed by Phase 3, starting with a transplant between the hacking-branch checkpoints on either side of the transition. Developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
+Review Phase 4, then Phase 5 (not started): locate the switch in the weights by fine-tuning only the output layer or only layer 2 of the completion checkpoint on the corrected reward. Developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
 
 ### Maintenance checklist
 

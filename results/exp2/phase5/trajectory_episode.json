@@ -1,0 +1,40 @@
+{
+  "seed": 42,
+  "dev_layout_index": 0,
+  "layout": [
+    2,
+    7,
+    0,
+    0,
+    5,
+    3
+  ],
+  "episodes": {
+    "Hacking network": {
+      "steps": 100,
+      "reached_goal": false,
+      "tile_entries": 47
+    },
+    "RL fine-tuned, full network": {
+      "steps": 9,
+      "reached_goal": true,
+      "tile_entries": 0
+    },
+    "Distilled, output head only": {
+      "steps": 62,
+      "reached_goal": true,
+      "tile_entries": 0
+    },
+    "Distilled, full network": {
+      "steps": 10,
+      "reached_goal": true,
+      "tile_entries": 0
+    },
+    "Good network": {
+      "steps": 9,
+      "reached_goal": true,
+      "tile_entries": 0
+    }
+  },
+  "gif_frames_shown": 70
+}

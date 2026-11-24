@@ -35,3 +35,14 @@ results/exp2/**/*.log
 !results/exp2/phase1/seed123/[gh]*/checkpoints/checkpoint_220000.pt
 !results/exp2/phase1/seed456/[gh]*/checkpoints/checkpoint_90000.pt
 !results/exp2/phase1/seed456/[gh]*/checkpoints/checkpoint_190000.pt
+# Phase 4 near-transition donors: hacking checkpoints 10k, 20k and 50k before each seed's completion step.
+# Listed with hashes in results/exp2/phase4/required_checkpoints.json.
+!results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_110000.pt
+!results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_140000.pt
+!results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_150000.pt
+!results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_170000.pt
+!results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_200000.pt
+!results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_210000.pt
+!results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_140000.pt
+!results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_170000.pt
+!results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_180000.pt

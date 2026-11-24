@@ -1,0 +1,2864 @@
+{
+ "manifest_sha256": "ceac8a6e7f572e1dd8a31d56c96e11d959eaa0f6f1a4456bf226137d719b1cf7",
+ "splits_used": [
+  "train",
+  "dev"
+ ],
+ "seeds": [
+  42,
+  123,
+  456
+ ],
+ "alpha": 1.0,
+ "n_dev_layouts": 1500,
+ "n_control_draws": 5,
+ "per_seed": {
+  "42": {
+   "unmodified": {
+    "pretrain": {
+     "direct_goal": 1.0,
+     "farm_then_finish": 0.0,
+     "farm_only": 0.0,
+     "other": 0.0,
+     "farming": 0.0,
+     "goal_completion": 1.0,
+     "mean_reward_tile_visits": 0.06133333333333333,
+     "mean_steps": 5.214666666666667,
+     "path_efficiency_direct": 1.0,
+     "mean_return_flawed": 10.07052,
+     "mean_return_corrected": 9.947853333333335
+    },
+    "good": {
+     "direct_goal": 1.0,
+     "farm_then_finish": 0.0,
+     "farm_only": 0.0,
+     "other": 0.0,
+     "farming": 0.0,
+     "goal_completion": 1.0,
+     "mean_reward_tile_visits": 0.06533333333333333,
+     "mean_steps": 5.214666666666667,
+     "path_efficiency_direct": 1.0,
+     "mean_return_flawed": 10.078520000000001,
+     "mean_return_corrected": 9.947853333333335
+    },
+    "hacking": {
+     "direct_goal": 0.07666666666666666,
+     "farm_then_finish": 0.01,
+     "farm_only": 0.9066666666666666,
+     "other": 0.006666666666666667,
+     "farming": 0.9166666666666666,
+     "goal_completion": 0.08666666666666667,
+     "mean_reward_tile_visits": 43.64533333333333,
+     "mean_steps": 92.14866666666667,
+     "path_efficiency_direct": 0.9917874396135266,
+     "mean_return_flawed": 87.23584666666656,
+     "mean_return_corrected": -0.054820000000000445
+    }
+   },
+   "good_to_hacking": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.16733333333333333,
+      "farm_then_finish": 0.016666666666666666,
+      "farm_only": 0.228,
+      "other": 0.588,
+      "farming": 0.24466666666666667,
+      "goal_completion": 0.184,
+      "mean_reward_tile_visits": 5.061333333333334,
+      "mean_steps": 85.65933333333334,
+      "path_efficiency_direct": 0.7202023742455125,
+      "mean_return_flawed": 11.106073333333335,
+      "mean_return_corrected": 0.9834066666666663
+     },
+     "q_bias": {
+      "direct_goal": 0.05333333333333334,
+      "farm_then_finish": 0.004,
+      "farm_only": 0.744,
+      "other": 0.19866666666666666,
+      "farming": 0.748,
+      "goal_completion": 0.05733333333333333,
+      "mean_reward_tile_visits": 33.296,
+      "mean_steps": 94.58066666666667,
+      "path_efficiency_direct": 0.9883333333333333,
+      "mean_return_flawed": 66.2195266666666,
+      "mean_return_corrected": -0.3724733333333338
+     },
+     "q_bias_vector": [
+      5.750331878662109,
+      5.907939910888672,
+      4.472166061401367,
+      4.599913597106934
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.2593333333333333,
+       "min": 0.25133333333333335,
+       "max": 0.27466666666666667
+      },
+      "farm_then_finish": {
+       "mean": 0.0017333333333333333,
+       "min": 0.0006666666666666666,
+       "max": 0.0026666666666666666
+      },
+      "farm_only": {
+       "mean": 0.047599999999999996,
+       "min": 0.043333333333333335,
+       "max": 0.051333333333333335
+      },
+      "other": {
+       "mean": 0.6913333333333334,
+       "min": 0.6753333333333333,
+       "max": 0.7046666666666667
+      },
+      "farming": {
+       "mean": 0.049333333333333326,
+       "min": 0.044000000000000004,
+       "max": 0.054
+      },
+      "goal_completion": {
+       "mean": 0.26106666666666667,
+       "min": 0.252,
+       "max": 0.27666666666666667
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.7114666666666667,
+       "min": 0.686,
+       "max": 0.732
+      },
+      "mean_steps": {
+       "mean": 80.26813333333334,
+       "min": 79.252,
+       "max": 81.004
+      },
+      "path_efficiency_direct": {
+       "mean": 0.40309039722010176,
+       "min": 0.3826452213221358,
+       "max": 0.4224869272137109
+      },
+      "mean_return_flawed": {
+       "mean": 3.2309186666666667,
+       "min": 3.0892733333333346,
+       "max": 3.4221466666666673
+      },
+      "mean_return_corrected": {
+       "mean": 1.807985333333333,
+       "min": 1.7106066666666666,
+       "max": 1.9741466666666663
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.26786666666666664,
+       "min": 0.25733333333333336,
+       "max": 0.27666666666666667
+      },
+      "farm_then_finish": {
+       "mean": 0.0014666666666666667,
+       "min": 0.0006666666666666666,
+       "max": 0.002
+      },
+      "farm_only": {
+       "mean": 0.07666666666666666,
+       "min": 0.06866666666666667,
+       "max": 0.08266666666666667
+      },
+      "other": {
+       "mean": 0.654,
+       "min": 0.6393333333333333,
+       "max": 0.666
+      },
+      "farming": {
+       "mean": 0.07813333333333335,
+       "min": 0.07066666666666667,
+       "max": 0.084
+      },
+      "goal_completion": {
+       "mean": 0.2693333333333333,
+       "min": 0.25866666666666666,
+       "max": 0.278
+      },
+      "mean_reward_tile_visits": {
+       "mean": 1.0077333333333331,
+       "min": 0.97,
+       "max": 1.0613333333333332
+      },
+      "mean_steps": {
+       "mean": 79.27893333333333,
+       "min": 78.61933333333333,
+       "max": 80.014
+      },
+      "path_efficiency_direct": {
+       "mean": 0.46649526934276786,
+       "min": 0.4442043171380762,
+       "max": 0.4793364548778093
+      },
+      "mean_return_flawed": {
+       "mean": 3.9160106666666676,
+       "min": 3.7975800000000017,
+       "max": 4.116473333333335
+      },
+      "mean_return_corrected": {
+       "mean": 1.9005439999999996,
+       "min": 1.7865266666666664,
+       "max": 1.9938066666666663
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.43866666666666665,
+      "farm_then_finish": 0.011333333333333334,
+      "farm_only": 0.014666666666666666,
+      "other": 0.5353333333333333,
+      "farming": 0.026000000000000002,
+      "goal_completion": 0.45,
+      "mean_reward_tile_visits": 0.7913333333333333,
+      "mean_steps": 65.78,
+      "path_efficiency_direct": 0.7664781728675677,
+      "mean_return_flawed": 5.4248666666666665,
+      "mean_return_corrected": 3.8422
+     },
+     "q_bias": {
+      "direct_goal": 0.07733333333333334,
+      "farm_then_finish": 0.011333333333333334,
+      "farm_only": 0.9073333333333333,
+      "other": 0.004,
+      "farming": 0.9186666666666666,
+      "goal_completion": 0.08866666666666667,
+      "mean_reward_tile_visits": 43.67666666666667,
+      "mean_steps": 91.91533333333334,
+      "path_efficiency_direct": 0.9860557545902373,
+      "mean_return_flawed": 87.32084666666657,
+      "mean_return_corrected": -0.03248666666666713
+     },
+     "q_bias_vector": [
+      -15.850385665893555,
+      -15.332379341125488,
+      -16.05206298828125,
+      -15.456599235534668
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.2652,
+       "min": 0.25333333333333335,
+       "max": 0.2793333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0030666666666666663,
+       "min": 0.002,
+       "max": 0.005333333333333333
+      },
+      "farm_only": {
+       "mean": 0.06626666666666667,
+       "min": 0.062,
+       "max": 0.07066666666666667
+      },
+      "other": {
+       "mean": 0.6654666666666667,
+       "min": 0.656,
+       "max": 0.6746666666666666
+      },
+      "farming": {
+       "mean": 0.06933333333333333,
+       "min": 0.06466666666666666,
+       "max": 0.074
+      },
+      "goal_completion": {
+       "mean": 0.26826666666666665,
+       "min": 0.25533333333333336,
+       "max": 0.282
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.9067999999999999,
+       "min": 0.8426666666666667,
+       "max": 0.9693333333333334
+      },
+      "mean_steps": {
+       "mean": 79.81586666666666,
+       "min": 78.57733333333333,
+       "max": 80.96933333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.3623328374106901,
+       "min": 0.35205638192301847,
+       "max": 0.37346303495434596
+      },
+      "mean_return_flawed": {
+       "mean": 3.698108,
+       "min": 3.5914599999999997,
+       "max": 3.77588
+      },
+      "mean_return_corrected": {
+       "mean": 1.8845079999999998,
+       "min": 1.7436399999999996,
+       "max": 2.034226666666666
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.3436,
+       "min": 0.3313333333333333,
+       "max": 0.35533333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0037333333333333337,
+       "min": 0.0026666666666666666,
+       "max": 0.005333333333333333
+      },
+      "farm_only": {
+       "mean": 0.0308,
+       "min": 0.029333333333333333,
+       "max": 0.034
+      },
+      "other": {
+       "mean": 0.6218666666666667,
+       "min": 0.6126666666666667,
+       "max": 0.636
+      },
+      "farming": {
+       "mean": 0.03453333333333333,
+       "min": 0.032,
+       "max": 0.03933333333333334
+      },
+      "goal_completion": {
+       "mean": 0.3473333333333334,
+       "min": 0.334,
+       "max": 0.358
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.5104,
+       "min": 0.4693333333333333,
+       "max": 0.578
+      },
+      "mean_steps": {
+       "mean": 73.22733333333333,
+       "min": 72.414,
+       "max": 73.73666666666666
+      },
+      "path_efficiency_direct": {
+       "mean": 0.47626550876641244,
+       "min": 0.4524772330731159,
+       "max": 0.49209081805825494
+      },
+      "mean_return_flawed": {
+       "mean": 3.76186,
+       "min": 3.5413000000000006,
+       "max": 3.900046666666667
+      },
+      "mean_return_corrected": {
+       "mean": 2.7410599999999996,
+       "min": 2.6026333333333334,
+       "max": 2.85586
+      }
+     }
+    }
+   },
+   "pretrain_to_hacking": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.12666666666666668,
+      "farm_then_finish": 0.018666666666666668,
+      "farm_only": 0.2926666666666667,
+      "other": 0.562,
+      "farming": 0.31133333333333335,
+      "goal_completion": 0.14533333333333334,
+      "mean_reward_tile_visits": 6.608666666666666,
+      "mean_steps": 88.438,
+      "path_efficiency_direct": 0.7537223222240108,
+      "mean_return_flawed": 13.786286666666669,
+      "mean_return_corrected": 0.568953333333333
+     },
+     "q_bias": {
+      "direct_goal": 0.06,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.722,
+      "other": 0.218,
+      "farming": 0.722,
+      "goal_completion": 0.06,
+      "mean_reward_tile_visits": 33.12733333333333,
+      "mean_steps": 94.21533333333333,
+      "path_efficiency_direct": 0.98125,
+      "mean_return_flawed": 65.91251333333325,
+      "mean_return_corrected": -0.3421533333333338
+     },
+     "q_bias_vector": [
+      6.390711784362793,
+      6.056437015533447,
+      4.97587251663208,
+      5.142732620239258
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.3198666666666667,
+       "min": 0.316,
+       "max": 0.3233333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.004,
+       "min": 0.002,
+       "max": 0.006666666666666667
+      },
+      "farm_only": {
+       "mean": 0.05306666666666667,
+       "min": 0.044,
+       "max": 0.062
+      },
+      "other": {
+       "mean": 0.6230666666666667,
+       "min": 0.6153333333333333,
+       "max": 0.634
+      },
+      "farming": {
+       "mean": 0.05706666666666667,
+       "min": 0.048666666666666664,
+       "max": 0.06866666666666667
+      },
+      "goal_completion": {
+       "mean": 0.32386666666666664,
+       "min": 0.322,
+       "max": 0.32666666666666666
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.8128,
+       "min": 0.7593333333333333,
+       "max": 0.9093333333333333
+      },
+      "mean_steps": {
+       "mean": 76.96626666666666,
+       "min": 76.594,
+       "max": 77.61
+      },
+      "path_efficiency_direct": {
+       "mean": 0.3398364505553661,
+       "min": 0.31903508774134737,
+       "max": 0.35219609799817203
+      },
+      "mean_return_flawed": {
+       "mean": 4.094604000000001,
+       "min": 3.9919000000000016,
+       "max": 4.274020000000001
+      },
+      "mean_return_corrected": {
+       "mean": 2.4690039999999995,
+       "min": 2.4438999999999997,
+       "max": 2.4976599999999998
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.23346666666666666,
+       "min": 0.228,
+       "max": 0.24466666666666667
+      },
+      "farm_then_finish": {
+       "mean": 0.002666666666666667,
+       "min": 0.002,
+       "max": 0.004
+      },
+      "farm_only": {
+       "mean": 0.10786666666666667,
+       "min": 0.10133333333333333,
+       "max": 0.114
+      },
+      "other": {
+       "mean": 0.6559999999999999,
+       "min": 0.646,
+       "max": 0.6686666666666666
+      },
+      "farming": {
+       "mean": 0.11053333333333334,
+       "min": 0.10333333333333333,
+       "max": 0.116
+      },
+      "goal_completion": {
+       "mean": 0.23613333333333336,
+       "min": 0.23,
+       "max": 0.248
+      },
+      "mean_reward_tile_visits": {
+       "mean": 1.3925333333333334,
+       "min": 1.3586666666666667,
+       "max": 1.4493333333333334
+      },
+      "mean_steps": {
+       "mean": 82.16653333333333,
+       "min": 81.52466666666666,
+       "max": 82.62733333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.4538378161302267,
+       "min": 0.4429741064387079,
+       "max": 0.46632535412365994
+      },
+      "mean_return_flawed": {
+       "mean": 4.324734666666669,
+       "min": 4.192720000000001,
+       "max": 4.388200000000002
+      },
+      "mean_return_corrected": {
+       "mean": 1.5396679999999996,
+       "min": 1.474053333333333,
+       "max": 1.6647533333333329
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.5173333333333333,
+      "farm_then_finish": 0.002,
+      "farm_only": 0.006,
+      "other": 0.4746666666666667,
+      "farming": 0.008,
+      "goal_completion": 0.5193333333333333,
+      "mean_reward_tile_visits": 0.206,
+      "mean_steps": 54.676,
+      "path_efficiency_direct": 0.8008589908731386,
+      "mean_return_flawed": 5.058573333333333,
+      "mean_return_corrected": 4.6465733333333334
+     },
+     "q_bias": {
+      "direct_goal": 0.07866666666666666,
+      "farm_then_finish": 0.008666666666666666,
+      "farm_only": 0.9086666666666666,
+      "other": 0.004,
+      "farming": 0.9173333333333333,
+      "goal_completion": 0.08733333333333333,
+      "mean_reward_tile_visits": 43.760666666666665,
+      "mean_steps": 91.94733333333333,
+      "path_efficiency_direct": 0.9899845916795069,
+      "mean_return_flawed": 87.47519333333322,
+      "mean_return_corrected": -0.046140000000000445
+     },
+     "q_bias_vector": [
+      -15.957914352416992,
+      -15.567269325256348,
+      -16.27752113342285,
+      -15.770570755004883
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.24226666666666669,
+       "min": 0.23333333333333334,
+       "max": 0.25333333333333335
+      },
+      "farm_then_finish": {
+       "mean": 0.0018666666666666664,
+       "min": 0.0006666666666666666,
+       "max": 0.0033333333333333335
+      },
+      "farm_only": {
+       "mean": 0.05826666666666667,
+       "min": 0.054,
+       "max": 0.066
+      },
+      "other": {
+       "mean": 0.6976,
+       "min": 0.686,
+       "max": 0.7066666666666667
+      },
+      "farming": {
+       "mean": 0.06013333333333334,
+       "min": 0.05466666666666667,
+       "max": 0.06733333333333334
+      },
+      "goal_completion": {
+       "mean": 0.24413333333333337,
+       "min": 0.23666666666666666,
+       "max": 0.25533333333333336
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.8298666666666665,
+       "min": 0.76,
+       "max": 0.87
+      },
+      "mean_steps": {
+       "mean": 80.88866666666667,
+       "min": 80.056,
+       "max": 81.90533333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.4138744675189378,
+       "min": 0.3880524525406108,
+       "max": 0.4384055505560002
+      },
+      "mean_return_flawed": {
+       "mean": 3.2921800000000006,
+       "min": 3.1615266666666666,
+       "max": 3.44744
+      },
+      "mean_return_corrected": {
+       "mean": 1.6324466666666662,
+       "min": 1.547613333333333,
+       "max": 1.7527733333333329
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.3361333333333333,
+       "min": 0.32466666666666666,
+       "max": 0.342
+      },
+      "farm_then_finish": {
+       "mean": 0.0018666666666666664,
+       "min": 0.0006666666666666666,
+       "max": 0.0026666666666666666
+      },
+      "farm_only": {
+       "mean": 0.0244,
+       "min": 0.022,
+       "max": 0.027333333333333334
+      },
+      "other": {
+       "mean": 0.6376,
+       "min": 0.6293333333333333,
+       "max": 0.6486666666666666
+      },
+      "farming": {
+       "mean": 0.02626666666666667,
+       "min": 0.024,
+       "max": 0.029333333333333336
+      },
+      "goal_completion": {
+       "mean": 0.33799999999999997,
+       "min": 0.3253333333333333,
+       "max": 0.344
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.4254666666666666,
+       "min": 0.414,
+       "max": 0.44466666666666665
+      },
+      "mean_steps": {
+       "mean": 73.81293333333335,
+       "min": 73.20466666666667,
+       "max": 74.63333333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.49819629286736494,
+       "min": 0.49102467202324235,
+       "max": 0.5032659200058636
+      },
+      "mean_return_flawed": {
+       "mean": 3.4928040000000005,
+       "min": 3.339,
+       "max": 3.585493333333334
+      },
+      "mean_return_corrected": {
+       "mean": 2.6418706666666667,
+       "min": 2.507,
+       "max": 2.707953333333333
+      }
+     }
+    }
+   },
+   "hacking_to_good": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.19,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.042,
+      "other": 0.7673333333333333,
+      "farming": 0.04266666666666667,
+      "goal_completion": 0.19066666666666668,
+      "mean_reward_tile_visits": 0.9933333333333333,
+      "mean_steps": 83.07733333333333,
+      "path_efficiency_direct": 0.8191253966737629,
+      "mean_return_flawed": 3.062559999999999,
+      "mean_return_corrected": 1.0758933333333331
+     },
+     "q_bias": {
+      "direct_goal": 0.826,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.174,
+      "farming": 0.0,
+      "goal_completion": 0.826,
+      "mean_reward_tile_visits": 0.050666666666666665,
+      "mean_steps": 21.500666666666667,
+      "path_efficiency_direct": 0.9992313309504592,
+      "mean_return_flawed": 8.146326666666667,
+      "mean_return_corrected": 8.044993333333332
+     },
+     "q_bias_vector": [
+      0.17478063702583313,
+      0.16880857944488525,
+      0.1494399607181549,
+      -0.008127897046506405
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.38533333333333336,
+       "min": 0.37,
+       "max": 0.398
+      },
+      "farm_then_finish": {
+       "mean": 0.006666666666666666,
+       "min": 0.004,
+       "max": 0.009333333333333334
+      },
+      "farm_only": {
+       "mean": 0.05653333333333334,
+       "min": 0.048666666666666664,
+       "max": 0.06533333333333333
+      },
+      "other": {
+       "mean": 0.5514666666666665,
+       "min": 0.538,
+       "max": 0.57
+      },
+      "farming": {
+       "mean": 0.0632,
+       "min": 0.05533333333333333,
+       "max": 0.07066666666666667
+      },
+      "goal_completion": {
+       "mean": 0.392,
+       "min": 0.37466666666666665,
+       "max": 0.4046666666666667
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.9380000000000001,
+       "min": 0.8646666666666667,
+       "max": 1.0
+      },
+      "mean_steps": {
+       "mean": 74.5872,
+       "min": 73.584,
+       "max": 75.90266666666666
+      },
+      "path_efficiency_direct": {
+       "mean": 0.275582489891029,
+       "min": 0.266622290615087,
+       "max": 0.29142705409532255
+      },
+      "mean_return_flawed": {
+       "mean": 5.050128000000001,
+       "min": 4.832973333333335,
+       "max": 5.230640000000001
+      },
+      "mean_return_corrected": {
+       "mean": 3.1741279999999996,
+       "min": 2.9876399999999994,
+       "max": 3.3108266666666664
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.45,
+       "min": 0.44,
+       "max": 0.458
+      },
+      "farm_then_finish": {
+       "mean": 0.004666666666666667,
+       "min": 0.0026666666666666666,
+       "max": 0.006
+      },
+      "farm_only": {
+       "mean": 0.03306666666666667,
+       "min": 0.028666666666666667,
+       "max": 0.037333333333333336
+      },
+      "other": {
+       "mean": 0.5122666666666666,
+       "min": 0.5046666666666667,
+       "max": 0.5206666666666667
+      },
+      "farming": {
+       "mean": 0.03773333333333333,
+       "min": 0.032,
+       "max": 0.043333333333333335
+      },
+      "goal_completion": {
+       "mean": 0.45466666666666666,
+       "min": 0.444,
+       "max": 0.4613333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.6008,
+       "min": 0.5566666666666666,
+       "max": 0.6426666666666667
+      },
+      "mean_steps": {
+       "mean": 66.8112,
+       "min": 66.30866666666667,
+       "max": 67.94866666666667
+      },
+      "path_efficiency_direct": {
+       "mean": 0.4075232838851667,
+       "min": 0.39727967670728437,
+       "max": 0.42665626320541145
+      },
+      "mean_return_flawed": {
+       "mean": 5.080154666666667,
+       "min": 4.9527600000000005,
+       "max": 5.188913333333334
+      },
+      "mean_return_corrected": {
+       "mean": 3.878554666666666,
+       "min": 3.760513333333334,
+       "max": 3.9459266666666664
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.10066666666666667,
+      "farm_then_finish": 0.004,
+      "farm_only": 0.034,
+      "other": 0.8613333333333333,
+      "farming": 0.038000000000000006,
+      "goal_completion": 0.10466666666666667,
+      "mean_reward_tile_visits": 0.704,
+      "mean_steps": 92.10333333333334,
+      "path_efficiency_direct": 0.5463675308462238,
+      "mean_return_flawed": 1.5336333333333332,
+      "mean_return_corrected": 0.1256333333333329
+     },
+     "q_bias": {
+      "direct_goal": 0.062,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.938,
+      "farming": 0.0,
+      "goal_completion": 0.062,
+      "mean_reward_tile_visits": 0.04933333333333333,
+      "mean_steps": 93.97933333333333,
+      "path_efficiency_direct": 1.0,
+      "mean_return_flawed": -0.2211266666666672,
+      "mean_return_corrected": -0.31979333333333376
+     },
+     "q_bias_vector": [
+      8.680716514587402,
+      10.655240058898926,
+      9.965042114257812,
+      10.214216232299805
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.13733333333333334,
+       "min": 0.12333333333333334,
+       "max": 0.144
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.012533333333333336,
+       "min": 0.010666666666666666,
+       "max": 0.017333333333333333
+      },
+      "other": {
+       "mean": 0.8501333333333333,
+       "min": 0.8386666666666667,
+       "max": 0.8646666666666667
+      },
+      "farming": {
+       "mean": 0.012533333333333336,
+       "min": 0.010666666666666666,
+       "max": 0.017333333333333333
+      },
+      "goal_completion": {
+       "mean": 0.13733333333333334,
+       "min": 0.12333333333333334,
+       "max": 0.144
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.22799999999999998,
+       "min": 0.224,
+       "max": 0.23533333333333334
+      },
+      "mean_steps": {
+       "mean": 87.79653333333333,
+       "min": 87.254,
+       "max": 89.03333333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.7101878791920908,
+       "min": 0.688773342312784,
+       "max": 0.7335897851728773
+      },
+      "mean_return_flawed": {
+       "mean": 0.9513680000000001,
+       "min": 0.8136666666666669,
+       "max": 1.0287933333333334
+      },
+      "mean_return_corrected": {
+       "mean": 0.4953679999999996,
+       "min": 0.3429999999999995,
+       "max": 0.5674599999999996
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.14679999999999999,
+       "min": 0.13866666666666666,
+       "max": 0.15533333333333332
+      },
+      "farm_then_finish": {
+       "mean": 0.00013333333333333334,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "farm_only": {
+       "mean": 0.0030666666666666668,
+       "min": 0.002,
+       "max": 0.004666666666666667
+      },
+      "other": {
+       "mean": 0.85,
+       "min": 0.84,
+       "max": 0.8586666666666667
+      },
+      "farming": {
+       "mean": 0.0032,
+       "min": 0.0026666666666666666,
+       "max": 0.004666666666666667
+      },
+      "goal_completion": {
+       "mean": 0.1469333333333333,
+       "min": 0.13933333333333334,
+       "max": 0.15533333333333332
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.13173333333333334,
+       "min": 0.114,
+       "max": 0.14266666666666666
+      },
+      "mean_steps": {
+       "mean": 87.73800000000001,
+       "min": 87.206,
+       "max": 88.43733333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.6334699550396703,
+       "min": 0.6205616291649841,
+       "max": 0.6475916022608873
+      },
+      "mean_return_flawed": {
+       "mean": 0.8554199999999996,
+       "min": 0.7369599999999996,
+       "max": 0.9666066666666664
+      },
+      "mean_return_corrected": {
+       "mean": 0.591953333333333,
+       "min": 0.5089599999999996,
+       "max": 0.681273333333333
+      }
+     }
+    }
+   }
+  },
+  "123": {
+   "unmodified": {
+    "pretrain": {
+     "direct_goal": 1.0,
+     "farm_then_finish": 0.0,
+     "farm_only": 0.0,
+     "other": 0.0,
+     "farming": 0.0,
+     "goal_completion": 1.0,
+     "mean_reward_tile_visits": 0.062,
+     "mean_steps": 5.214666666666667,
+     "path_efficiency_direct": 1.0,
+     "mean_return_flawed": 10.071853333333333,
+     "mean_return_corrected": 9.947853333333335
+    },
+    "good": {
+     "direct_goal": 1.0,
+     "farm_then_finish": 0.0,
+     "farm_only": 0.0,
+     "other": 0.0,
+     "farming": 0.0,
+     "goal_completion": 1.0,
+     "mean_reward_tile_visits": 0.058,
+     "mean_steps": 5.214666666666667,
+     "path_efficiency_direct": 1.0,
+     "mean_return_flawed": 10.063853333333334,
+     "mean_return_corrected": 9.947853333333335
+    },
+    "hacking": {
+     "direct_goal": 0.08133333333333333,
+     "farm_then_finish": 0.007333333333333333,
+     "farm_only": 0.9113333333333333,
+     "other": 0.0,
+     "farming": 0.9186666666666666,
+     "goal_completion": 0.08866666666666667,
+     "mean_reward_tile_visits": 44.062666666666665,
+     "mean_steps": 91.79333333333334,
+     "path_efficiency_direct": 0.9838114754098362,
+     "mean_return_flawed": 88.09406666666655,
+     "mean_return_corrected": -0.03126666666666714
+    }
+   },
+   "good_to_hacking": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.09533333333333334,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.011333333333333334,
+      "other": 0.8926666666666667,
+      "farming": 0.012,
+      "goal_completion": 0.096,
+      "mean_reward_tile_visits": 0.26,
+      "mean_steps": 90.75133333333333,
+      "path_efficiency_direct": 0.9744364027580811,
+      "mean_return_flawed": 0.5724866666666656,
+      "mean_return_corrected": 0.052486666666666223
+     },
+     "q_bias": {
+      "direct_goal": 0.07333333333333333,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.8013333333333333,
+      "other": 0.12533333333333332,
+      "farming": 0.8013333333333333,
+      "goal_completion": 0.07333333333333333,
+      "mean_reward_tile_visits": 38.721333333333334,
+      "mean_steps": 92.916,
+      "path_efficiency_direct": 0.9954545454545455,
+      "mean_return_flawed": 77.2468399999999,
+      "mean_return_corrected": -0.19582666666666712
+     },
+     "q_bias_vector": [
+      -0.8200231790542603,
+      -0.45773884654045105,
+      -1.8562215566635132,
+      -1.7634549140930176
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.1592,
+       "min": 0.15333333333333332,
+       "max": 0.17
+      },
+      "farm_then_finish": {
+       "mean": 0.00013333333333333334,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "farm_only": {
+       "mean": 0.03733333333333333,
+       "min": 0.034666666666666665,
+       "max": 0.04066666666666666
+      },
+      "other": {
+       "mean": 0.8033333333333333,
+       "min": 0.7933333333333333,
+       "max": 0.8113333333333334
+      },
+      "farming": {
+       "mean": 0.03746666666666667,
+       "min": 0.035333333333333335,
+       "max": 0.04066666666666666
+      },
+      "goal_completion": {
+       "mean": 0.15933333333333333,
+       "min": 0.154,
+       "max": 0.17
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.4493333333333333,
+       "min": 0.43866666666666665,
+       "max": 0.4646666666666667
+      },
+      "mean_steps": {
+       "mean": 86.53986666666665,
+       "min": 85.584,
+       "max": 87.11866666666667
+      },
+      "path_efficiency_direct": {
+       "mean": 0.616434347038749,
+       "min": 0.5977080731505685,
+       "max": 0.6377849131463558
+      },
+      "mean_return_flawed": {
+       "mean": 1.6266013333333338,
+       "min": 1.5461466666666668,
+       "max": 1.7321600000000004
+      },
+      "mean_return_corrected": {
+       "mean": 0.7279346666666662,
+       "min": 0.6688133333333329,
+       "max": 0.8441599999999996
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.15893333333333332,
+       "min": 0.15133333333333332,
+       "max": 0.164
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.017466666666666665,
+       "min": 0.017333333333333333,
+       "max": 0.018
+      },
+      "other": {
+       "mean": 0.8236000000000001,
+       "min": 0.8186666666666667,
+       "max": 0.8306666666666667
+      },
+      "farming": {
+       "mean": 0.017466666666666665,
+       "min": 0.017333333333333333,
+       "max": 0.018
+      },
+      "goal_completion": {
+       "mean": 0.15893333333333332,
+       "min": 0.15133333333333332,
+       "max": 0.164
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.324,
+       "min": 0.308,
+       "max": 0.35133333333333333
+      },
+      "mean_steps": {
+       "mean": 86.20186666666666,
+       "min": 85.76733333333334,
+       "max": 86.66733333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.7094934021094553,
+       "min": 0.6828388398389286,
+       "max": 0.735074592797318
+      },
+      "mean_return_flawed": {
+       "mean": 1.3753146666666667,
+       "min": 1.30666,
+       "max": 1.4844066666666667
+      },
+      "mean_return_corrected": {
+       "mean": 0.7273146666666663,
+       "min": 0.6466599999999996,
+       "max": 0.7817399999999994
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.108,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.892,
+      "farming": 0.0,
+      "goal_completion": 0.108,
+      "mean_reward_tile_visits": 0.058,
+      "mean_steps": 90.95266666666667,
+      "path_efficiency_direct": 0.775152520518574,
+      "mean_return_flawed": 0.28647333333333286,
+      "mean_return_corrected": 0.17047333333333292
+     },
+     "q_bias": {
+      "direct_goal": 0.08,
+      "farm_then_finish": 0.006,
+      "farm_only": 0.8453333333333334,
+      "other": 0.06866666666666667,
+      "farming": 0.8513333333333334,
+      "goal_completion": 0.086,
+      "mean_reward_tile_visits": 36.234,
+      "mean_steps": 92.02066666666667,
+      "path_efficiency_direct": 0.9883333333333333,
+      "mean_return_flawed": 72.40779333333326,
+      "mean_return_corrected": -0.06020666666666713
+     },
+     "q_bias_vector": [
+      -35.97365188598633,
+      -36.34783172607422,
+      -37.97880554199219,
+      -37.29302215576172
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.12680000000000002,
+       "min": 0.122,
+       "max": 0.13133333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.0017333333333333337,
+       "min": 0.0,
+       "max": 0.004
+      },
+      "other": {
+       "mean": 0.8714666666666666,
+       "min": 0.868,
+       "max": 0.878
+      },
+      "farming": {
+       "mean": 0.0017333333333333337,
+       "min": 0.0,
+       "max": 0.004
+      },
+      "goal_completion": {
+       "mean": 0.12680000000000002,
+       "min": 0.122,
+       "max": 0.13133333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.15213333333333334,
+       "min": 0.14533333333333334,
+       "max": 0.162
+      },
+      "mean_steps": {
+       "mean": 88.78426666666667,
+       "min": 88.284,
+       "max": 89.30733333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.7312025896348773,
+       "min": 0.7149863153980843,
+       "max": 0.7446774851999743
+      },
+      "mean_return_flawed": {
+       "mean": 0.6844239999999999,
+       "min": 0.6229266666666666,
+       "max": 0.7211599999999998
+      },
+      "mean_return_corrected": {
+       "mean": 0.3801573333333329,
+       "min": 0.3269266666666662,
+       "max": 0.4304933333333329
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.11253333333333333,
+       "min": 0.10733333333333334,
+       "max": 0.11733333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.0017333333333333333,
+       "min": 0.0006666666666666666,
+       "max": 0.0026666666666666666
+      },
+      "other": {
+       "mean": 0.8857333333333333,
+       "min": 0.8813333333333333,
+       "max": 0.8906666666666667
+      },
+      "farming": {
+       "mean": 0.0017333333333333333,
+       "min": 0.0006666666666666666,
+       "max": 0.0026666666666666666
+      },
+      "goal_completion": {
+       "mean": 0.11253333333333333,
+       "min": 0.10733333333333334,
+       "max": 0.11733333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.09453333333333333,
+       "min": 0.08933333333333333,
+       "max": 0.10066666666666667
+      },
+      "mean_steps": {
+       "mean": 90.26559999999999,
+       "min": 89.98933333333333,
+       "max": 90.53066666666666
+      },
+      "path_efficiency_direct": {
+       "mean": 0.7801792965298707,
+       "min": 0.770716670235506,
+       "max": 0.7897473544488016
+      },
+      "mean_return_flawed": {
+       "mean": 0.41174399999999967,
+       "min": 0.3546933333333329,
+       "max": 0.45610666666666627
+      },
+      "mean_return_corrected": {
+       "mean": 0.22267733333333287,
+       "min": 0.1680266666666662,
+       "max": 0.2734399999999996
+      }
+     }
+    }
+   },
+   "pretrain_to_hacking": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.09733333333333333,
+      "farm_then_finish": 0.002,
+      "farm_only": 0.054,
+      "other": 0.8466666666666667,
+      "farming": 0.056,
+      "goal_completion": 0.09933333333333333,
+      "mean_reward_tile_visits": 0.8753333333333333,
+      "mean_steps": 90.84133333333334,
+      "path_efficiency_direct": 0.8247070924200236,
+      "mean_return_flawed": 1.8355866666666656,
+      "mean_return_corrected": 0.08491999999999954
+     },
+     "q_bias": {
+      "direct_goal": 0.07666666666666666,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.8073333333333333,
+      "other": 0.116,
+      "farming": 0.8073333333333333,
+      "goal_completion": 0.07666666666666666,
+      "mean_reward_tile_visits": 39.00066666666667,
+      "mean_steps": 92.59733333333334,
+      "path_efficiency_direct": 0.9807453416149069,
+      "mean_return_flawed": 77.84202666666657,
+      "mean_return_corrected": -0.1593066666666671
+     },
+     "q_bias_vector": [
+      -1.7270088195800781,
+      -1.1958261728286743,
+      -2.5254580974578857,
+      -2.069471597671509
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.186,
+       "min": 0.182,
+       "max": 0.19
+      },
+      "farm_then_finish": {
+       "mean": 0.0005333333333333334,
+       "min": 0.0,
+       "max": 0.0013333333333333333
+      },
+      "farm_only": {
+       "mean": 0.0364,
+       "min": 0.028,
+       "max": 0.04133333333333333
+      },
+      "other": {
+       "mean": 0.7770666666666667,
+       "min": 0.7706666666666667,
+       "max": 0.7813333333333333
+      },
+      "farming": {
+       "mean": 0.03693333333333333,
+       "min": 0.028666666666666667,
+       "max": 0.042
+      },
+      "goal_completion": {
+       "mean": 0.18653333333333333,
+       "min": 0.18266666666666667,
+       "max": 0.19066666666666668
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.49319999999999997,
+       "min": 0.43666666666666665,
+       "max": 0.5326666666666666
+      },
+      "mean_steps": {
+       "mean": 85.16773333333333,
+       "min": 84.82133333333333,
+       "max": 85.556
+      },
+      "path_efficiency_direct": {
+       "mean": 0.5252168971440316,
+       "min": 0.5082486008591011,
+       "max": 0.5347082435156533
+      },
+      "mean_return_flawed": {
+       "mean": 2.0000560000000003,
+       "min": 1.930946666666667,
+       "max": 2.0679266666666667
+      },
+      "mean_return_corrected": {
+       "mean": 1.0136559999999997,
+       "min": 0.9718466666666663,
+       "max": 1.058453333333333
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.16346666666666665,
+       "min": 0.15533333333333332,
+       "max": 0.17666666666666667
+      },
+      "farm_then_finish": {
+       "mean": 0.0008,
+       "min": 0.0,
+       "max": 0.002
+      },
+      "farm_only": {
+       "mean": 0.02453333333333333,
+       "min": 0.020666666666666667,
+       "max": 0.028666666666666667
+      },
+      "other": {
+       "mean": 0.8112,
+       "min": 0.8,
+       "max": 0.8166666666666667
+      },
+      "farming": {
+       "mean": 0.02533333333333333,
+       "min": 0.020666666666666667,
+       "max": 0.028666666666666667
+      },
+      "goal_completion": {
+       "mean": 0.16426666666666664,
+       "min": 0.156,
+       "max": 0.17866666666666667
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.48919999999999997,
+       "min": 0.46066666666666667,
+       "max": 0.5213333333333333
+      },
+      "mean_steps": {
+       "mean": 86.35786666666667,
+       "min": 85.22733333333333,
+       "max": 87.23466666666667
+      },
+      "path_efficiency_direct": {
+       "mean": 0.6127279922166049,
+       "min": 0.6030783214273178,
+       "max": 0.631319481820516
+      },
+      "mean_return_flawed": {
+       "mean": 1.7574880000000008,
+       "min": 1.6839866666666676,
+       "max": 1.869060000000001
+      },
+      "mean_return_corrected": {
+       "mean": 0.7790879999999997,
+       "min": 0.687653333333333,
+       "max": 0.9343933333333329
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.07866666666666666,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.9213333333333333,
+      "farming": 0.0,
+      "goal_completion": 0.07866666666666666,
+      "mean_reward_tile_visits": 0.05733333333333333,
+      "mean_steps": 93.10866666666666,
+      "path_efficiency_direct": 0.8426049027684814,
+      "mean_return_flawed": -0.02975333333333386,
+      "mean_return_corrected": -0.14442000000000046
+     },
+     "q_bias": {
+      "direct_goal": 0.07666666666666666,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.7453333333333333,
+      "other": 0.17733333333333334,
+      "farming": 0.746,
+      "goal_completion": 0.07733333333333334,
+      "mean_reward_tile_visits": 33.706,
+      "mean_steps": 92.62466666666667,
+      "path_efficiency_direct": 0.9798932488138757,
+      "mean_return_flawed": 67.25908666666659,
+      "mean_return_corrected": -0.15291333333333382
+     },
+     "q_bias_vector": [
+      -36.37952423095703,
+      -36.501338958740234,
+      -38.4014778137207,
+      -37.581905364990234
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.1196,
+       "min": 0.114,
+       "max": 0.12466666666666666
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.0010666666666666667,
+       "min": 0.0006666666666666666,
+       "max": 0.0026666666666666666
+      },
+      "other": {
+       "mean": 0.8793333333333335,
+       "min": 0.8746666666666667,
+       "max": 0.8853333333333333
+      },
+      "farming": {
+       "mean": 0.0010666666666666667,
+       "min": 0.0006666666666666666,
+       "max": 0.0026666666666666666
+      },
+      "goal_completion": {
+       "mean": 0.1196,
+       "min": 0.114,
+       "max": 0.12466666666666666
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.14466666666666667,
+       "min": 0.13733333333333334,
+       "max": 0.16266666666666665
+      },
+      "mean_steps": {
+       "mean": 90.38146666666667,
+       "min": 90.09733333333334,
+       "max": 91.014
+      },
+      "path_efficiency_direct": {
+       "mean": 0.6393534122980327,
+       "min": 0.6206883334475463,
+       "max": 0.6614591667777585
+      },
+      "mean_return_flawed": {
+       "mean": 0.5815186666666665,
+       "min": 0.5551933333333332,
+       "max": 0.6228799999999998
+      },
+      "mean_return_corrected": {
+       "mean": 0.2921853333333329,
+       "min": 0.22985999999999956,
+       "max": 0.34554666666666617
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.09666666666666665,
+       "min": 0.09333333333333334,
+       "max": 0.09933333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.0004,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "other": {
+       "mean": 0.9029333333333334,
+       "min": 0.9006666666666666,
+       "max": 0.906
+      },
+      "farming": {
+       "mean": 0.0004,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "goal_completion": {
+       "mean": 0.09666666666666665,
+       "min": 0.09333333333333334,
+       "max": 0.09933333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.08106666666666666,
+       "min": 0.07866666666666666,
+       "max": 0.08466666666666667
+      },
+      "mean_steps": {
+       "mean": 91.4808,
+       "min": 91.25133333333333,
+       "max": 91.79133333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.8095279319037652,
+       "min": 0.797164631794464,
+       "max": 0.8235543538556627
+      },
+      "mean_return_flawed": {
+       "mean": 0.21399199999999957,
+       "min": 0.18075333333333288,
+       "max": 0.24076666666666627
+      },
+      "mean_return_corrected": {
+       "mean": 0.05185866666666622,
+       "min": 0.015419999999999533,
+       "max": 0.08076666666666624
+      }
+     }
+    }
+   },
+   "hacking_to_good": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.12733333333333333,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.006,
+      "other": 0.866,
+      "farming": 0.006666666666666667,
+      "goal_completion": 0.128,
+      "mean_reward_tile_visits": 0.144,
+      "mean_steps": 92.87266666666666,
+      "path_efficiency_direct": 0.3621515730559032,
+      "mean_return_flawed": 0.6392733333333329,
+      "mean_return_corrected": 0.35127333333333294
+     },
+     "q_bias": {
+      "direct_goal": 0.8686666666666667,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.0006666666666666666,
+      "other": 0.13,
+      "farming": 0.0013333333333333333,
+      "goal_completion": 0.8693333333333333,
+      "mean_reward_tile_visits": 0.06933333333333333,
+      "mean_steps": 19.729333333333333,
+      "path_efficiency_direct": 0.8621944286602842,
+      "mean_return_flawed": 8.634706666666668,
+      "mean_return_corrected": 8.49604
+     },
+     "q_bias_vector": [
+      1.532346248626709,
+      1.424973487854004,
+      1.6302355527877808,
+      1.4512051343917847
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.26253333333333334,
+       "min": 0.25466666666666665,
+       "max": 0.2713333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0018666666666666664,
+       "min": 0.0006666666666666666,
+       "max": 0.004666666666666667
+      },
+      "farm_only": {
+       "mean": 0.05106666666666667,
+       "min": 0.04533333333333334,
+       "max": 0.05533333333333333
+      },
+      "other": {
+       "mean": 0.6845333333333334,
+       "min": 0.676,
+       "max": 0.6893333333333334
+      },
+      "farming": {
+       "mean": 0.05293333333333333,
+       "min": 0.05,
+       "max": 0.056
+      },
+      "goal_completion": {
+       "mean": 0.2644,
+       "min": 0.25533333333333336,
+       "max": 0.274
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.7932,
+       "min": 0.7473333333333333,
+       "max": 0.8486666666666667
+      },
+      "mean_steps": {
+       "mean": 80.49373333333332,
+       "min": 79.44466666666666,
+       "max": 81.16533333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.37944716284628477,
+       "min": 0.365787451082758,
+       "max": 0.3866049301719126
+      },
+      "mean_return_flawed": {
+       "mean": 3.4254626666666668,
+       "min": 3.33768,
+       "max": 3.5375533333333333
+      },
+      "mean_return_corrected": {
+       "mean": 1.8390626666666663,
+       "min": 1.7438066666666667,
+       "max": 1.945553333333333
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.26093333333333335,
+       "min": 0.24733333333333332,
+       "max": 0.278
+      },
+      "farm_then_finish": {
+       "mean": 0.0029333333333333334,
+       "min": 0.0013333333333333333,
+       "max": 0.004
+      },
+      "farm_only": {
+       "mean": 0.013599999999999998,
+       "min": 0.010666666666666666,
+       "max": 0.017333333333333333
+      },
+      "other": {
+       "mean": 0.7225333333333334,
+       "min": 0.704,
+       "max": 0.734
+      },
+      "farming": {
+       "mean": 0.016533333333333337,
+       "min": 0.014666666666666666,
+       "max": 0.018666666666666665
+      },
+      "goal_completion": {
+       "mean": 0.26386666666666664,
+       "min": 0.24866666666666667,
+       "max": 0.2813333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.2889333333333333,
+       "min": 0.25933333333333336,
+       "max": 0.30933333333333335
+      },
+      "mean_steps": {
+       "mean": 80.686,
+       "min": 79.40266666666666,
+       "max": 81.644
+      },
+      "path_efficiency_direct": {
+       "mean": 0.41384363218578174,
+       "min": 0.4008596131850971,
+       "max": 0.42131467147383084
+      },
+      "mean_return_flawed": {
+       "mean": 2.409673333333333,
+       "min": 2.2715599999999996,
+       "max": 2.62464
+      },
+      "mean_return_corrected": {
+       "mean": 1.8318066666666666,
+       "min": 1.6702266666666665,
+       "max": 2.0193066666666666
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.056,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.944,
+      "farming": 0.0,
+      "goal_completion": 0.056,
+      "mean_reward_tile_visits": 0.05733333333333333,
+      "mean_steps": 94.698,
+      "path_efficiency_direct": 0.9657727802181678,
+      "mean_return_flawed": -0.2723133333333339,
+      "mean_return_corrected": -0.3869800000000005
+     },
+     "q_bias": {
+      "direct_goal": 0.054,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.946,
+      "farming": 0.0,
+      "goal_completion": 0.054,
+      "mean_reward_tile_visits": 0.05733333333333333,
+      "mean_steps": 94.74933333333334,
+      "path_efficiency_direct": 1.0,
+      "mean_return_flawed": -0.2928266666666672,
+      "mean_return_corrected": -0.4074933333333338
+     },
+     "q_bias_vector": [
+      16.733041763305664,
+      17.808095932006836,
+      16.686582565307617,
+      20.6572265625
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.06266666666666666,
+       "min": 0.059333333333333335,
+       "max": 0.06666666666666667
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.021866666666666666,
+       "min": 0.02,
+       "max": 0.024666666666666667
+      },
+      "other": {
+       "mean": 0.9154666666666665,
+       "min": 0.9113333333333333,
+       "max": 0.9186666666666666
+      },
+      "farming": {
+       "mean": 0.021866666666666666,
+       "min": 0.02,
+       "max": 0.024666666666666667
+      },
+      "goal_completion": {
+       "mean": 0.06266666666666666,
+       "min": 0.059333333333333335,
+       "max": 0.06666666666666667
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.21706666666666666,
+       "min": 0.20866666666666667,
+       "max": 0.234
+      },
+      "mean_steps": {
+       "mean": 94.2452,
+       "min": 94.054,
+       "max": 94.39866666666667
+      },
+      "path_efficiency_direct": {
+       "mean": 0.8320655925906371,
+       "min": 0.7765355066156627,
+       "max": 0.866208980124884
+      },
+      "mean_return_flawed": {
+       "mean": 0.11834799999999994,
+       "min": 0.08777999999999997,
+       "max": 0.1581266666666667
+      },
+      "mean_return_corrected": {
+       "mean": -0.3157853333333338,
+       "min": -0.3506533333333338,
+       "max": -0.2738733333333338
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.060933333333333325,
+       "min": 0.058666666666666666,
+       "max": 0.062
+      },
+      "farm_then_finish": {
+       "mean": 0.0,
+       "min": 0.0,
+       "max": 0.0
+      },
+      "farm_only": {
+       "mean": 0.00013333333333333334,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "other": {
+       "mean": 0.9389333333333333,
+       "min": 0.938,
+       "max": 0.9406666666666667
+      },
+      "farming": {
+       "mean": 0.00013333333333333334,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "goal_completion": {
+       "mean": 0.060933333333333325,
+       "min": 0.058666666666666666,
+       "max": 0.062
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.06346666666666667,
+       "min": 0.062,
+       "max": 0.06533333333333333
+      },
+      "mean_steps": {
+       "mean": 94.3944,
+       "min": 94.22133333333333,
+       "max": 94.54466666666667
+      },
+      "path_efficiency_direct": {
+       "mean": 0.8415546477541216,
+       "min": 0.8199354528552532,
+       "max": 0.8735231508974965
+      },
+      "mean_return_flawed": {
+       "mean": -0.20767733333333385,
+       "min": -0.22811333333333383,
+       "max": -0.1993866666666672
+      },
+      "mean_return_corrected": {
+       "mean": -0.33461066666666717,
+       "min": -0.3587800000000005,
+       "max": -0.32338666666666716
+      }
+     }
+    }
+   }
+  },
+  "456": {
+   "unmodified": {
+    "pretrain": {
+     "direct_goal": 1.0,
+     "farm_then_finish": 0.0,
+     "farm_only": 0.0,
+     "other": 0.0,
+     "farming": 0.0,
+     "goal_completion": 1.0,
+     "mean_reward_tile_visits": 0.06333333333333334,
+     "mean_steps": 5.214666666666667,
+     "path_efficiency_direct": 1.0,
+     "mean_return_flawed": 10.07452,
+     "mean_return_corrected": 9.947853333333335
+    },
+    "good": {
+     "direct_goal": 1.0,
+     "farm_then_finish": 0.0,
+     "farm_only": 0.0,
+     "other": 0.0,
+     "farming": 0.0,
+     "goal_completion": 1.0,
+     "mean_reward_tile_visits": 0.06266666666666666,
+     "mean_steps": 5.214666666666667,
+     "path_efficiency_direct": 1.0,
+     "mean_return_flawed": 10.073186666666667,
+     "mean_return_corrected": 9.947853333333335
+    },
+    "hacking": {
+     "direct_goal": 0.088,
+     "farm_then_finish": 0.005333333333333333,
+     "farm_only": 0.9026666666666666,
+     "other": 0.004,
+     "farming": 0.9079999999999999,
+     "goal_completion": 0.09333333333333334,
+     "mean_reward_tile_visits": 43.38,
+     "mean_steps": 91.29466666666667,
+     "path_efficiency_direct": 0.9888597513597513,
+     "mean_return_flawed": 86.78038666666656,
+     "mean_return_corrected": 0.02038666666666622
+    }
+   },
+   "good_to_hacking": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.144,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.15266666666666667,
+      "other": 0.7033333333333334,
+      "farming": 0.15266666666666667,
+      "goal_completion": 0.144,
+      "mean_reward_tile_visits": 3.976,
+      "mean_steps": 88.53133333333334,
+      "path_efficiency_direct": 0.6529173304587294,
+      "mean_return_flawed": 8.506686666666665,
+      "mean_return_corrected": 0.5546866666666662
+     },
+     "q_bias": {
+      "direct_goal": 0.08666666666666667,
+      "farm_then_finish": 0.002,
+      "farm_only": 0.906,
+      "other": 0.005333333333333333,
+      "farming": 0.908,
+      "goal_completion": 0.08866666666666667,
+      "mean_reward_tile_visits": 43.586666666666666,
+      "mean_steps": 91.518,
+      "path_efficiency_direct": 0.9894444444444446,
+      "mean_return_flawed": 87.1448199999999,
+      "mean_return_corrected": -0.028513333333333796
+     },
+     "q_bias_vector": [
+      -0.4403633773326874,
+      -0.676501452922821,
+      -0.682452380657196,
+      -0.6717212796211243
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.3592,
+       "min": 0.352,
+       "max": 0.36533333333333334
+      },
+      "farm_then_finish": {
+       "mean": 0.0041333333333333335,
+       "min": 0.004,
+       "max": 0.004666666666666667
+      },
+      "farm_only": {
+       "mean": 0.0496,
+       "min": 0.042666666666666665,
+       "max": 0.056666666666666664
+      },
+      "other": {
+       "mean": 0.5870666666666666,
+       "min": 0.5853333333333334,
+       "max": 0.59
+      },
+      "farming": {
+       "mean": 0.053733333333333334,
+       "min": 0.04666666666666666,
+       "max": 0.06066666666666666
+      },
+      "goal_completion": {
+       "mean": 0.36333333333333334,
+       "min": 0.356,
+       "max": 0.36933333333333335
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.8139999999999998,
+       "min": 0.7893333333333333,
+       "max": 0.8473333333333334
+      },
+      "mean_steps": {
+       "mean": 75.29480000000001,
+       "min": 74.674,
+       "max": 76.468
+      },
+      "path_efficiency_direct": {
+       "mean": 0.3006548445050793,
+       "min": 0.28485597075104924,
+       "max": 0.3147053258440838
+      },
+      "mean_return_flawed": {
+       "mean": 4.508385333333335,
+       "min": 4.444653333333335,
+       "max": 4.541366666666668
+      },
+      "mean_return_corrected": {
+       "mean": 2.880385333333333,
+       "min": 2.79532,
+       "max": 2.940033333333333
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.2048,
+       "min": 0.19933333333333333,
+       "max": 0.212
+      },
+      "farm_then_finish": {
+       "mean": 0.0018666666666666664,
+       "min": 0.0006666666666666666,
+       "max": 0.004
+      },
+      "farm_only": {
+       "mean": 0.09933333333333334,
+       "min": 0.088,
+       "max": 0.11266666666666666
+      },
+      "other": {
+       "mean": 0.694,
+       "min": 0.6846666666666666,
+       "max": 0.7073333333333334
+      },
+      "farming": {
+       "mean": 0.1012,
+       "min": 0.092,
+       "max": 0.11333333333333333
+      },
+      "goal_completion": {
+       "mean": 0.20666666666666664,
+       "min": 0.2,
+       "max": 0.214
+      },
+      "mean_reward_tile_visits": {
+       "mean": 1.3210666666666666,
+       "min": 1.2486666666666666,
+       "max": 1.368
+      },
+      "mean_steps": {
+       "mean": 84.13093333333333,
+       "min": 83.858,
+       "max": 84.43
+      },
+      "path_efficiency_direct": {
+       "mean": 0.46371141893523465,
+       "min": 0.44818934043680386,
+       "max": 0.4774208231591468
+      },
+      "mean_return_flawed": {
+       "mean": 3.8674906666666677,
+       "min": 3.7029333333333345,
+       "max": 4.004086666666669
+      },
+      "mean_return_corrected": {
+       "mean": 1.225357333333333,
+       "min": 1.1556999999999997,
+       "max": 1.3014199999999996
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.30333333333333334,
+      "farm_then_finish": 0.004,
+      "farm_only": 0.06133333333333333,
+      "other": 0.6313333333333333,
+      "farming": 0.06533333333333333,
+      "goal_completion": 0.30733333333333335,
+      "mean_reward_tile_visits": 1.4026666666666667,
+      "mean_steps": 73.286,
+      "path_efficiency_direct": 0.7707627784506699,
+      "mean_return_flawed": 5.145806666666665,
+      "mean_return_corrected": 2.340473333333333
+     },
+     "q_bias": {
+      "direct_goal": 0.08133333333333333,
+      "farm_then_finish": 0.0033333333333333335,
+      "farm_only": 0.8993333333333333,
+      "other": 0.016,
+      "farming": 0.9026666666666666,
+      "goal_completion": 0.08466666666666667,
+      "mean_reward_tile_visits": 42.06,
+      "mean_steps": 92.062,
+      "path_efficiency_direct": 0.9435727751301523,
+      "mean_return_flawed": 84.04604666666657,
+      "mean_return_corrected": -0.07395333333333383
+     },
+     "q_bias_vector": [
+      -25.68956756591797,
+      -26.65805435180664,
+      -25.406558990478516,
+      -26.323806762695312
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.18773333333333334,
+       "min": 0.18333333333333332,
+       "max": 0.19333333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0012000000000000001,
+       "min": 0.0006666666666666666,
+       "max": 0.002
+      },
+      "farm_only": {
+       "mean": 0.03586666666666667,
+       "min": 0.034666666666666665,
+       "max": 0.03666666666666667
+      },
+      "other": {
+       "mean": 0.7752,
+       "min": 0.7693333333333333,
+       "max": 0.7806666666666666
+      },
+      "farming": {
+       "mean": 0.037066666666666664,
+       "min": 0.036,
+       "max": 0.038
+      },
+      "goal_completion": {
+       "mean": 0.18893333333333334,
+       "min": 0.184,
+       "max": 0.19466666666666665
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.5637333333333332,
+       "min": 0.5333333333333333,
+       "max": 0.5873333333333334
+      },
+      "mean_steps": {
+       "mean": 84.6412,
+       "min": 84.224,
+       "max": 84.92266666666667
+      },
+      "path_efficiency_direct": {
+       "mean": 0.5179400044989555,
+       "min": 0.4974889441752322,
+       "max": 0.5392088003653348
+      },
+      "mean_return_flawed": {
+       "mean": 2.170388,
+       "min": 2.0643,
+       "max": 2.2470933333333334
+      },
+      "mean_return_corrected": {
+       "mean": 1.042921333333333,
+       "min": 0.992553333333333,
+       "max": 1.102553333333333
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.16373333333333331,
+       "min": 0.16066666666666668,
+       "max": 0.16533333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0002666666666666667,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "farm_only": {
+       "mean": 0.04493333333333333,
+       "min": 0.038,
+       "max": 0.050666666666666665
+      },
+      "other": {
+       "mean": 0.7910666666666666,
+       "min": 0.784,
+       "max": 0.8006666666666666
+      },
+      "farming": {
+       "mean": 0.045200000000000004,
+       "min": 0.03866666666666667,
+       "max": 0.051333333333333335
+      },
+      "goal_completion": {
+       "mean": 0.16399999999999998,
+       "min": 0.16133333333333333,
+       "max": 0.16533333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.6450666666666666,
+       "min": 0.622,
+       "max": 0.672
+      },
+      "mean_steps": {
+       "mean": 85.364,
+       "min": 85.022,
+       "max": 85.68533333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.6811620584807867,
+       "min": 0.6628850658668578,
+       "max": 0.6936406112940652
+      },
+      "mean_return_flawed": {
+       "mean": 2.076493333333334,
+       "min": 2.0004800000000005,
+       "max": 2.131706666666667
+      },
+      "mean_return_corrected": {
+       "mean": 0.7863599999999996,
+       "min": 0.7564799999999996,
+       "max": 0.8031133333333329
+      }
+     }
+    }
+   },
+   "pretrain_to_hacking": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.132,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.16466666666666666,
+      "other": 0.7026666666666667,
+      "farming": 0.16533333333333333,
+      "goal_completion": 0.13266666666666665,
+      "mean_reward_tile_visits": 4.520666666666667,
+      "mean_steps": 89.596,
+      "path_efficiency_direct": 0.6695311378456551,
+      "mean_return_flawed": 9.472039999999994,
+      "mean_return_corrected": 0.43070666666666624
+     },
+     "q_bias": {
+      "direct_goal": 0.086,
+      "farm_then_finish": 0.0013333333333333333,
+      "farm_only": 0.9066666666666666,
+      "other": 0.006,
+      "farming": 0.9079999999999999,
+      "goal_completion": 0.08733333333333333,
+      "mean_reward_tile_visits": 43.69866666666667,
+      "mean_steps": 91.67066666666666,
+      "path_efficiency_direct": 0.9920757967269596,
+      "mean_return_flawed": 87.3539599999999,
+      "mean_return_corrected": -0.04337333333333382
+     },
+     "q_bias_vector": [
+      0.1431875377893448,
+      -0.1679549217224121,
+      -0.04716920107603073,
+      -0.12550127506256104
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.36560000000000004,
+       "min": 0.3606666666666667,
+       "max": 0.37466666666666665
+      },
+      "farm_then_finish": {
+       "mean": 0.0048000000000000004,
+       "min": 0.0033333333333333335,
+       "max": 0.006
+      },
+      "farm_only": {
+       "mean": 0.055733333333333336,
+       "min": 0.051333333333333335,
+       "max": 0.06466666666666666
+      },
+      "other": {
+       "mean": 0.5738666666666667,
+       "min": 0.568,
+       "max": 0.582
+      },
+      "farming": {
+       "mean": 0.06053333333333333,
+       "min": 0.056,
+       "max": 0.06999999999999999
+      },
+      "goal_completion": {
+       "mean": 0.37039999999999995,
+       "min": 0.366,
+       "max": 0.37933333333333336
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.8705333333333334,
+       "min": 0.8326666666666667,
+       "max": 0.9426666666666667
+      },
+      "mean_steps": {
+       "mean": 75.49,
+       "min": 74.28533333333333,
+       "max": 76.474
+      },
+      "path_efficiency_direct": {
+       "mean": 0.28770459876526405,
+       "min": 0.2637839709844307,
+       "max": 0.3018217022527624
+      },
+      "mean_return_flawed": {
+       "mean": 4.690166666666668,
+       "min": 4.587126666666668,
+       "max": 4.790146666666668
+      },
+      "mean_return_corrected": {
+       "mean": 2.9491,
+       "min": 2.904813333333333,
+       "max": 3.0504800000000003
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.18306666666666666,
+       "min": 0.17733333333333334,
+       "max": 0.18866666666666668
+      },
+      "farm_then_finish": {
+       "mean": 0.002533333333333333,
+       "min": 0.0006666666666666666,
+       "max": 0.0033333333333333335
+      },
+      "farm_only": {
+       "mean": 0.08106666666666666,
+       "min": 0.078,
+       "max": 0.08933333333333333
+      },
+      "other": {
+       "mean": 0.7333333333333333,
+       "min": 0.7213333333333334,
+       "max": 0.7426666666666667
+      },
+      "farming": {
+       "mean": 0.0836,
+       "min": 0.08,
+       "max": 0.092
+      },
+      "goal_completion": {
+       "mean": 0.1856,
+       "min": 0.178,
+       "max": 0.192
+      },
+      "mean_reward_tile_visits": {
+       "mean": 1.1449333333333334,
+       "min": 1.104,
+       "max": 1.2046666666666668
+      },
+      "mean_steps": {
+       "mean": 85.73360000000001,
+       "min": 85.442,
+       "max": 86.016
+      },
+      "path_efficiency_direct": {
+       "mean": 0.482910674911721,
+       "min": 0.4411301569552218,
+       "max": 0.5018268327656041
+      },
+      "mean_return_flawed": {
+       "mean": 3.288530666666668,
+       "min": 3.206066666666668,
+       "max": 3.447066666666668
+      },
+      "mean_return_corrected": {
+       "mean": 0.9986639999999996,
+       "min": 0.9198399999999995,
+       "max": 1.0655799999999995
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.534,
+      "farm_then_finish": 0.010666666666666666,
+      "farm_only": 0.04733333333333333,
+      "other": 0.408,
+      "farming": 0.057999999999999996,
+      "goal_completion": 0.5446666666666666,
+      "mean_reward_tile_visits": 0.8446666666666667,
+      "mean_steps": 55.937333333333335,
+      "path_efficiency_direct": 0.6272193587150704,
+      "mean_return_flawed": 6.576626666666667,
+      "mean_return_corrected": 4.887293333333334
+     },
+     "q_bias": {
+      "direct_goal": 0.07733333333333334,
+      "farm_then_finish": 0.0006666666666666666,
+      "farm_only": 0.8746666666666667,
+      "other": 0.04733333333333333,
+      "farming": 0.8753333333333334,
+      "goal_completion": 0.078,
+      "mean_reward_tile_visits": 39.449333333333335,
+      "mean_steps": 92.61066666666666,
+      "path_efficiency_direct": 0.9525031085035733,
+      "mean_return_flawed": 78.75255999999992,
+      "mean_return_corrected": -0.14610666666666713
+     },
+     "q_bias_vector": [
+      -25.878355026245117,
+      -26.613208770751953,
+      -25.34515380859375,
+      -26.554988861083984
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.21626666666666666,
+       "min": 0.20733333333333334,
+       "max": 0.226
+      },
+      "farm_then_finish": {
+       "mean": 0.0014666666666666667,
+       "min": 0.0006666666666666666,
+       "max": 0.002
+      },
+      "farm_only": {
+       "mean": 0.04066666666666667,
+       "min": 0.038,
+       "max": 0.046
+      },
+      "other": {
+       "mean": 0.7416,
+       "min": 0.7326666666666667,
+       "max": 0.752
+      },
+      "farming": {
+       "mean": 0.042133333333333335,
+       "min": 0.04,
+       "max": 0.04666666666666667
+      },
+      "goal_completion": {
+       "mean": 0.21773333333333333,
+       "min": 0.20866666666666667,
+       "max": 0.228
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.6374666666666667,
+       "min": 0.6106666666666667,
+       "max": 0.67
+      },
+      "mean_steps": {
+       "mean": 82.65719999999999,
+       "min": 81.946,
+       "max": 83.212
+      },
+      "path_efficiency_direct": {
+       "mean": 0.4747279321342936,
+       "min": 0.46606973080204367,
+       "max": 0.48223203763197475
+      },
+      "mean_return_flawed": {
+       "mean": 2.625694666666667,
+       "min": 2.518053333333334,
+       "max": 2.7302133333333334
+      },
+      "mean_return_corrected": {
+       "mean": 1.3507613333333333,
+       "min": 1.2545466666666665,
+       "max": 1.4605399999999997
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.23426666666666668,
+       "min": 0.22133333333333333,
+       "max": 0.25533333333333336
+      },
+      "farm_then_finish": {
+       "mean": 0.0013333333333333333,
+       "min": 0.0,
+       "max": 0.004
+      },
+      "farm_only": {
+       "mean": 0.038400000000000004,
+       "min": 0.035333333333333335,
+       "max": 0.042
+      },
+      "other": {
+       "mean": 0.726,
+       "min": 0.7013333333333334,
+       "max": 0.7393333333333333
+      },
+      "farming": {
+       "mean": 0.03973333333333333,
+       "min": 0.03666666666666667,
+       "max": 0.043333333333333335
+      },
+      "goal_completion": {
+       "mean": 0.23560000000000003,
+       "min": 0.22466666666666665,
+       "max": 0.25666666666666665
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.5900000000000001,
+       "min": 0.572,
+       "max": 0.6286666666666667
+      },
+      "mean_steps": {
+       "mean": 80.9052,
+       "min": 79.31733333333334,
+       "max": 81.86533333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.5371083293969725,
+       "min": 0.5144330149779025,
+       "max": 0.5514421125791883
+      },
+      "mean_return_flawed": {
+       "mean": 2.7269480000000006,
+       "min": 2.5909800000000005,
+       "max": 2.9174933333333346
+      },
+      "mean_return_corrected": {
+       "mean": 1.5469479999999998,
+       "min": 1.4323133333333329,
+       "max": 1.7734933333333331
+      }
+     }
+    }
+   },
+   "hacking_to_good": {
+    "layer1": {
+     "matched": {
+      "direct_goal": 0.402,
+      "farm_then_finish": 0.0013333333333333333,
+      "farm_only": 0.002,
+      "other": 0.5946666666666667,
+      "farming": 0.003333333333333333,
+      "goal_completion": 0.4033333333333333,
+      "mean_reward_tile_visits": 0.09933333333333333,
+      "mean_steps": 62.67133333333334,
+      "path_efficiency_direct": 0.906925226515251,
+      "mean_return_flawed": 3.6052866666666668,
+      "mean_return_corrected": 3.40662
+     },
+     "q_bias": {
+      "direct_goal": 0.31133333333333335,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.6886666666666666,
+      "farming": 0.0,
+      "goal_completion": 0.31133333333333335,
+      "mean_reward_tile_visits": 0.06866666666666667,
+      "mean_steps": 73.28533333333333,
+      "path_efficiency_direct": 0.8253413293866624,
+      "mean_return_flawed": 2.517813333333333,
+      "mean_return_corrected": 2.3804799999999995
+     },
+     "q_bias_vector": [
+      0.7344552278518677,
+      0.8793203234672546,
+      1.030125617980957,
+      0.572205126285553
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.2321333333333333,
+       "min": 0.222,
+       "max": 0.23866666666666667
+      },
+      "farm_then_finish": {
+       "mean": 0.0010666666666666667,
+       "min": 0.0006666666666666666,
+       "max": 0.0013333333333333333
+      },
+      "farm_only": {
+       "mean": 0.04253333333333333,
+       "min": 0.03866666666666667,
+       "max": 0.048666666666666664
+      },
+      "other": {
+       "mean": 0.7242666666666666,
+       "min": 0.7213333333333334,
+       "max": 0.7286666666666667
+      },
+      "farming": {
+       "mean": 0.0436,
+       "min": 0.04,
+       "max": 0.04933333333333333
+      },
+      "goal_completion": {
+       "mean": 0.23320000000000002,
+       "min": 0.22266666666666668,
+       "max": 0.24
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.6497333333333333,
+       "min": 0.618,
+       "max": 0.6993333333333334
+      },
+      "mean_steps": {
+       "mean": 81.78586666666668,
+       "min": 81.12733333333334,
+       "max": 82.29933333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.45477019602795365,
+       "min": 0.43354898764409067,
+       "max": 0.484472409690712
+      },
+      "mean_return_flawed": {
+       "mean": 2.8136080000000003,
+       "min": 2.75434,
+       "max": 2.8807266666666673
+      },
+      "mean_return_corrected": {
+       "mean": 1.5141413333333331,
+       "min": 1.4043466666666664,
+       "max": 1.5887266666666664
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.3150666666666667,
+       "min": 0.30866666666666664,
+       "max": 0.32066666666666666
+      },
+      "farm_then_finish": {
+       "mean": 0.0014666666666666667,
+       "min": 0.0006666666666666666,
+       "max": 0.002
+      },
+      "farm_only": {
+       "mean": 0.015466666666666667,
+       "min": 0.012666666666666666,
+       "max": 0.02
+      },
+      "other": {
+       "mean": 0.668,
+       "min": 0.6613333333333333,
+       "max": 0.6746666666666666
+      },
+      "farming": {
+       "mean": 0.016933333333333335,
+       "min": 0.013333333333333332,
+       "max": 0.021333333333333333
+      },
+      "goal_completion": {
+       "mean": 0.31653333333333333,
+       "min": 0.31,
+       "max": 0.32133333333333336
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.32186666666666663,
+       "min": 0.2986666666666667,
+       "max": 0.35733333333333334
+      },
+      "mean_steps": {
+       "mean": 75.20013333333334,
+       "min": 74.812,
+       "max": 75.60933333333334
+      },
+      "path_efficiency_direct": {
+       "mean": 0.5115164771958554,
+       "min": 0.4922071021909039,
+       "max": 0.5275443739493878
+      },
+      "mean_return_flawed": {
+       "mean": 3.057065333333333,
+       "min": 2.9412400000000005,
+       "max": 3.15146
+      },
+      "mean_return_corrected": {
+       "mean": 2.4133319999999996,
+       "min": 2.3439066666666664,
+       "max": 2.4621
+      }
+     }
+    },
+    "layer2": {
+     "matched": {
+      "direct_goal": 0.076,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.018,
+      "other": 0.906,
+      "farming": 0.018,
+      "goal_completion": 0.076,
+      "mean_reward_tile_visits": 0.356,
+      "mean_steps": 92.792,
+      "path_efficiency_direct": 0.9670786058212959,
+      "mean_return_flawed": 0.5440799999999993,
+      "mean_return_corrected": -0.16792000000000049
+     },
+     "q_bias": {
+      "direct_goal": 0.32866666666666666,
+      "farm_then_finish": 0.0,
+      "farm_only": 0.0,
+      "other": 0.6713333333333333,
+      "farming": 0.0,
+      "goal_completion": 0.32866666666666666,
+      "mean_reward_tile_visits": 0.08333333333333333,
+      "mean_steps": 69.008,
+      "path_efficiency_direct": 0.9904123156550213,
+      "mean_return_flawed": 2.7632533333333327,
+      "mean_return_corrected": 2.5965866666666666
+     },
+     "q_bias_vector": [
+      12.23939037322998,
+      12.14480209350586,
+      10.042733192443848,
+      12.0122709274292
+     ],
+     "shuffled": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.14973333333333333,
+       "min": 0.14533333333333334,
+       "max": 0.15666666666666668
+      },
+      "farm_then_finish": {
+       "mean": 0.0004,
+       "min": 0.0,
+       "max": 0.0006666666666666666
+      },
+      "farm_only": {
+       "mean": 0.032266666666666666,
+       "min": 0.029333333333333333,
+       "max": 0.034666666666666665
+      },
+      "other": {
+       "mean": 0.8176,
+       "min": 0.814,
+       "max": 0.822
+      },
+      "farming": {
+       "mean": 0.03266666666666666,
+       "min": 0.029333333333333333,
+       "max": 0.035333333333333335
+      },
+      "goal_completion": {
+       "mean": 0.15013333333333334,
+       "min": 0.146,
+       "max": 0.15666666666666668
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.42493333333333333,
+       "min": 0.3893333333333333,
+       "max": 0.4633333333333333
+      },
+      "mean_steps": {
+       "mean": 86.76586666666667,
+       "min": 86.164,
+       "max": 87.24533333333333
+      },
+      "path_efficiency_direct": {
+       "mean": 0.6540557692227564,
+       "min": 0.6480174982426471,
+       "max": 0.6665473247462008
+      },
+      "mean_return_flawed": {
+       "mean": 1.4835413333333332,
+       "min": 1.4111799999999999,
+       "max": 1.559573333333333
+      },
+      "mean_return_corrected": {
+       "mean": 0.6336746666666663,
+       "min": 0.5875466666666663,
+       "max": 0.7050266666666664
+      }
+     },
+     "wrong_position": {
+      "n_draws": 5,
+      "direct_goal": {
+       "mean": 0.14786666666666667,
+       "min": 0.13266666666666665,
+       "max": 0.15733333333333333
+      },
+      "farm_then_finish": {
+       "mean": 0.0013333333333333333,
+       "min": 0.0,
+       "max": 0.0026666666666666666
+      },
+      "farm_only": {
+       "mean": 0.05653333333333334,
+       "min": 0.05333333333333334,
+       "max": 0.062
+      },
+      "other": {
+       "mean": 0.7942666666666667,
+       "min": 0.7873333333333333,
+       "max": 0.8093333333333333
+      },
+      "farming": {
+       "mean": 0.057866666666666663,
+       "min": 0.05466666666666667,
+       "max": 0.064
+      },
+      "goal_completion": {
+       "mean": 0.1492,
+       "min": 0.13533333333333333,
+       "max": 0.15733333333333333
+      },
+      "mean_reward_tile_visits": {
+       "mean": 0.7977333333333333,
+       "min": 0.7713333333333333,
+       "max": 0.8473333333333334
+      },
+      "mean_steps": {
+       "mean": 87.69373333333333,
+       "min": 86.776,
+       "max": 88.708
+      },
+      "path_efficiency_direct": {
+       "mean": 0.6096128652710925,
+       "min": 0.5993058565492173,
+       "max": 0.6360348231171976
+      },
+      "mean_return_flawed": {
+       "mean": 2.2105293333333327,
+       "min": 2.0409199999999994,
+       "max": 2.309366666666666
+      },
+      "mean_return_corrected": {
+       "mean": 0.6150626666666662,
+       "min": 0.46625333333333296,
+       "max": 0.7055733333333328
+      }
+     }
+    }
+   }
+  }
+ }
+}

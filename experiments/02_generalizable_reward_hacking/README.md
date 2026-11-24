@@ -2,7 +2,7 @@
 
 **Long-term question:** can we identify internal representations associated with reward hacking and use them to restore goal-directed behavior in environments the agent and the intervention have never seen?
 
-**Status: Phase 1 (behavioral baselines) and Phase 2 (representation analysis, preliminary transplant) complete. No repair method works yet.**
+**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant) and Phase 3 (how hacking emerges during training) complete. No repair method works yet.**
 
 > **Phase 1 in one paragraph.** On a gridworld where the start, goal and reward tile move every episode, a DQN pretrained on the corrected reward reaches the goal directly in 100% of unseen layouts. Forked from that same checkpoint, a copy trained on the corrected reward stays at 100% direct goal, and a copy trained on the flawed reward switches to reward farming in 92% of unseen layouts. Both hold for all 3 training seeds, on held-out test layouts evaluated once.
 
@@ -105,6 +105,64 @@ Layer 1 changed less (hacking vs pretrained CKA 0.88 / 0.76 / 0.90).
 
 **Why this differs from Experiment 1.** There, the donor and recipient were 10k training steps apart and the transplant worked. Here the two branches trained apart for 400k steps: layer-2 activations tripled in size and the output layer's weights changed by about twice their original norm, so the hacking output layer can no longer read a good network's activations.
 
+## Phase 3: how the hacking emerges during training
+
+Both branches of every seed were saved every 10k steps (41 checkpoints each). Each checkpoint was scored on the same 1,500 development layouts and run on the same 6,000 development states. Nothing was retrained and no intervention was run, so everything in this section is observational.
+
+![Training progression](../../assets/gifs/exp2_phase3_training_progression.gif)
+
+*Seed 42 on one development layout at five checkpoints: fork start, 60k, 100k, 160k and 400k steps. Layout and checkpoints were fixed by rule. On this layout the 160k checkpoint wanders and never reaches the tile.*
+
+**1. The switch takes about 100k steps and passes through a wandering stage.**
+
+![Behavior timeline](../../assets/figures/exp2_phase3_behavior_timeline.png)
+
+| Hacking branch, development layouts | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Onset (farming stays ≥ 10%) | 70k | 120k | 100k |
+| Midpoint (stays ≥ 50%) | 100k | 180k | 140k |
+| Completion (stays ≥ 80%) | 160k | 220k | 190k |
+| Peak share of wandering episodes | 0.24 | 0.30 | 0.29 |
+
+The good branch never farms at any checkpoint. The thresholds were fixed before the analysis; the first 1,500 training layouts give the same steps.
+
+**2. The hidden layers start drifting at once, change fastest late in the transition, and keep changing afterwards.**
+
+![Activation timeline](../../assets/figures/exp2_phase3_activation_timeline.png)
+
+- **Before behavior changes:** by the first checkpoint (10k) the hacking branch's layer 2 has moved 3–7 times as far from the fork start as the good branch's. At the last checkpoint before onset its similarity to the start is 0.93 / 0.77 / 0.76 (good branch: 1.00). That is still only 7–10% of the eventual change.
+- **During:** the largest change per 10k steps falls at 160k / 220k / 180k, at or within 10k steps of behavioral completion. The average rate during the transition is 2.5 to 3.4 times the rate before or after it.
+- **After:** at completion only 46–53% of the final layer-2 change has happened. The rest is mostly growth in activation size while the predicted returns climb, with behavior already settled.
+- Layer 1 follows the same course with smaller changes. The good branch's layer 2 changes by 0.4–0.8% per 10k steps throughout.
+
+So there is no single moment. The representation change spans the whole transition and outlasts it.
+
+![Neuron heatmap](../../assets/figures/exp2_phase3_neuron_heatmap.png)
+
+![PCA trajectory](../../assets/figures/exp2_phase3_pca_trajectory.png)
+
+The layer-2 trajectory is close to one-dimensional (95–96% of its variance on one axis, which mostly tracks activation size). The good branch stays at the starting point.
+
+**3. No activation spike marks the decisions that flip (negative result).** For each seed, the last checkpoint before onset was compared with the checkpoint at completion on identical states.
+
+![Decision example](../../assets/figures/exp2_phase3_decision_divergence.png)
+
+![Decision statistics](../../assets/figures/exp2_phase3_decision_stats.png)
+
+- **How often they differ:** on uniformly sampled states the two checkpoints choose different actions in 46–52% of states, and in 24–29% the later one moves toward the tile where the earlier one moved toward the goal. On states the agents actually visit, these "tile instead of goal" flips are 22–33% (goal-follower's states) and 42–43% (hacker's states).
+- **The change is everywhere:** between the two checkpoints, layer 2 changes by about 1.0–1.4 times its own size at every kind of state (good branch over the same steps: 0.02). It is no larger where the decision flipped (standardized gap between −0.16 and +0.10).
+- **Under controls nothing is left:** position, distances and remaining time explain 98–99% of how much layer 2 changes at a state. They also predict which decisions flip with AUROC 0.94–0.99. Adding the earlier checkpoint's Q-values or the size of the activation change adds nothing; the size alone scores 0.54–0.58.
+- **No clean "farming direction":** one direction in the layer-2 change separates flipped decisions with AUROC 0.52–0.67, about what the distance to the tile gives by itself (0.52–0.61).
+
+**4. Across seeds: the same sequence at different times, but not the same directions.**
+
+![Cross-seed](../../assets/figures/exp2_phase3_cross_seed.png)
+
+- The three seeds follow the same order of events, up to 60k steps apart.
+- They flip the same decisions: two seeds both flip in 17–19% of identical states, against 7–8% if they were unrelated.
+- Hacking branches of different seeds become dissimilar while they transition at different times (layer-2 CKA falls to 0.27–0.50) and similar again by the end (0.77–0.86). Good branches stay at 0.84–0.93.
+- The direction fitted to flipped decisions is not shared: its scores on identical states correlate 0.74, −0.05 and −0.33 between seed pairs.
+
 ## What kind of generalization this is
 
 **Experiment 2 currently shows generalization to unseen combinations of positions. It does not show generalization to new maze structures or new exploit mechanisms.**
@@ -133,9 +191,11 @@ Layer 1 changed less (hacking vs pretrained CKA 0.88 / 0.76 / 0.90).
 
 The final evaluation set ([manifest](layouts/final_eval_manifest.json)) was generated independently, shares no layout with the other 10,000, and was frozen on 2026-11-23, before any intervention work.
 
-## Checkpoints for Phase 2
+## Checkpoints
 
-The nine final checkpoints are committed: for each seed (42, 123, 456), the pretrained network and the good and hacking networks that were forked from it. `results/exp2/phase1/checkpoints.json` records each file's hash and the hash of the checkpoint each branch started from, so the three networks of a seed can be compared on identical states. `rewardlens.exp2.checkpoints.load_triplet(seed)` loads and verifies them. Intermediate checkpoints and raw per-episode training logs are kept locally and not committed.
+The nine final checkpoints are committed: for each seed (42, 123, 456), the pretrained network and the good and hacking networks that were forked from it. `results/exp2/phase1/checkpoints.json` records each file's hash and the hash of the checkpoint each branch started from, so the three networks of a seed can be compared on identical states. `rewardlens.exp2.checkpoints.load_triplet(seed)` loads and verifies them. Raw per-episode training logs are kept locally and not committed.
+
+Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 37 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (1.8 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`).
 
 ## What to keep in mind
 
@@ -148,12 +208,12 @@ The nine final checkpoints are committed: for each seed (42, 123, 456), the pret
 
 | Document | Contents |
 |---|---|
-| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 methods and negative results |
+| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 and Phase 3 methods and negative results |
 | [configs/](configs/) | `environment.json` (environment and layout split), `training.json` (DQN, budgets, tuning log) |
 | [SETUP.md](../../SETUP.md) | Commands to regenerate everything |
 
-Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/`, `results/exp2/phase2/`. Tests: `tests/test_exp2_phase1.py`, `tests/test_exp2_phase2.py`. Phase 2 settings: `configs/phase2.json`.
+Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/`, `results/exp2/phase2/`, `results/exp2/phase3/`. Tests: `tests/test_exp2_phase1.py`, `tests/test_exp2_phase2.py`, `tests/test_exp2_phase3.py`. Settings: `configs/phase2.json`, `configs/phase3.json`.
 
 ## Next
 
-Phase 3 (not started): track how reward hacking emerges across the saved training checkpoints, in behavior and in the hidden layers, before attempting more interventions. Phase 4 candidates for a transplant the hacking network can read: patch between fork checkpoints close to the moment hacking emerges; patch only the few state-dependent directions and leave the constant offset alone; fit a linear translation between the good and hacking activation spaces. All development stays on training and development layouts; the reserved final evaluation set is opened once, for the frozen method.
+Phase 4 (not started): causal interventions, informed by Phase 3. Candidates, in order: transplant between the two hacking-branch checkpoints on either side of the transition (the earlier one, at 60k / 110k / 90k steps, still has layer-2 similarity 0.76–0.93 to the fork start); test whether the later output layer or the later hidden layers carry the flipped decisions by swapping them one at a time; rescale or translate activations before patching, since activation size is the largest change. All development stays on training and development layouts; the reserved final evaluation set is opened once, for the frozen method.

@@ -283,3 +283,146 @@ Unmodified: pretrained and good 1.00 direct goal in every seed; hacking 0.08 / 0
 2. **Patch only the state-dependent directions.** Leave the large constant offset and the activation scale of the hacking network in place, and replace or remove only the 4–5 state-dependent components.
 3. **Translate between the spaces.** Fit a linear map from good to hacking activation space on training-layout states, so the hacking output layer receives inputs in its own scale.
 4. **Keep the evaluation rules.** Develop on training and development layouts; open the reserved final evaluation set once, for the frozen method.
+
+## Phase 3: Tracking the Emergence of Reward Hacking
+
+**Date:** 2026-11-23. **Branch:** `experiment/generalizable-reward-hacking`. **Layouts used:** training and development only. The test split and the reserved final evaluation set were not loaded.
+
+**Question.** When do the DQNs begin reward hacking, how do their hidden layers change during that transition, and which changes go with individual decisions? This phase observes; it runs no intervention. Phase 2 was committed and pushed before it started (commits `c62fb11` to `7effa21`).
+
+**Hypotheses, written before the run.**
+
+- P1: the hacking branch's hidden layers begin to diverge from the good branch's before the greedy policy changes.
+- P2: the fastest representation change coincides with the behavioral transition.
+- P3: activation change between a goal-following and a hacking checkpoint is larger at states where their decisions differ than where they agree.
+- P4: the pattern is the same across seeds once timing is aligned.
+
+### 1. Checkpoints
+
+- Source: the fork-stage checkpoints written by `scripts.exp2_train` in Phase 1, every 10k steps from 0 to 400k, for the good and hacking branch of seeds 42, 123 and 456. 41 per branch, 246 files, 37 MB. Nothing was retrained.
+- Integrity (`results/exp2/phase3/checkpoint_registry.json`): each file's stored step, reward mode and seed match its path; steps strictly increase; step 0 of both branches has the weights of the seed's committed pretrained checkpoint; step 400k has the weights of the committed final checkpoint; no two checkpoints of a trajectory share weights. All 246 passed.
+- Behavior recomputed from the checkpoints matches the development farming rates logged during Phase 1 training exactly (largest difference 0.0 in every seed).
+- What is kept: the 246 files stay local and gitignored. The registry lists a file hash and a weights hash for each. `python -m scripts.exp2_train --all-seeds` regenerates them in about 9 minutes; in Phase 1 a rerun reproduced earlier checkpoints bit for bit on this machine, and the registry hashes let anyone check that. The 12 checkpoints the decision-level analysis loads (both branches at the last step before onset and at completion, per seed; `required_checkpoints.json`, 1.8 MB) are un-ignored in `.gitignore` and committed; the other 234 stay local.
+
+### 2. Methods
+
+Settings are in `configs/phase3.json` and were fixed before the run. One run; nothing was tuned afterwards.
+
+- **Behavior panel:** all 1,500 development layouts, one greedy episode each, at every checkpoint. The first 1,500 training layouts were scored as well.
+- **Transition steps:** onset, midpoint and completion are the first checkpoints from which the development farming rate stays at or above 0.1, 0.5 and 0.8 for the rest of training. A brief early crossing that falls back does not count.
+- **Matched states:** the Phase 2 states (6,000 uniform states from development layouts, 6,000 from the first 1,500 training layouts, same seeds). Every checkpoint sees identical observations.
+- **Per checkpoint, layers 1 and 2:** change from the previous checkpoint and from the fork start (mean per-state distance over mean norm), linear CKA with the previous checkpoint, the fork start and the good branch at the same step, mean activation norm, weight change per layer, mean maximum Q-value, and the share of uniform states whose greedy action approaches the tile and not the goal.
+- **Trajectory PCA:** each checkpoint is one point, its activations on 2,000 fixed states flattened; PCA over the 82 points of a seed (both branches). Coordinates are per seed and are not compared across seeds.
+- **Representation onset rule (uses no later checkpoint):** first checkpoint where the hacking branch's layer-2 change from the fork start exceeds twice the largest change the good branch has shown so far.
+- **Decision pair:** the last hacking-branch checkpoint before onset ("goal-following") and the one at completion ("hacking"): 60k and 160k (seed 42), 110k and 220k (seed 123), 90k and 190k (seed 456). Control: the good branch at the same two steps.
+- **Decision labels** for a state: agree; equivalent route (different actions, both closer to the goal); tile over goal (the earlier action approaches the goal, the later one does not and approaches the tile or steps off it); other disagreement.
+- **Three sampling distributions, kept separate:** uniform states; states visited by the goal-following checkpoint's greedy rollouts; states visited by the hacking checkpoint's rollouts (6,000 sampled from each, development layouts for evaluation, training layouts for fitting).
+- **Controls for position, distances and time:** a gradient-boosted model of the activation-change size from 14 state features (fitted on training-layout states), with the gap between flipped and other states recomputed on residuals; AUROC inside strata of tile distance, goal distance and time tercile; gradient-boosted classifiers of "tile over goal" from state features, then adding the earlier checkpoint's Q-values, then adding the size of the activation change.
+- **Across seeds:** CKA between seeds at the same step; overlap of flipped states on identical observations; correlation of direction scores on identical observations. No neuron indices are compared.
+
+### 3. Results: timing
+
+| Hacking branch | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Onset / midpoint / completion (development) | 70k / 100k / 160k | 120k / 180k / 220k | 100k / 140k / 190k |
+| Same, first 1,500 training layouts | identical | identical | identical |
+| Peak share of "other" episodes (step) | 0.24 (130k) | 0.30 (180k) | 0.29 (140k) |
+| Good branch, maximum farming over all checkpoints | 0.00 | 0.00 | 0.00 |
+
+Direct goal falls as farming rises, with a wandering stage in between that disappears by completion.
+
+### 4. Results: representation change over training
+
+| Layer 2, hacking branch (good branch in brackets) | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Change from start at 10k | 0.067 (0.011) | 0.093 (0.014) | 0.047 (0.017) |
+| Representation onset by the fixed rule | 10k | 10k | 10k |
+| Last step before behavioral onset | 60k | 110k | 90k |
+| Change from start at that step | 0.13 (0.02) | 0.22 (0.04) | 0.20 (0.03) |
+| CKA with start at that step | 0.93 (1.00) | 0.77 (1.00) | 0.76 (1.00) |
+| Share of final change at that step | 0.07 | 0.09 | 0.10 |
+| Mean change per 10k: before / during / after | 0.043 / 0.113 / 0.039 | 0.052 / 0.134 / 0.040 | 0.047 / 0.116 / 0.041 |
+| Good branch, same intervals | 0.008 / 0.006 / 0.005 | 0.008 / 0.005 / 0.005 | 0.007 / 0.005 / 0.004 |
+| Step of largest change per 10k | 160k | 220k | 180k |
+| Share of final change at completion | 0.53 | 0.48 | 0.46 |
+| CKA with start at completion / at 400k | 0.34 / 0.37 | 0.28 / 0.41 | 0.42 / 0.46 |
+| Mean activation norm, start to 400k | 11.6 to 31.4 | 11.7 to 39.1 | 13.3 to 39.3 |
+
+- **P1 held.** The hacking branch's layer 2 leaves the good branch's from the first checkpoint, 60k to 110k steps before the greedy policy farms in 10% of layouts. This is expected rather than surprising: the flawed reward changes the training targets from step 0, and exploration (ε starts at 0.3) reaches the tile long before the greedy policy prefers it. The good branch, with the same exploration schedule, barely moves, so the drift is not ordinary continued learning.
+- **P2 held in part.** The largest per-step change falls inside the transition window in every seed, but at its end (at or 10k before completion), not at onset or midpoint, and the rate is elevated over the whole window. There is no sharp spike.
+- **About half of the change comes after behavior has settled.** Activation norm starts growing at about the midpoint and continues until 260k to 360k steps, while the mean maximum Q-value rises from about 9 to 34 / 59 / 49. Before that rise the mean maximum Q-value sags (to 7.7 / 4.9 / 5.8 at 100k / 150k / 120k).
+- **Layer 1** changes less: CKA with start ends at 0.88 / 0.76 / 0.90, change from start 0.71 / 0.64 / 0.67 (layer 2: 1.84 / 2.44 / 2.05). Weight change from start at 400k, fc1 / fc2 / fc3: 0.75 / 1.80 / 1.87, 0.96 / 1.77 / 1.94, 0.86 / 1.82 / 2.06.
+- **Trajectory PCA:** the first component holds 95–96% of the layer-2 trajectory's variance (layer 1: 84–88%). It mostly follows activation size, so the picture is dominated by the post-transition growth. The good branch's 41 checkpoints sit on the starting point.
+- **Uniform-state actions:** the share of states where the greedy action approaches the tile and not the goal is 0.04 / 0.04 / 0.03 at the last step before onset and 0.35 / 0.31 / 0.35 at 400k.
+
+### 5. Results: decisions
+
+Share of development states by label (seeds 42 / 123 / 456):
+
+| Sampling | Agree | Equivalent route | Tile over goal | Other |
+|---|---|---|---|---|
+| Uniform | 0.48 / 0.54 / 0.49 | 0.18 / 0.16 / 0.18 | 0.28 / 0.24 / 0.29 | 0.06 / 0.05 / 0.04 |
+| Visited by the goal-following checkpoint | 0.23 / 0.27 / 0.33 | 0.08 / 0.09 / 0.08 | 0.33 / 0.22 / 0.25 | 0.36 / 0.42 / 0.35 |
+| Visited by the hacking checkpoint | 0.26 / 0.35 / 0.37 | 0.23 / 0.17 / 0.13 | 0.43 / 0.42 / 0.43 | 0.08 / 0.07 / 0.07 |
+
+Layer-2 activation change between the two checkpoints, relative to the earlier activation's norm, uniform states:
+
+| | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Agree states | 1.05 | 1.24 | 1.01 |
+| Tile-over-goal states | 1.00 | 1.23 | 1.02 |
+| Good branch, same steps, any label | 0.02 | 0.02 | 0.02 |
+| Cohen's d, tile over goal against the rest | −0.07 | −0.08 | +0.10 |
+| Same, after removing what state features explain | −0.03 | −0.11 | −0.03 |
+| Variance of the change size explained by state features | 0.99 | 0.99 | 0.98 |
+
+- **P3 failed.** Across the three seeds, three sampling distributions and both layers, Cohen's d for the size of the activation change at tile-over-goal states against all other states lies between −0.16 and +0.17, and between −0.13 and +0.18 after the state-feature control. No sign is consistent. The layer changes by about its own size at every state; decision points are not special.
+- **Which decisions flip is a function of the state.** Held-out AUROC for predicting tile over goal on uniform states: state features 0.98 / 0.97 / 0.99; plus the earlier checkpoint's Q-values 0.98 / 0.97 / 0.98; plus the size of the activation change 0.98 / 0.97 / 0.98; size of the change alone 0.58 / 0.56 / 0.54. On rollout states the feature baseline is 0.94–0.97 and the additions change it by at most 0.01.
+- **A single direction does not capture the flip.** The difference between the mean layer-2 change at tile-over-goal states and at other states, fitted on training-layout states, gives AUROC 0.55 / 0.59 / 0.67 on uniform development states (0.52–0.58 on rollout states). Tile distance alone gives 0.58 / 0.61 / 0.57. Inside strata of tile distance, goal distance and time the direction scores 0.59 / 0.63 / 0.65, so the little it has is not only tile proximity, but it is weak. One reason is built in: "toward the tile" means a different action in different states, and one direction cannot encode four.
+- **Near-circular upper bound, reported for completeness:** adding the top 8 components of the layer-2 change to features and Q-values gives 0.94–0.99, no better than features alone. The later checkpoint's layer 2 determines its Q-values linearly, so this could not have been evidence either way.
+- **Worked example** (`exp2_phase3_decision_divergence.png`; seed 42, first uniform state meeting a fixed rule): at step 39 with the goal 3 cells up and the tile up and to the right, the 60k checkpoint moves up (Q margin 0.09) and the 160k checkpoint moves right (margin 0.64, all Q-values near 23). 83 of the 128 layer-2 units change by more than 0.05 at this state; the good branch's largest per-unit change is 0.05.
+
+### 6. Results: across seeds
+
+- **Timing** differs by up to 60k steps; the order of events (early drift, wandering stage, late peak, post-transition growth) is the same in all three. P4 held for the timeline.
+- **Same-step CKA between hacking branches, layer 2:** starts at 0.84–0.90, falls to 0.50 (42 vs 123, at 150k), 0.27 (42 vs 456, at 190k) and 0.32 (123 vs 456, at 230k), and ends at 0.86 / 0.86 / 0.77. Good branches stay at 0.84–0.93. Layer 1 between hacking branches: minimum 0.78–0.87, end 0.83–0.91. The dip is partly a timing effect, since the seeds are at different stages at the same step.
+- **At the decision-pair checkpoints,** layer-2 CKA between seeds is 0.79–0.86 for the goal-following checkpoints and 0.76 / 0.25 / 0.34 for the hacking checkpoints (42 vs 123, 42 vs 456, 123 vs 456). So seeds are still dissimilar when the behavior has just completed and converge later.
+- **Flipped decisions overlap:** both seeds flip in 0.185 / 0.165 / 0.174 of identical uniform states, against 0.069 / 0.083 / 0.071 expected if independent (phi 0.60 / 0.40 / 0.53).
+- **The flip direction is not shared:** direction scores on identical states correlate 0.74 / −0.05 / −0.33. P4 failed at the level of directions. The size of the layer-2 change per state correlates 0.79 / 0.07 / 0.18.
+
+### 7. Interpretation
+
+- The network does not acquire a discrete "farming feature" at the moment behavior flips. Layer 2 drifts from the first checkpoint, reorganizes over about 100k steps, and then mostly rescales as value estimates grow. Behavior flips partway through.
+- At the level of single decisions the change is global. Whether a decision flips is predicted almost perfectly by where the agent, goal and tile are and how much time is left, and the amount of activation change adds nothing to that.
+- The Phase 2 transplant failure fits this picture: by 400k most of the layer-2 difference is post-transition growth that the good network never underwent. The checkpoints either side of the transition differ far less in scale (norm about 11 against 21 / 23 / 24 at completion), which makes them better candidates for Phase 4.
+- None of this is causal. CKA, PCA and the decision statistics describe what changed, not what produces the behavior.
+
+### 8. Negative results and limitations
+
+- **Negative:** P3 (no larger change at flipped decisions, with or without controls); no shared flip direction across seeds; no single-direction account of the flip within a seed; no sharp spike at onset or midpoint.
+- **Resolution:** checkpoints are 10k steps apart. Onset and completion are known to that precision only, and "precedes" means by at least one checkpoint.
+- **The early drift is unsurprising.** It shows that the representation changes before the greedy policy does, not that it predicts when or whether hacking will follow. No early-warning claim is made: every hacking run here did hack, so there is no run to tell apart.
+- **Thresholds** (0.1, 0.5, 0.8) are conventions. The curves are in `timeline.json` for other choices.
+- **Display choices use later information:** the heatmap sorts units by their final change and the PCA is fitted on the whole trajectory. Neither feeds a timing claim.
+- **Decision labels** depend on greedy actions, which flip on small Q differences; 16–18% of uniform states are "equivalent route" disagreements that are not behavior changes. The pair spans 100k–110k steps, so it compares before and after, not the moment of change.
+- **Uniform states** over-represent positions and times the agents rarely reach; rollout states are dominated by the area around the tile (hacker) or short goal paths (goal-follower). Results are reported for each separately and agree.
+- **Linear and magnitude-based tools only.** A nonlinear or multi-directional code for the flip would be missed.
+- Three seeds, one architecture, one environment family.
+
+### 9. Compute and artifacts
+
+- **Reproducibility check (2026-11-24):** a full rerun of `python -m scripts.exp2_run_phase3` (9.8 minutes) reproduced all four JSON files and both `.npz` files exactly, and regenerating the figures and GIF gave byte-identical files.
+
+- `python -m scripts.exp2_run_phase3`: about 13 minutes on CPU (registry 5 s, timeline 9 min, decisions 4 min). Visualization with the GIF: under a minute.
+- Results (`results/exp2/phase3/`, 2.9 MB): `checkpoint_registry.json`, `required_checkpoints.json`, `timeline.json`, `mean_activations.npz` (per-unit mean activation at every checkpoint), `decision_analysis.json`, `decision_points.npz` (observation, layout, elapsed steps, both actions, both sets of Q-values, label and activation-change size for every analyzed development state), `gif_episode.json`.
+- Figures: `assets/figures/exp2_phase3_{behavior_timeline,activation_timeline,neuron_heatmap,pca_trajectory,decision_divergence,decision_stats,cross_seed}.png`.
+- GIF: `assets/gifs/exp2_phase3_training_progression.gif` (seed 42, development layout 0, checkpoints 0 / 60k / 100k / 160k / 400k; goal in 9 steps, goal in 19 steps with one tile entry, goal in 17 steps, 100 steps of wandering, 47 tile entries).
+- Tests: `tests/test_exp2_phase3.py` (31).
+
+### 10. Recommended Phase 4 experiments
+
+1. **Transplant across the transition within the hacking branch.** Donor: the last checkpoint before onset. Recipient: the completion checkpoint. Same controls as Phase 2 (random-state donor, wrong-position donor, constant Q bias), plus the good branch at the donor step as a second donor.
+2. **Locate the flip by layer.** Combine the earlier checkpoint's hidden layers with the later checkpoint's output layer and the reverse, to see whether the flipped decisions follow the features or the readout.
+3. **Scale-matched patches.** Rescale or linearly translate donor activations to the recipient's scale before patching, since activation size is the largest change after the midpoint.
+4. **Sweep the recipient along training.** Apply one fixed donor to recipients at 160k, 200k, 300k and 400k to measure when a transplant stops being readable.
+5. Keep development on training and development layouts and open the final evaluation set once, for the frozen method.

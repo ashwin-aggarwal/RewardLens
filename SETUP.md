@@ -142,6 +142,17 @@ python -m scripts.exp2_visualize_phase2 --gif
 python -m pytest tests/test_exp2_phase2.py -q
 ```
 
+### Phase 3: tracking the emergence of reward hacking
+
+```bash
+python -m scripts.exp2_train --all-seeds      # only if the intermediate checkpoints are missing; about 9 minutes on CPU
+python -m scripts.exp2_run_phase3             # about 13 minutes on CPU
+python -m scripts.exp2_visualize_phase3 --gif
+python -m pytest tests/test_exp2_phase3.py -q
+```
+
+Phase 3 reads every fork-stage checkpoint (`checkpoint_<step>.pt`, every 10k steps, good and hacking branch). These 246 files are gitignored; `results/exp2/phase3/checkpoint_registry.json` records the hash of each, and `python -m scripts.exp2_run_phase3 --part registry` re-verifies a regenerated set (it raises if steps, reward modes or the fork-start and final weights do not line up). The parts can be run one at a time with `--part registry`, `--part timeline` or `--part decisions`; `decisions` needs `timeline.json` and only the 12 checkpoints listed in `results/exp2/phase3/required_checkpoints.json`. Retraining overwrites the committed final checkpoints, so restore them afterwards with `git checkout -- results/exp2/phase1` if the hashes differ on your hardware.
+
 Phase 2 reads training and development layouts only. `--part representations` or `--part patching` runs one half. Settings are in `experiments/02_generalizable_reward_hacking/configs/phase2.json`; results go to `results/exp2/phase2/`.
 
 ### Layouts and checkpoints

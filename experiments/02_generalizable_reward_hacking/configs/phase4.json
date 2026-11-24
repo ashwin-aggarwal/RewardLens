@@ -1,0 +1,43 @@
+{
+  "seeds": [42, 123, 456],
+  "results_dir": "results/exp2/phase4",
+  "checkpoint_dir": "results/exp2/phase1",
+  "phase3_timeline": "results/exp2/phase3/timeline.json",
+  "allowed_splits": ["train", "dev"],
+  "pairs": {
+    "rule": "Recipient: the hacking-branch checkpoint at behavioral completion (farming stays >= 0.8 on development layouts, from Phase 3). Donors: hacking-branch checkpoints of the same run 10k, 20k and 50k steps earlier, the last checkpoint before onset, and the fork start (step 0, the pretrained network). Two reference pairs: the same pre-onset donor into the final 400k hacking checkpoint (fixed donor, more distant recipient), and the good branch at the completion step into the completion checkpoint (different run, same step). The rule is the same for every seed; no pair is chosen by its result.",
+    "gaps_before_completion": [10000, 20000, 50000],
+    "include_last_before_onset": true,
+    "include_fork_start": true,
+    "reference_pairs": ["pre_onset_to_final", "good_same_step_to_completion"]
+  },
+  "patching": {
+    "layers": [1, 2],
+    "alpha": 1.0,
+    "n_control_draws": 5,
+    "control_seed": 0,
+    "controls": ["shuffled", "wrong_position", "q_bias"],
+    "head_swap": "Layer 2 only: the donor network reading the recipient's layer-2 activation (donor head, recipient features). Separates features from readout.",
+    "note": "Full replacement at alpha 1. Shuffled donor states come from the first 1,500 training layouts; the Q-bias vector is the matched patch's mean Q change on those states."
+  },
+  "success_criterion": {
+    "min_gain_over_recipient": 0.2,
+    "min_gain_over_best_state_control": 0.1,
+    "max_other": 0.25,
+    "note": "A pair counts as goal restoration only if layer-2 matched patching raises the direct-goal rate by at least 0.2 over the unmodified recipient, beats the better of the shuffled and wrong-position means by at least 0.1, and leaves at most 25% of episodes in 'other'. Fixed before the run."
+  },
+  "alpha_sweep": {
+    "alphas": [0.25, 0.5, 0.75],
+    "trigger": "Run only for pairs whose layer-2 matched patch beats the recipient by >= 0.1 and the best state control by >= 0.1 in direct goal. Matched and shuffled donors only.",
+    "n_control_draws": 3
+  },
+  "states": {
+    "n_fit_layouts": 1500,
+    "states_per_layout": 4,
+    "fit_state_seed": 101,
+    "dev_state_seed": 202,
+    "rollout_states": 6000,
+    "rollout_dev_seed": 404,
+    "note": "Uniform states are the Phase 2/3 matched states. Rollout states are those the unmodified recipient visits on development layouts. Both are used for Q-value and action diagnostics only; behavior is measured by full episodes on the 1,500 development layouts."
+  }
+}

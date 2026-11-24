@@ -134,6 +134,18 @@ python -m scripts.exp2_visualize --gif
 python -m pytest tests/test_exp2_phase1.py -q
 ```
 
+### Phase 2: representation analysis and preliminary transplantation
+
+```bash
+python -m scripts.exp2_run_phase2             # about 2.5 minutes on CPU; needs the nine committed checkpoints
+python -m scripts.exp2_visualize_phase2 --gif
+python -m pytest tests/test_exp2_phase2.py -q
+```
+
+Phase 2 reads training and development layouts only. `--part representations` or `--part patching` runs one half. Settings are in `experiments/02_generalizable_reward_hacking/configs/phase2.json`; results go to `results/exp2/phase2/`.
+
+### Layouts and checkpoints
+
 The layout split is frozen in `experiments/02_generalizable_reward_hacking/layouts/manifest.json`. `python -m scripts.exp2_make_layouts` regenerates the identical file from the seeds in `configs/environment.json` and refuses to overwrite an existing one. One seed or stage can be run with `python -m scripts.exp2_train --seed 42 --stage pretrain` (stages: `pretrain`, `good`, `hacking`, `fork`). Checkpoints are written to `results/exp2/phase1/seed<N>/<stage>/checkpoints/`. The nine `checkpoint_final.pt` files (pretrain, good, hacking for each seed) are committed, so the evaluation and visualization commands work without retraining; intermediate checkpoints and per-episode training logs are gitignored. Retraining overwrites the committed files, and may not reproduce them bit-for-bit on other hardware, so after retraining rebuild the registry or restore the files with `git checkout -- results/exp2`.
 
 ```python

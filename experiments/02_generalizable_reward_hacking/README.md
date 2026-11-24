@@ -2,7 +2,7 @@
 
 **Long-term question:** can we identify internal representations associated with reward hacking and use them to restore goal-directed behavior in environments the agent and the intervention have never seen?
 
-**Status: Phase 1 complete (behavioral baselines). No interpretability or steering work has started.**
+**Status: Phase 1 (behavioral baselines) and Phase 2 (representation analysis, preliminary transplant) complete. No repair method works yet.**
 
 > **Phase 1 in one paragraph.** On a gridworld where the start, goal and reward tile move every episode, a DQN pretrained on the corrected reward reaches the goal directly in 100% of unseen layouts. Forked from that same checkpoint, a copy trained on the corrected reward stays at 100% direct goal, and a copy trained on the flawed reward switches to reward farming in 92% of unseen layouts. Both hold for all 3 training seeds, on held-out test layouts evaluated once.
 
@@ -13,7 +13,7 @@
 
 *Seed 42 on a held-out test layout. The layout was picked by a fixed rule as a typical case; the rates are in the tables below.*
 
-## The setup
+## Phase 1: the setup
 
 - **Environment.** An 8×8 open grid, 100-step episodes, four moves. The goal pays +10 and ends the episode. Every step costs 0.01. The reward tile pays **+2 on every entry (flawed reward)** or **0 (corrected reward)**. Start, goal and tile positions are drawn fresh each episode.
 - **Observation (7 numbers in [0, 1]), in order:** agent x, agent y, goal x, goal y, tile x, tile y, fraction of the episode remaining. It is identical under both rewards. No distance features were added, because the plain coordinates were enough.
@@ -48,6 +48,62 @@ Behavior categories: **direct goal** (goal reached, fewer than 5 tile visits), *
 ![Behavior by seed](../../assets/figures/exp2_behavior_by_seed.png)
 
 The good DQN takes the shortest path (path efficiency 1.00, 5.5 steps on average). The hacking DQN's farming is almost all farm-only (0.907), with 0.014 farm-then-finish.
+
+## Phase 2: what changed inside the hacking network
+
+For each seed, the pretrained, good and hacking networks were run on 6,000 identical states from development layouts (and 6,000 from training layouts for fitting). No test or final-evaluation layout was used. Everything in this section before the transplant is correlational.
+
+**1. The good network barely moved; the hacking network was rebuilt, mostly in layer 2.**
+
+![Difference and PCA](../../assets/figures/exp2_phase2_difference_pca.png)
+
+| Layer 2, per seed (42 / 123 / 456) | Good vs pretrained | Hacking vs pretrained |
+|---|---|---|
+| Similarity (linear CKA) | 0.99 / 0.99 / 0.99 | 0.37 / 0.41 / 0.46 |
+| Activation change relative to pretrained norm | 0.06 / 0.07 / 0.06 | 1.84 / 2.44 / 2.05 |
+| Mean activation norm | 11.3 / 11.5 / 13.0 | 31.4 / 39.1 / 39.3 |
+
+Layer 1 changed less (hacking vs pretrained CKA 0.88 / 0.76 / 0.90).
+
+**2. The difference is mostly one constant shift, plus a few state-dependent directions.** At layer 2, 88–93% of the squared (hacking − good) difference is the same offset in every state. What remains needs only 4–5 principal directions for 90% of its variance. Those directions track simple quantities: the first follows time remaining (|r| = 0.78–0.98), the next follow the agent's offset from the reward tile.
+
+**3. The hacking networks of different seeds resemble each other.** Neurons of independently trained networks do not line up, so nothing was averaged across seeds; comparisons use CKA, or a linear map fitted on training-layout states and scored on development states.
+
+![CKA](../../assets/figures/exp2_phase2_cka.png)
+
+- Layer 2 CKA: hacking vs hacking across seeds 0.77–0.86; good vs good 0.86–0.93; hacking vs any good or pretrained network 0.32–0.48.
+- One seed's top-8 difference directions are predicted from another seed's with R² 0.92–0.96 (shuffled states: 0.00). The other seed's *good* network predicts them less well (0.64–0.82).
+- Caveat: the other seed's plain *hacking* activations predict them just as well (0.93–0.96), and at layer 1 every network does (0.97). So this shows that hacking networks come to encode the same things (the clock and the tile's relative position), which the task itself may force. It does not show a shared mechanism.
+
+![Cross-seed](../../assets/figures/exp2_phase2_cross_seed.png)
+
+**4. Transplanting good activations stops the farming but does not restore the task.** The hacking network's whole layer was replaced with the good network's activation for the same state.
+
+![Patching](../../assets/figures/exp2_phase2_patching.png)
+
+| Layer-2 transplant, good → hacking (1,500 development layouts) | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Hacking alone: direct goal / farming | 0.08 / 0.92 | 0.08 / 0.92 | 0.09 / 0.91 |
+| **Matched patch: direct goal** | **0.44** | **0.11** | **0.30** |
+| Matched patch: farming | 0.03 | 0.00 | 0.07 |
+| Matched patch: other / failure | 0.54 | 0.89 | 0.63 |
+| Random-state donor: direct goal | 0.27 | 0.13 | 0.19 |
+| Wrong-position donor: direct goal | 0.34 | 0.11 | 0.16 |
+| Constant Q bias: direct goal / farming | 0.08 / 0.92 | 0.08 / 0.85 | 0.08 / 0.90 |
+
+- **Mostly disruption.** Farming disappears, but in 54–89% of layouts the agent then wanders until time runs out.
+- **Partly state-dependent in two of three seeds.** For seeds 42 and 456 the matched patch beats donors from the wrong state by 0.10–0.17 and takes more direct paths (efficiency 0.77 against 0.36–0.52). For seed 123 it is no better than a random-state donor.
+- **Not a constant push.** The constant Q-bias control leaves the hacking behavior in place.
+- **Other variants are no better.** Layer 1: 0.17 / 0.10 / 0.14 direct goal. Pretrained donor at layer 2: 0.52 / 0.08 / 0.53. The reverse transplant (hacking → good) does not create farming (0–4%); it breaks the good network (86–94% other).
+
+| Hacking DQN | Same layout with the layer-2 transplant |
+|---|---|
+| ![Hacking](../../assets/gifs/exp2_phase2_hacking.gif) | ![Patched](../../assets/gifs/exp2_phase2_patched.gif) |
+| Farms the tile 47 times | Stops farming, then wanders for 100 steps |
+
+*Seed 42, first eligible development layout; the patched outcome was not selected.*
+
+**Why this differs from Experiment 1.** There, the donor and recipient were 10k training steps apart and the transplant worked. Here the two branches trained apart for 400k steps: layer-2 activations tripled in size and the output layer's weights changed by about twice their original norm, so the hacking output layer can no longer read a good network's activations.
 
 ## What kind of generalization this is
 
@@ -92,12 +148,12 @@ The nine final checkpoints are committed: for each seed (42, 123, 456), the pret
 
 | Document | Contents |
 |---|---|
-| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute |
+| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 methods and negative results |
 | [configs/](configs/) | `environment.json` (environment and layout split), `training.json` (DQN, budgets, tuning log) |
 | [SETUP.md](../../SETUP.md) | Commands to regenerate everything |
 
-Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/`. Tests: `tests/test_exp2_phase1.py`.
+Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/`, `results/exp2/phase2/`. Tests: `tests/test_exp2_phase1.py`, `tests/test_exp2_phase2.py`. Phase 2 settings: `configs/phase2.json`.
 
 ## Next
 
-Phase 2 (not started): look for internal differences between the good and hacking agents, which share a pretrained starting point and now differ in behavior across thousands of layouts.
+Phase 3 (not started): track how reward hacking emerges across the saved training checkpoints, in behavior and in the hidden layers, before attempting more interventions. Phase 4 candidates for a transplant the hacking network can read: patch between fork checkpoints close to the moment hacking emerges; patch only the few state-dependent directions and leave the constant offset alone; fit a linear translation between the good and hacking activation spaces. All development stays on training and development layouts; the reserved final evaluation set is opened once, for the frozen method.

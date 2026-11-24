@@ -76,7 +76,15 @@ Experiment 2, Phase 1 (behavioral baselines) — complete, 2026-11-23, on `exper
 - Scope of the claim: generalization to unseen combinations of positions on an open grid. Not shown: new maze structures (no obstacles exist) or new exploit mechanisms.
 - Finalization (2026-11-23): the nine final checkpoints (pretrain / good / hacking × seeds 42, 123, 456) are committed, with hashes and fork correspondence in `results/exp2/phase1/checkpoints.json` (`rewardlens.exp2.checkpoints.load_triplet`). Intermediate checkpoints and raw per-episode logs are local only.
 - Evaluation integrity rule: the 1,500 test layouts were used once for Phase 1 baselines and must not be used to select representations, interventions or hyperparameters. Phase 2 development uses training and development layouts only. A fresh 1,500-layout final evaluation set, disjoint from all others, is frozen in `experiments/02_generalizable_reward_hacking/layouts/final_eval_manifest.json` and reserved for the final steering experiment. It has never been evaluated.
-- Next: Phase 2, comparing the internals of the pretrained, good and hacking agents of each seed on identical states. Not started; no interpretability or steering has been done in Experiment 2.
+
+Experiment 2, Phase 2 (representation analysis, preliminary transplantation) — complete, 2026-11-23, uncommitted. Training and development layouts only; details in the Experiment 2 `PROGRESS.md`.
+- Activations of all nine networks on 6,000 identical development states (6,000 training-layout states for fitting). Settings fixed in `configs/phase2.json`; one run, no tuning.
+- Good stays near pretrained (layer-2 CKA 0.99, activation change 6–7%). Hacking diverges, mostly in layer 2 (CKA with pretrained 0.37–0.46; activation norm about 3× larger; fc2 and fc3 weights moved by about 1.8–2× their norm).
+- The layer-2 (hacking − good) difference is 88–93% a constant offset; the state-dependent remainder needs 4–5 components for 90% of its variance, and these track time remaining and the tile's offset from the agent (R² 0.96 from simple state features).
+- Across seeds (no raw averaging; CKA and held-out linear maps): hacking networks resemble each other (layer-2 CKA 0.77–0.86) and not the good ones (0.32–0.48). One seed's top-8 difference components are predicted from another's with R² 0.92–0.96, but equally well from the other seed's plain hacking activations, so this is shared encoding of task variables, not a demonstrated shared mechanism.
+- Transplant good → hacking at α = 1 on 1,500 development layouts: farming drops to 0–7%, but direct goal reaches only 0.44 / 0.11 / 0.30 (layer 2) and "other" is 54–89%. Random-state donors give 0.27 / 0.13 / 0.19; a constant Q bias changes nothing. State-dependent benefit in seeds 42 and 456 only; none in seed 123. Layer 1 is worse; hacking → good breaks the good network without creating farming. Negative result for repair.
+- Decision: similarity results are reported as correlational; the transplant was left untuned by design.
+- Next: Phase 3 tracks the emergence of hacking across training checkpoints (observational). Intervention candidates are deferred to Phase 4: patching between fork checkpoints near the transition, patching only the state-dependent components, or a fitted linear translation between activation spaces. Not started.
 
 ## 4. Scientific Controls
 
@@ -124,7 +132,7 @@ Status is maintained at milestone level rather than as a session transcript.
   - Transfer to seeds 42 and 456 fails because the runtime patch itself fails there (0.10, 0.03).
   - Interpretation: behavioral imitation of a patch through a compact edit, not discovery of the reward-hacking mechanism. Details: `experiments/01_fixed_gridworld_repair/weight_editing/README.md`.
 
-Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 complete and finalized on `experiment/generalizable-reward-hacking`.
+Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 complete there, uncommitted.
 
 Documentation layout (revised 2026-11-23, on `experiment/weight-editing`): the root README is a short landing page listing experiments. Experiment 1 lives in `experiments/01_fixed_gridworld_repair/`: `README.md` (research report), `METHODS.md` (shared methods and limitations), `PROGRESS.md` (the full chronological journal, moved from the root, including the archived phase-by-phase README), and one folder per extension (`sparse_patching/`, `low_rank_patching/`, `weight_editing/`) with its report and config. The root `PROGRESS.md` is a short index. `SETUP.md` holds all installation and reproduction commands. Code, scripts, results and assets stay at their shared top-level locations; only the three runner config paths changed. The edited-model checkpoint `results/weight_editing/models/` is gitignored like the training checkpoints and regenerated by `scripts.run_weight_editing`. `requirements.txt` lists `torch` and `scikit-learn`, which the code always required but the file originally omitted.
 
@@ -607,7 +615,7 @@ python -m pytest tests/test_phase4_7.py -q   # 14 passed
 
 ### Immediate next milestone
 
-Phase 2 (not started): representation analysis of the pretrained, good and hacking agents on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
+Phase 3 (not started): track when hacking emerges across the saved training checkpoints and how the hidden layers change around that transition (observational). Phase 4 then looks for a transplant or edit the hacking network can read. Both are developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
 
 ### Maintenance checklist
 

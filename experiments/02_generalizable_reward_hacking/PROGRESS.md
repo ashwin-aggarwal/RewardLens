@@ -157,3 +157,129 @@ Decisions made before Phase 2, at the project owner's direction:
 - Is the residual 8% direct-goal behavior a distinct internal state (goal nearby) that an intervention could widen?
 - Does the "other" phase during the switch correspond to a measurable intermediate representation?
 - Harder generalization tests for later: obstacles, unseen reward magnitudes, a different exploit, more seeds.
+
+
+## Phase 2: Representation Analysis and Preliminary Transplantation
+
+**Date:** 2026-11-23. Branch: `experiment/generalizable-reward-hacking`. Script: `scripts/exp2_run_phase2.py`. Settings: `configs/phase2.json`.
+
+**Question.** Do reward-hacking DQNs develop consistent internal representations across randomized layouts and independent seeds, and does transplanting goal-following activations change their behavior?
+
+**Hypotheses, written before running.**
+- H1: the good branch stays close to the pretrained network; the hacking branch diverges, more in layer 2 than layer 1.
+- H2: the matched-state difference between hacking and good activations is low-dimensional.
+- H3: the change is similar across seeds once neuron misalignment is accounted for.
+- H4: a same-seed full-layer transplant (good → hacking) restores direct goal pursuit in a state-dependent way, beating shuffled-state and constant-bias controls.
+
+### 1. Methods
+
+- **Data rules.** Training and development layouts only. The test split and `final_eval_manifest.json` are not read; a test scans the Phase 2 source files for any reference to them and checks that the setup exposes only training and development layouts.
+- **Matched states.** For each layout, 4 states with the agent on a uniformly random non-goal cell and a uniformly random elapsed time. 6,000 "fit" states from the first 1,500 training layouts (seed 101) and 6,000 evaluation states from the 1,500 development layouts (seed 202). Every network sees the same observations. These states are policy-independent, so many are states a trained agent would rarely visit.
+- **Networks.** The nine committed checkpoints, loaded and hash-verified with `load_triplet`.
+- **Activations.** Post-ReLU layer 1 and layer 2 (128 units each), computed without hooks.
+- **Within a seed.** Linear CKA; mean per-state activation change relative to the pretrained norm; relative weight change per layer; PCA of matched-state differences (fitted on fit states, variance measured on development states); the share of the difference that is a constant offset; linear regression of the top-8 difference components on 14 hand-written state features.
+- **Across seeds.** Raw differences are never averaged or subtracted across seeds, because neurons do not correspond. Two tools: (a) CKA, which ignores neuron order and rotation; (b) held-out R² of a ridge map (α = 0.001) from one seed's representation to another seed's top-8 difference components, fitted on fit states and scored on development states. Comparison inputs of equal size: the other seed's top-8 difference components, its top-8 good-activation components, its top-8 hacking-activation components, and the difference components with states shuffled.
+- **Transplant.** `h ← h_recipient + α(h_donor − h_recipient)` at α = 1, at layer 1 or layer 2, on all 1,500 development layouts. At layer 2 this is the recipient's output layer reading the donor's activation. Both layers are reported; nothing was selected or tuned.
+- **Controls.** Unmodified agents; donor activation from a random training-layout state (5 draws); donor seeing the right goal and tile but a random agent position and time (5 draws); a constant Q-value bias equal to the mean Q change the matched patch causes on fit states. Extra directions: pretrained → hacking, and hacking → good.
+- **Fixed in advance:** k = 8, α = 1, 5 control draws, both layers. One run; no settings were changed after seeing results.
+
+### 2. Results: representations
+
+**Within seed (development states; seeds 42 / 123 / 456):**
+
+| Quantity | Layer 1 | Layer 2 |
+|---|---|---|
+| CKA pretrained vs good | 0.99 / 1.00 / 1.00 | 0.99 / 0.99 / 0.99 |
+| CKA pretrained vs hacking | 0.88 / 0.76 / 0.90 | 0.37 / 0.41 / 0.46 |
+| CKA good vs hacking | 0.86 / 0.74 / 0.89 | 0.36 / 0.40 / 0.41 |
+| Activation change vs pretrained, good | 0.16 / 0.14 / 0.11 | 0.06 / 0.07 / 0.06 |
+| Activation change vs pretrained, hacking | 0.71 / 0.64 / 0.67 | 1.84 / 2.44 / 2.05 |
+| Mean activation norm, good → hacking | 4.0 → 5.9 / 4.7 → 6.7 / 4.3 → 6.3 | 11.3 → 31.4 / 11.5 → 39.1 / 13.0 → 39.3 |
+
+- Weights, relative change from pretrained: good 0.21–0.29 (fc1), 0.27–0.38 (fc2), 0.14–0.18 (fc3); hacking 0.75–0.97 (fc1), 1.77–1.82 (fc2), 1.87–2.06 (fc3).
+- **H1 held.** The good branch is almost unchanged; the hacking branch changed most in layer 2 and in the output layer.
+- Greedy actions on matched states agree between pretrained and good in only 67–85% of states although both reach the goal directly everywhere. Many states have two equally short moves, and many matched states are off-policy, so action agreement understates behavioral similarity.
+
+**The (hacking − good) difference:**
+
+| Quantity | Layer 1 | Layer 2 |
+|---|---|---|
+| Share that is a constant offset | 0.79 / 0.72 / 0.78 | 0.88 / 0.93 / 0.91 |
+| Components for 90% of the remaining variance | 7 / 6 / 8 | 4 / 5 / 4 |
+| Variance in top 8 components | 0.93 / 0.95 / 0.91 | 0.96 / 0.96 / 0.96 |
+| R² of top-8 components from state features | 0.98 / 0.98 / 0.98 | 0.96 / 0.96 / 0.96 |
+
+- Layer 2, strongest single correlate of the first component: time remaining (r = −0.98 / −0.78 / +0.87; the sign of a component is arbitrary). Components 2–3 correlate with the tile's horizontal or vertical offset from the agent (|r| 0.74–0.91).
+- **H2 held, with a qualification.** The state-dependent part is low-dimensional, but most of the difference is a constant shift that carries no state information.
+
+### 3. Results: across seeds
+
+- Layer-2 CKA: hacking vs hacking 0.77–0.86; good vs good 0.86–0.93; pretrained vs pretrained 0.84–0.90; hacking vs good or pretrained (any seeds) 0.32–0.48.
+- CKA between difference representations of two seeds: layer 2 0.74–0.85, layer 1 0.66–0.86.
+- Held-out R² for one seed's top-8 layer-2 difference components, over the 6 ordered seed pairs:
+
+| Predictor (other seed, 8 components) | Layer 1 | Layer 2 |
+|---|---|---|
+| Difference components | 0.97 (0.97–0.97) | 0.94 (0.92–0.96) |
+| Hacking activations | 0.98 (0.97–0.98) | 0.94 (0.93–0.96) |
+| Good activations | 0.97 (0.97–0.98) | 0.76 (0.64–0.82) |
+| Difference components, states shuffled | 0.00 | 0.00 |
+
+- **H3 held in a limited sense.** The state-dependent change at layer 2 is the same function of the state across seeds, and good networks express it less directly. But another seed's ordinary hacking activations predict it equally well, and at layer 1 any network does. Since the components are almost linear in the clock and the tile offset (R² 0.96), the shared structure may simply be what the farming task requires. This is similarity, not evidence of a common causal mechanism.
+
+### 4. Results: transplantation (1,500 development layouts)
+
+Unmodified: pretrained and good 1.00 direct goal in every seed; hacking 0.08 / 0.08 / 0.09 direct, 0.92 / 0.92 / 0.91 farming.
+
+**Good → hacking** (direct goal / farming / other):
+
+| Condition | Seed 42 | Seed 123 | Seed 456 |
+|---|---|---|---|
+| Layer 2, matched | 0.44 / 0.03 / 0.54 | 0.11 / 0.00 / 0.89 | 0.30 / 0.07 / 0.63 |
+| Layer 2, random-state donor (mean of 5) | 0.27 / 0.07 / 0.67 | 0.13 / 0.00 / 0.87 | 0.19 / 0.04 / 0.78 |
+| Layer 2, wrong-position donor (mean of 5) | 0.34 / 0.03 / 0.62 | 0.11 / 0.00 / 0.89 | 0.16 / 0.05 / 0.79 |
+| Layer 2, constant Q bias | 0.08 / 0.92 / 0.00 | 0.08 / 0.85 / 0.07 | 0.08 / 0.90 / 0.02 |
+| Layer 1, matched | 0.17 / 0.25 / 0.59 | 0.10 / 0.01 / 0.89 | 0.14 / 0.15 / 0.70 |
+| Layer 1, random-state donor (mean of 5) | 0.26 / 0.05 / 0.69 | 0.16 / 0.04 / 0.80 | 0.36 / 0.05 / 0.59 |
+| Layer 1, constant Q bias | 0.05 / 0.75 / 0.20 | 0.07 / 0.80 / 0.13 | 0.09 / 0.91 / 0.01 |
+
+- Layer 2 matched patch: reward-tile visits 0.8 / 0.1 / 1.4 per episode; path efficiency of the direct-goal episodes 0.77 / 0.78 / 0.77, against 0.36 / 0.73 / 0.52 for random-state donors.
+- **Pretrained → hacking, layer 2, matched:** 0.52 / 0.08 / 0.53 direct goal.
+- **Hacking → good, layer 2, matched:** direct 0.10 / 0.06 / 0.08, farming 0.04 / 0.00 / 0.02, other 0.86 / 0.94 / 0.91. Transplanting hacking activations does not make the good network farm.
+
+**H4 failed.**
+- The transplant reliably removes farming, and so do donors from the wrong state. That part is disruption.
+- Direct goal pursuit is restored in at most 44% of layouts. The matched patch beats the wrong-state controls by 0.10–0.17 for seeds 42 and 456, with more direct paths, so a state-dependent component exists there. For seed 123 it is indistinguishable from a random-state donor (0.11 vs 0.13).
+- At layer 1 the matched patch is worse than a random-state donor in every seed.
+- The constant Q bias changes almost nothing at layer 2, so the effect is not a uniform action-preference shift.
+
+**Negative results, preserved:** H4 at both layers and in all three seeds; the pretrained donor for seed 123; the reverse transplant; layer-1 patches doing worse than their shuffled control.
+
+### 5. Interpretation
+
+- Unlike Experiment 1, where donor and recipient were 10k steps apart on one training run and the recipient's output layer could read the donor's layer 2, here the branches trained apart for 400k steps. Layer-2 activation norms tripled and the output layer moved by about twice its original weight norm. A good activation of norm about 11 is far outside what the hacking output layer was trained to read (about 31–39).
+- Representation similarity across seeds says the hacking networks compute similar features. The transplant result says that having the good network's features in place of the hacking network's is not enough to make the hacking network's later weights pursue the goal. These are different questions, and only the second is causal.
+- "Other" is the dominant outcome of every α = 1 patch. In Experiment 1 terms these patches are closer to the wandering produced by direction subtraction than to the time-shifted transplant.
+
+### 6. Limitations
+
+- Matched states are uniform over positions and time, not the states agents actually visit.
+- One transplant strength (α = 1) and full-layer replacement only. No partial, low-rank or norm-matched patches were tried, deliberately: this phase was meant to be preliminary and untuned.
+- Only final checkpoints were used. The fork checkpoints nearer the transition exist on the local machine (every 10k steps) but are not committed.
+- Three seeds; one environment family; behavior measured on development layouts, which were also used for Phase 1 budgeting decisions.
+- Linear tools only (PCA, linear CKA, ridge). Nonlinear shared structure would be missed.
+- Feature correlations describe what difference directions co-vary with; they do not show what the network uses them for.
+
+### 7. Compute and artifacts
+
+- `python -m scripts.exp2_run_phase2`: about 2.5 minutes on CPU. Visualization: under a minute.
+- Results: `results/exp2/phase2/representation_analysis.json`, `patching_results.json`, `pca_scatter.npz`, `gif_episode.json`.
+- Figures: `assets/figures/exp2_phase2_{cka,difference_pca,cross_seed,patching}.png`. GIFs: `assets/gifs/exp2_phase2_{hacking,patched}.gif` (seed 42, development layout index 0; the patched episode ends as "other").
+- Tests: `tests/test_exp2_phase2.py` (17).
+
+### 8. Recommended next steps
+
+1. **Patch across a smaller training gap.** Use hacking-branch checkpoints from just before and just after the switch (as Experiment 1 did), where the output layer may still read goal-following activations. This needs the intermediate fork checkpoints committed or regenerated.
+2. **Patch only the state-dependent directions.** Leave the large constant offset and the activation scale of the hacking network in place, and replace or remove only the 4–5 state-dependent components.
+3. **Translate between the spaces.** Fit a linear map from good to hacking activation space on training-layout states, so the hacking output layer receives inputs in its own scale.
+4. **Keep the evaluation rules.** Develop on training and development layouts; open the reserved final evaluation set once, for the frozen method.

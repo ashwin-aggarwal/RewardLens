@@ -27,3 +27,11 @@ results/exp2/**/checkpoints/*
 !results/exp2/phase1/seed*/*/checkpoints/checkpoint_final.pt
 results/exp2/**/training_episodes.csv
 results/exp2/**/*.log
+# Phase 3 decision-level pairs: the last checkpoint before hacking onset and the one at completion, both branches.
+# Listed with hashes in results/exp2/phase3/required_checkpoints.json.
+!results/exp2/phase1/seed42/[gh]*/checkpoints/checkpoint_60000.pt
+!results/exp2/phase1/seed42/[gh]*/checkpoints/checkpoint_160000.pt
+!results/exp2/phase1/seed123/[gh]*/checkpoints/checkpoint_110000.pt
+!results/exp2/phase1/seed123/[gh]*/checkpoints/checkpoint_220000.pt
+!results/exp2/phase1/seed456/[gh]*/checkpoints/checkpoint_90000.pt
+!results/exp2/phase1/seed456/[gh]*/checkpoints/checkpoint_190000.pt

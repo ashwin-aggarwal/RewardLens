@@ -95,13 +95,23 @@ Experiment 2, Phase 3 (tracking the emergence of hacking): complete 2026-11-23; 
 - Decision: transition thresholds, the decision pair and the controls were fixed in `configs/phase3.json` before the run; no early-warning or causal claim is made.
 - Next at the time: Phase 4 (below).
 
-Experiment 2, Phase 4 (near-transition causal patching): complete 2026-11-24, uncommitted. Training and development layouts only; design fixed in `configs/phase4.json` before the run; details in the Experiment 2 `PROGRESS.md`.
+Experiment 2, Phase 4 (near-transition causal patching): complete 2026-11-24, committed and pushed (`efe1791` to `65a8d81`). Training and development layouts only; design fixed in `configs/phase4.json` before the run; details in the Experiment 2 `PROGRESS.md`.
 - Question: did the Phase 2 transplant fail because the networks had drifted apart? Recipient: hacking checkpoint at completion. Donors from the same run 10k, 20k, 50k earlier, the last pre-onset checkpoint, the fork start; references: pre-onset donor into 400k, good branch at the same step. Full layer-2 and layer-1 replacement against shuffled-state, wrong-position and constant-Q-bias controls.
 - Result: 0 of 21 pairs met the preregistered goal-restoration criterion. Donors 10–50k back are compatible (layer-2 CKA 0.65–1.00) but already farm (48–79%), so the patch reproduces farming. Goal-following donors (pre-onset 0.80–0.88 direct goal, fork start 1.00) are already distant (CKA 0.28–0.48) and the patch mostly produces wandering, within 0.05 of wrong-state donors except seed 42 (fork start 0.61 against 0.37, still 36% wandering).
 - Holding the pre-onset donor fixed and moving the recipient from completion to 400k did not make patching worse (−0.06 / 0.00 / +0.14). Layer 1 never helps. Head swap (recipient features, donor output layer) gives 0.06–0.12.
 - New baseline: a uniformly random policy reaches the goal directly in 0.49 of development layouts (path efficiency 0.23). Direct goal alone is a weak signal on this open grid; earlier transplant numbers (Phase 2: 0.44 / 0.11 / 0.30) are below it, though more efficient.
 - Decision: the checkpoint-compatibility hypothesis is not supported. Behavior and representation change together, so no compatible goal-following donor exists at 10k checkpoint spacing.
-- Next: Phase 5, not started. Recommended: ask which weights carry the switch by fine-tuning only the output layer or only layer 2 of the completion checkpoint on the corrected reward, against full fine-tuning.
+- Next at the time: Phase 5 (below).
+
+Experiment 2, Phase 5 (weight-level interventions): complete 2026-11-24, committed and pushed. Training and development layouts only; design in `configs/phase5.json`; details in the Experiment 2 `PROGRESS.md`.
+- Question: must the output head, a hidden layer, or both change to reverse hacking, and which weights change during the transition?
+- Repair criterion (fixed first): direct goal ≥ 0.90, path efficiency ≥ 0.90, farming ≤ 0.05 on development layouts. Random policy: 0.49 direct goal, efficiency 0.23. Scripted shortest path, pretrained and good networks: 1.00 / 1.00.
+- Weight swaps (same-seed donor into hacking recipient; head, layer 2, layer 1, layer 2 + head, plus two preregistered follow-up subsets; 4 pairs): 0 of 72 meet the criterion. Head alone gives 0.05–0.12 direct goal, like a same-size random head. Best single result 0.84 with efficiency 0.72 (seed 456). Layer 1 + layer 2 swap reproduces the Phase 2 and Phase 4 activation transplants exactly.
+- RL fine-tuning from the final hacking network on the corrected reward, 200k steps, head only / layer 2 only / layer 1 only / full network: farming falls below 0.10 in 9 of 12 runs, but direct goal ends at 0.12–0.41, below the random policy, in every condition including the full network. No run meets the criterion.
+- Supervised distillation from the same-seed good network (separate experiment, added after the RL result, run once, equal data and updates per condition): only the full network is repaired, in all three seeds (0.99 / 0.99 / 1.00 direct goal, efficiency 0.98–1.00). Single layers reach 0.49–0.83 with efficiency 0.50–0.63. The exact least-squares head gives 0.66 / 0.66 / 0.89.
+- Weight drift: layer 2 and the head change most (about 1.8 and 1.9–2.1 times their starting norm; layer 1 0.7–0.9; good branch 0.14–0.37). All layers change fastest inside the transition; hidden layers lead and the head lags. Drift size does not explain behavior: same-size random edits give 0.07–0.11 direct goal, and the successful repair is smaller (0.18–0.40 per layer) than the distance to the good network (0.59–0.86).
+- Decision: reversing hacking here needs coordinated changes across the hidden layers and the head. No claim of a unique circuit. RL repair at larger budgets is untested.
+- Next: Phase 6, not started. Recommended: the smallest coordinated repair (low-rank or sparse update across all three layers, against same-size random updates), and one preregistered longer RL run with more exploration.
 
 ## 4. Scientific Controls
 
@@ -149,7 +159,7 @@ Status is maintained at milestone level rather than as a session transcript.
   - Transfer to seeds 42 and 456 fails because the runtime patch itself fails there (0.10, 0.03).
   - Interpretation: behavioral imitation of a patch through a compact edit, not discovery of the reward-hacking mechanism. Details: `experiments/01_fixed_gridworld_repair/weight_editing/README.md`.
 
-Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 committed and pushed there (`7effa21`); Phase 3 committed and pushed there (`ab83f30`, 2026-11-24); Phase 4 complete there, uncommitted.
+Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 committed and pushed there (`7effa21`); Phase 3 committed and pushed there (`ab83f30`, 2026-11-24); Phase 4 committed and pushed there (`65a8d81`, 2026-11-24); Phase 5 committed and pushed there (2026-11-24).
 
 Documentation layout (revised 2026-11-23, on `experiment/weight-editing`): the root README is a short landing page listing experiments. Experiment 1 lives in `experiments/01_fixed_gridworld_repair/`: `README.md` (research report), `METHODS.md` (shared methods and limitations), `PROGRESS.md` (the full chronological journal, moved from the root, including the archived phase-by-phase README), and one folder per extension (`sparse_patching/`, `low_rank_patching/`, `weight_editing/`) with its report and config. The root `PROGRESS.md` is a short index. `SETUP.md` holds all installation and reproduction commands. Code, scripts, results and assets stay at their shared top-level locations; only the three runner config paths changed. The edited-model checkpoint `results/weight_editing/models/` is gitignored like the training checkpoints and regenerated by `scripts.run_weight_editing`. `requirements.txt` lists `torch` and `scikit-learn`, which the code always required but the file originally omitted.
 
@@ -632,7 +642,7 @@ python -m pytest tests/test_phase4_7.py -q   # 14 passed
 
 ### Immediate next milestone
 
-Review Phase 4, then Phase 5 (not started): locate the switch in the weights by fine-tuning only the output layer or only layer 2 of the completion checkpoint on the corrected reward. Developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
+Review Phase 5, then Phase 6 (not started): find the smallest coordinated weight update that repairs the hacking network, and test whether corrected-reward RL repairs it with a longer, preregistered budget. Developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
 
 ### Maintenance checklist
 

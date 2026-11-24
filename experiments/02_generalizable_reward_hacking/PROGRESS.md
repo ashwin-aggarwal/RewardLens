@@ -541,3 +541,165 @@ Whole-layer activation transplants have now failed for every pairing tried: acro
 2. **Denser checkpoints around the transition,** only if (1) suggests the switch is narrow: retrain one seed with 1k-step checkpoints between onset and completion to look for a compatible goal-following donor.
 3. Keep the final evaluation set closed until a method is frozen.
 
+
+## Phase 5: Weight-Level Interventions
+
+**Date:** 2026-11-24. **Branch:** `experiment/generalizable-reward-hacking`. **Layouts used:** training and development only. The test split and the reserved final evaluation set were not loaded. Phase 4 was verified, committed and pushed before this phase started (`efe1791` to `65a8d81`), including the nine near-transition checkpoints; a follow-up commit corrected the checkpoint sizes stated in the docs (300 KB per file, so 2.7 MB for those nine, 3.6 MB for the Phase 3 twelve, 73 MB for all 246).
+
+**Question.** Which parts of the DQN must change to reverse reward hacking: the output head (action selection), a hidden layer (representation), or both together? And which weights change during the transition from goal-following to farming?
+
+**Hypotheses, written before the run.**
+
+- H1 (readout): the hacking lives mostly in the output head, so replacing or retraining the head alone restores navigation.
+- H2 (representation): it lives mostly in layer 2 (Phase 2: layer 2 was rebuilt), so replacing or retraining layer 2 alone restores navigation.
+- H3 (coordinated): layers have co-adapted, so no single layer suffices and only joint changes repair.
+- H4 (drift): the layer whose weights change most, or earliest, around the transition is the one that matters.
+
+### 1. Design
+
+Everything is in `configs/phase5.json`. The baselines, swaps, RL fine-tuning and weight analysis were fixed before any of them ran. The distillation block was added after the RL result and fixed before its own run (section 5).
+
+- **Repair criterion:** on development layouts, direct goal ≥ 0.90, path efficiency of direct-goal episodes ≥ 0.90, farming ≤ 0.05. The pretrained and good networks and the scripted shortest path meet it; the random policy and every hacking checkpoint do not.
+- **Networks per seed (42, 123, 456):** pretrained (fork start), good final, hacking at the last step before onset (60k / 110k / 90k), at completion (160k / 220k / 190k) and final (400k). `load_net` checks the seed, stage and step stored in each file.
+- **Baselines:** each network, a uniformly random policy (3 draws) and the scripted shortest path that avoids the tile, on the 1,500 development layouts and the first 1,500 training layouts.
+- **Weight swaps:** copy the donor's weight and bias for a layer subset into a copy of the recipient. Four same-seed pairs: pretrained → final hacking; good final → final hacking; pre-onset → completion (same hacking run); pretrained → completion. Primary subsets: head, layer 2, layer 1, layer 2 + head. Follow-up subsets (layer 1 + layer 2, layer 1 + head) run for a pair only if no primary swap repairs all three seeds.
+- **Random-edit control:** the same tensors changed by Gaussian noise rescaled, tensor by tensor, to the norm of the real edit (5 draws). Used for swaps and for every fine-tuned network.
+- **RL fine-tuning:** from the final hacking checkpoint, corrected reward, 200k environment steps, Phase 1 DQN hyperparameters and fork exploration schedule (ε 0.3 → 0.05 over the first 25%), fresh optimizer and replay buffer, training layouts only, same seed for all four conditions. Trainable: head only (516 parameters), layer 2 only (16,512), layer 1 only (1,024), full network (18,052). Frozen layers have gradients off and are left out of the optimizer. Evaluated every 10k steps.
+- **Checkpoint selection:** the first 750 development layouts choose the checkpoint (highest mean corrected return), the other 750 report it.
+- **Weight analysis:** all 41 checkpoints of both branches. Per layer (weight and bias together): change from the fork start relative to the starting norm, change per 10k steps, cosine with the start, share of the final change. Q-value preference on the 2,583 uniform development states (of 6,000) that offer both a tile-ward-only and a goal-ward-only move.
+- **Decisions:** on the 6,000 uniform development states, agreement of greedy actions with the same-seed good network, share of goal-ward actions, Q-value scale. Note that the pretrained network agrees with the good one on only 0.79 / 0.66 / 0.85 of states although both are perfect, because several shortest routes exist. Agreement is a coarse measure; behavior is the outcome.
+
+### 2. Baselines (development layouts)
+
+| Policy | Direct goal | Farming | Other | Path efficiency | Steps to goal | Tile visits |
+|---|---|---|---|---|---|---|
+| Scripted shortest path | 1.000 | 0.000 | 0.000 | 1.00 | 5.2 | 0.0 |
+| Uniformly random | 0.492 | 0.052 | 0.456 | 0.23 | 41.0 | 0.9 |
+| Pretrained, all seeds | 1.000 | 0.000 | 0.000 | 1.00 | 5.2 | 0.1 |
+| Good final, all seeds | 1.000 | 0.000 | 0.000 | 1.00 | 5.2 | 0.1 |
+| Hacking, pre-onset (42 / 123 / 456) | 0.837 / 0.795 / 0.879 | 0.087 / 0.084 / 0.061 | 0.077 / 0.121 / 0.060 | 0.75 / 0.69 / 0.72 | 19.7 / 20.4 / 17.2 | 1.8 / 1.6 / 1.8 |
+| Hacking, completion | 0.079 / 0.086 / 0.093 | 0.875 / 0.859 / 0.856 | 0.045 / 0.055 / 0.051 | 0.96 / 0.97 / 0.85 | 6.9 / 6.9 / 19.0 | 39.8 / 39.4 / 39.3 |
+| Hacking, final | 0.077 / 0.081 / 0.088 | 0.917 / 0.919 / 0.908 | 0.007 / 0.000 / 0.004 | 0.99 / 0.98 / 0.99 | 9.4 / 7.4 / 6.7 | 43.6 / 44.1 / 43.4 |
+
+The training panel gives the same picture (random policy 0.474 direct goal, scripted 1.000). The pre-onset checkpoint still reaches the goal in 80–88% of layouts but already takes detours (efficiency 0.69–0.75), so it would not pass the repair criterion either.
+
+### 3. Weight swaps
+
+Direct goal on development layouts, seeds 42 / 123 / 456. "Random" is the mean of five same-size random edits.
+
+| Swap | Pretrained → final | Good → final | Pre-onset → completion | Pretrained → completion | Random (all pairs) |
+|---|---|---|---|---|---|
+| Head | 0.09 / 0.05 / 0.08 | 0.10 / 0.06 / 0.08 | 0.10 / 0.10 / 0.11 | 0.07 / 0.06 / 0.12 | 0.07–0.08 |
+| Layer 2 | 0.24 / 0.07 / 0.23 | 0.29 / 0.08 / 0.21 | 0.13 / 0.13 / 0.13 | 0.37 / 0.09 / 0.18 | 0.07–0.10 |
+| Layer 1 | 0.13 / 0.10 / 0.13 | 0.17 / 0.10 / 0.14 | 0.11 / 0.12 / 0.08 | 0.12 / 0.13 / 0.10 | 0.08–0.13 |
+| Layer 2 + head | 0.21 / 0.18 / 0.62 | 0.19 / 0.13 / 0.40 | 0.18 / 0.30 / 0.59 | 0.40 / 0.14 / 0.84 | 0.07–0.09 |
+| Layer 1 + layer 2 (follow-up) | 0.52 / 0.08 / 0.53 | 0.44 / 0.11 / 0.30 | 0.21 / 0.12 / 0.25 | 0.61 / 0.07 / 0.29 | 0.08–0.11 |
+| Layer 1 + head (follow-up) | 0.13 / 0.05 / 0.07 | 0.15 / 0.05 / 0.08 | 0.15 / 0.09 / 0.09 | 0.07 / 0.07 / 0.12 | 0.06–0.08 |
+
+- **0 of 72 swaps meet the repair criterion.** The follow-up rule triggered for all four pairs.
+- **Head alone:** farming drops to 0.00–0.17 and 73–95% of episodes become "other". A random head of the same size does the same (0.89–0.93 other). So replacing the head destroys the farming policy without supplying a goal policy.
+- **Layer 2 alone:** 0.07–0.37 direct goal with low path efficiency (0.31–0.79); in seeds 42 and 456 it beats the random edit, which leaves 10–26% farming in place.
+- **Layer 1 alone:** the least disruptive single swap. Farming partly survives (0.01–0.31) and direct goal stays at 0.08–0.17, the same as a random edit.
+- **Layer 2 + head** (hacking layer 1 under goal-following layers): the best primary swap for seed 456 (0.40–0.84), weak for seeds 42 and 123 (0.13–0.40). Best single result: pretrained → completion, seed 456, 0.84 direct goal, 0.15 other, path efficiency 0.72.
+- **Layer 1 + layer 2** (goal-following hidden layers under the hacking head): 0.52 / 0.08 / 0.53 for pretrained → final. This is the same network function as a matched layer-2 activation transplant, and it reproduces Phase 2 (pretrained donor: 0.52 / 0.08 / 0.53) and Phase 4 (fork start into completion: 0.61 / 0.07 / 0.29) to two decimals. The two code paths agree.
+- **Q-values:** swaps leave the network with mismatched scales. With hacking hidden layers and a goal head the mean maximum Q is 12–30; with a goal layer 1 under hacking layers it is 22–57; the good network's is about 9.
+- **Near-transition pairs do not help**, consistent with Phase 4: pre-onset → completion gives at most 0.59 (seed 456, layer 2 + head).
+- **Seed 123** stays at or below 0.30 in every swap, as it did in Phases 2 and 4.
+
+Reading: H1 and H2 are not supported by the swaps. A swap failing does not show that a layer is unimportant, only that the donor's version of it does not work with the recipient's other layers.
+
+### 4. RL fine-tuning on the corrected reward
+
+Selected checkpoint, reported on the 750 reporting layouts, seeds 42 / 123 / 456.
+
+| Trainable | Selected step | Direct goal | Farming | Other | Path efficiency | Weight change (relative) | Random edit, same size: direct goal |
+|---|---|---|---|---|---|---|---|
+| Head only | 110k / 190k / 170k | 0.24 / 0.29 / 0.32 | 0.04 / 0.04 / 0.09 | 0.72 / 0.67 / 0.60 | 0.43 / 0.41 / 0.41 | fc3 1.15 / 1.22 / 1.64 | 0.08 / 0.07 / 0.07 |
+| Layer 2 only | 50k / 180k / 170k | 0.32 / 0.18 / 0.26 | 0.04 / 0.18 / 0.06 | 0.64 / 0.64 / 0.68 | 0.36 / 0.60 / 0.55 | fc2 0.46 / 0.60 / 0.58 | 0.07 / 0.09 / 0.08 |
+| Layer 1 only | 170k / 110k / 180k | 0.23 / 0.12 / 0.17 | 0.16 / 0.60 / 0.02 | 0.60 / 0.28 / 0.81 | 0.49 / 0.81 / 0.62 | fc1 0.55 / 0.47 / 0.49 | 0.08 / 0.10 / 0.11 |
+| Full network | 190k / 200k / 190k | 0.28 / 0.41 / 0.41 | 0.05 / 0.05 / 0.02 | 0.67 / 0.54 / 0.57 | 0.71 / 0.57 / 0.57 | fc1 0.25–0.29, fc2 0.30–0.43, fc3 0.23–0.32 | 0.07 / 0.07 / 0.07 |
+
+- **No condition meets the repair criterion at any of the 21 evaluations, in any seed.** That includes the full network.
+- **Every condition unlearns the farming.** Final farming is below 0.10 in 9 of 12 runs (exceptions: layer 1 only in seeds 42 and 123, layer 2 only in seed 123). The head alone takes longest (below 0.10 from 100k / 180k / 170k steps); the full network gets there at 70k / 30k / 30k.
+- **What replaces farming is wandering**, with direct goal below the random policy's 0.49 in all 12 runs. The greedy policy gets stuck rather than exploring, and with ε at 0.05 after 50k steps the goal is found too rarely to relearn the route quickly.
+- **Frozen layers stayed bit-identical** in all runs (checked by tensor equality and recorded per run).
+- **Reference, with a caveat:** Phase 1 pretraining from random weights passed 0.90 direct goal on development layouts at 30k–40k steps. It used a different exploration schedule (ε from 1.0, decaying over 150k steps), so the comparison is confounded, but it suggests the hacking weights plus low exploration are a worse starting point for the corrected task than random weights with high exploration.
+
+This is a negative result for RL repair at this budget, and it leaves the localization question open: when the full network fails too, the conditions cannot be ranked.
+
+### 5. Supervised distillation (separate experiment, added after section 4)
+
+The brief allows a separately labelled supervised experiment when corrected-reward RL does not get there. It was designed after seeing section 4 and before it ran, and it ran once.
+
+- **Setup:** student = final hacking network; teacher = the same seed's good network. 28,000 uniformly sampled states from the 7,000 training layouts (4 per layout, state seed 505), labelled with the teacher's four Q-values. Smooth-L1 loss, Adam, learning rate 0.00025, batch 64, 50,000 updates (the number the 200k-step RL run performs). Every condition of a seed sees the same states, labels and batch order; only the trainable layers differ. Evaluated every 2,500 updates; same selection and reporting split.
+- **Closed-form head:** the least-squares output layer on the frozen hacking layer-2 activations, fitted to the same labels. It is the optimum of the head-only regression, with no optimizer or budget involved.
+
+| Trainable | Direct goal | Farming | Other | Path efficiency | Steps to goal | Agreement with good | Weight change (relative) | Meets criterion |
+|---|---|---|---|---|---|---|---|---|
+| Head only | 0.49 / 0.49 / 0.69 | 0.09 / 0.06 / 0.05 | 0.42 / 0.46 / 0.26 | 0.63 / 0.61 / 0.50 | 20.0 / 24.8 / 32.7 | 0.67 / 0.68 / 0.67 | fc3 1.09 / 0.94 / 1.02 | No |
+| Head, least squares | 0.66 / 0.66 / 0.89 | 0.00 / 0.01 / 0.00 | 0.34 / 0.33 / 0.10 | 0.60 / 0.65 / 0.71 | n/a | 0.73 / 0.73 / 0.76 | fc3 6.50 / 4.28 / 6.19 | No |
+| Layer 1 only | 0.53 / 0.61 / 0.75 | 0.03 / 0.02 / 0.01 | 0.45 / 0.37 / 0.23 | 0.51 / 0.54 / 0.61 | 33.7 / 36.8 / 24.2 | 0.67 / 0.66 / 0.68 | fc1 0.68 / 0.80 / 0.75 | No |
+| Layer 2 only | 0.64 / 0.70 / 0.83 | 0.05 / 0.01 / 0.02 | 0.31 / 0.29 / 0.15 | 0.58 / 0.61 / 0.59 | 23.7 / 21.3 / 24.7 | 0.66 / 0.69 / 0.69 | fc2 0.64 / 0.63 / 0.53 | No |
+| **Full network** | **0.99 / 0.99 / 1.00** | 0.00 / 0.00 / 0.00 | 0.01 / 0.01 / 0.00 | **0.98 / 1.00 / 1.00** | 5.6 / 5.1 / 5.2 | 0.80 / 0.83 / 0.85 | fc1 0.35–0.37, fc2 0.35–0.40, fc3 0.18–0.25 | **Yes, all seeds** |
+
+Head-only to full-network rows are the selected checkpoints on the 750 reporting layouts; the least-squares head is scored on all 1,500 development layouts. Random edits of the same size give 0.07–0.11 direct goal in every row.
+
+- **Only the full network is repaired**, in all three seeds, and it holds the criterion from 35k / 35k / 27.5k updates to the end.
+- **Single layers get partway.** They push direct goal above the random policy and nearly remove farming, but the paths are inefficient (0.50–0.63) and 15–46% of episodes still fail. Their training loss flattens at 0.01 (hidden layers) and 0.04–0.05 (head) against below 0.005 for the full network, and their direct-goal curves were still creeping up at 50k updates.
+- **The head-only limit is not a budget effect.** The least-squares head is the best possible linear readout of the hacking features for this objective and still fails (0.66 / 0.66 / 0.89, efficiency 0.60–0.71). The hacking layer-2 features do not linearly contain the good Q-function precisely enough to navigate.
+- **Parameter count does not explain it.** Layer 2 alone is 91% of the parameters. Full-network training changes each layer less (fc2 by 0.35–0.40) than layer-2-only training changes layer 2 (0.53–0.64).
+- **The repaired network is a nearby solution, not the good network.** It is 0.18–0.40 away from the hacking weights per layer; the good network is 0.59–0.68 (fc1), 0.84–0.86 (fc2) and 0.76–0.77 (fc3) away.
+
+Reading: H3 is supported. H1 and H2 are not: neither the action-selection layer nor either hidden layer, retrained alone with the same supervision, restores efficient navigation.
+
+### 6. Weights along the training run
+
+| Per layer, seeds 42 / 123 / 456 | Layer 1 (fc1) | Layer 2 (fc2) | Output head (fc3) |
+|---|---|---|---|
+| Hacking: final change / starting norm | 0.73 / 0.91 / 0.83 | 1.80 / 1.77 / 1.82 | 1.87 / 1.93 / 2.05 |
+| Good: final change / starting norm | 0.27 / 0.27 / 0.20 | 0.27 / 0.30 / 0.37 | 0.14 / 0.17 / 0.18 |
+| Hacking at last step before onset | 0.19 / 0.26 / 0.28 | 0.43 / 0.66 / 0.64 | 0.22 / 0.43 / 0.29 |
+| Good at the same step | 0.13 / 0.13 / 0.09 | 0.13 / 0.16 / 0.15 | 0.08 / 0.11 / 0.10 |
+| Share of final change before onset | 0.25 / 0.29 / 0.34 | 0.24 / 0.37 / 0.35 | 0.12 / 0.23 / 0.14 |
+| Share of final change at completion | 0.86 / 0.96 / 0.99 | 0.90 / 0.95 / 1.01 | 0.72 / 0.84 / 0.79 |
+| Change across the transition (pre-onset → completion) | 0.53 / 0.70 / 0.62 | 1.28 / 1.12 / 1.20 | 1.23 / 1.15 / 1.31 |
+| Good branch over the same steps | 0.08 / 0.11 / 0.07 | 0.10 / 0.10 / 0.13 | 0.05 / 0.06 / 0.06 |
+| Mean change per 10k: before / during / after | 0.04–0.05 / 0.07–0.09 / 0.03–0.04 | 0.10–0.12 / 0.19–0.22 / 0.09–0.10 | 0.06–0.07 / 0.15–0.17 / 0.07–0.09 |
+| Step of the fastest change | 140k / 160k / 110k | 140k / 170k / 110k | 140k / 190k / 150k |
+| Rank correlation of change per 10k with the absolute change in farming | 0.60 / 0.56 / 0.70 | 0.59 / 0.57 / 0.77 | 0.46 / 0.57 / 0.73 |
+
+- **Which layers change most:** layer 2 and the head, by similar amounts relative to their size (about 1.8 and 1.9–2.1). Layer 1 changes about half as much. All three change 3 to 14 times more than in the good branch.
+- **When:** the fastest change of every layer in every seed falls inside the onset-to-completion window, at 1.7 to 2.7 times the pre-onset rate. Layer 2 and layer 1 lead and are essentially done at completion; the head lags (12–23% before onset, 72–84% at completion) and keeps growing afterwards while predicted returns rise.
+- **Q-value preference at the 2,583 conflict states:** best tile-ward Q minus best goal-ward Q is −0.25 / −0.22 / −0.24 at the fork, −0.16 / −0.13 / −0.24 before onset (tile preferred at 9–18% of states), +1.39 / +1.13 / +1.39 at completion (84–92%), +1.47 / +1.93 / +1.62 at 400k. The mean first turns positive at 100k / 160k / 130k, near the behavioral midpoint (100k / 180k / 140k). The good branch stays between −0.25 and −0.22, preferring the tile at no more than 3% of states.
+- **Does drift predict behavior?** Partly, in timing. Before any farming appears the hacking branch's weights have moved 1.5 to 4.4 times as far as the good branch's, and the rate of change tracks the rate of behavior change moderately (ρ 0.46–0.77).
+- **Does drift explain behavior?** No. (a) Before onset layer 2 has moved 0.43–0.66 with goal-following still at 80–88%. (b) The good branch moves 0.14–0.37 per layer with no behavior change. (c) Random edits as large as a successful repair give 0.07–0.11 direct goal. (d) The successful repair moves layer 2 by 0.35–0.40, less than the failed layer-2-only repair. Direction matters; size does not identify it. H4 is not supported: the layers that change most (layer 2 and the head) are not individually sufficient to repair.
+
+### 7. Interpretation
+
+Across weight swaps, RL fine-tuning, distillation and the Phase 2 and 4 activation transplants, the same picture holds in all three seeds: the hacking policy is not held by one layer. The hidden layers and the head changed together during the transition, each reads or feeds the others in its changed form, and putting a goal-following version of any subset next to hacking versions of the rest yields a network that neither farms nor navigates. Repair was achieved only by a coordinated update of all three layers, and that update is small compared with the distance between the hacking and good networks.
+
+This answers the phase's question for these networks and budgets. It does not show that reward hacking is "distributed" in any deeper sense, and it does not identify a circuit.
+
+### 8. Limitations
+
+- **Sufficiency under fixed budgets, not necessity.** The single-layer distillation runs were still improving slowly at 50k updates. Only the head has a budget-free bound (least squares), and that bound is for Q-value regression; a different objective, such as matching actions, could behave differently.
+- **Swaps test one donor version of each layer.** A failed swap shows incompatibility with the remaining layers, not that the layer is irrelevant.
+- **RL repair is unresolved.** 200k steps with the fork exploration schedule was one fixed setting. More steps or more exploration might repair the full network; that was not tried, to avoid tuning toward a positive result.
+- **Distillation needs a good network.** It shows what the weights can represent, not a repair method that works without a goal-following reference.
+- **Selection.** Checkpoints were chosen on 750 development layouts and reported on the other 750; both halves were used to develop the analysis, and no untouched evaluation set was spent.
+- **Random-edit controls** match the norm tensor by tensor but are isotropic; they are a weak null for structured updates.
+- **Weight-space distances** are in the raw parameter basis. Hidden units can be permuted or rescaled without changing the function, so relative change overstates functional change in general. Same-seed comparisons from a shared fork start limit this but do not remove it.
+- **Agreement with the good network** undercounts correct behavior where several shortest routes exist (the pretrained network scores 0.66–0.85).
+- **Scope:** three seeds, one architecture, one open 8×8 grid, one exploit.
+
+### 9. Compute and artifacts
+
+- Full run: `python -m scripts.exp2_run_phase5`, about 2.3 minutes on an 8-core CPU (baselines 4 s, swaps 64 s, 12 RL runs about 70 s wall with 6 workers, 12 distillation runs about 45 s, weight analysis 1 s). A second full run reproduced every result file exactly (timings aside).
+- Results in `results/exp2/phase5/`: `baselines.json`, `weight_swaps.json`, `finetune.json`, `distill.json`, `weight_trajectory.json`, `required_checkpoints.json`, `trajectory_episode.json`, and the 24 selected networks in `finetuned/` and `distilled/` (about 75 KB each).
+- Checkpoints: the interventions load 15 files, all committed. The weight analysis loads all 41 steps of both branches (243 distinct files), most of which are gitignored and regenerate with `python -m scripts.exp2_train --all-seeds`.
+- Figures: `exp2_phase5_weight_drift.png`, `exp2_phase5_weight_swaps.png`, `exp2_phase5_finetune_curves.png`, `exp2_phase5_params_vs_repair.png`, `exp2_phase5_trajectories.png`. GIF: `exp2_phase5_repair_comparison.gif` (seed 42, development layout 0 by the Phase 2 rule, outcome not selected; on that layout the RL fine-tuned full network happens to succeed).
+- Tests: `tests/test_exp2_phase5.py`, 36 tests. Full suite: 392 passing.
+
+### 10. Recommended next step
+
+Find the smallest coordinated repair. Fit a low-rank or sparse update spanning all three layers on training layouts (the full-network distillation delta is the natural starting point: take its top singular directions per layer), score it with the same repair criterion, and compare against same-rank random updates and against single-layer updates of equal rank. Separately, settle the RL question with one preregistered longer run of the full network with higher exploration, since a teacher-free repair is what the final steering experiment needs.

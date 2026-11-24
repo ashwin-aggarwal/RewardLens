@@ -163,6 +163,17 @@ python -m pytest tests/test_exp2_phase4.py -q
 
 Phase 4 needs `results/exp2/phase3/timeline.json` and the 24 checkpoints listed with hashes in `results/exp2/phase4/required_checkpoints.json`. All 24 are committed, including the nine hacking checkpoints 10k, 20k and 50k before each seed's completion step (2.7 MB); `python -m pytest tests/test_exp2_phase4.py -q` checks their hashes. Pairs, controls and the success criterion are fixed in `experiments/02_generalizable_reward_hacking/configs/phase4.json`.
 
+### Phase 5: weight-level interventions
+
+```bash
+python -m scripts.exp2_run_phase5             # all parts, about 2.5 minutes on an 8-core CPU
+python -m scripts.exp2_run_phase5 --part swaps    # one part: baselines | swaps | finetune | distill | weights
+python -m scripts.exp2_visualize_phase5 --gif
+python -m pytest tests/test_exp2_phase5.py -q
+```
+
+The baselines, weight swaps, RL fine-tuning and distillation need only committed checkpoints (15 files) and `results/exp2/phase3/timeline.json`. The `weights` part reads every fork-stage checkpoint (see Phase 3 above for regenerating them); `results/exp2/phase5/required_checkpoints.json` lists each file with its hash. Fine-tuning and distillation run 12 jobs each in 6 worker processes and write the selected networks to `results/exp2/phase5/finetuned/` and `distilled/`. The repair criterion, swaps, budgets and controls are fixed in `experiments/02_generalizable_reward_hacking/configs/phase5.json`.
+
 Phase 2 reads training and development layouts only. `--part representations` or `--part patching` runs one half. Settings are in `experiments/02_generalizable_reward_hacking/configs/phase2.json`; results go to `results/exp2/phase2/`.
 
 ### Layouts and checkpoints

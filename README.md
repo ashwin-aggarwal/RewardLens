@@ -13,11 +13,11 @@ Reward hacking happens when an agent maximizes the reward it is given without do
 | # | Experiment | Status |
 |---|---|---|
 | 1 | [Fixed Gridworld Reward-Hacking Repair](experiments/01_fixed_gridworld_repair/README.md) | Complete |
-| 2 | [Generalizable Reward-Hacking Interventions](experiments/02_generalizable_reward_hacking/README.md) | Phases 1–4 complete; no working repair yet |
+| 2 | [Generalizable Reward-Hacking Interventions](experiments/02_generalizable_reward_hacking/README.md) | Phases 1–5 complete; repair needs all layers retrained together |
 
 **Experiment 1.** In one fixed 8×8 gridworld, transplanting a goal-following checkpoint's activations restored direct goal pursuit in a hacking DQN, and a rank-4 weight edit made that repair permanent. Ordinary fine-tuning worked as well, and neither repair transferred to other training seeds.
 
-**Experiment 2 (in progress).** Start, goal and reward tile move every episode. From one shared pretrained checkpoint, a good DQN reaches the goal directly in 100% of unseen layouts and a hacking DQN farms in 92%, across 3 seeds. A first activation transplant only stops the farming and does not restore goal-seeking. Tracking training checkpoints shows the hidden layers drifting before behavior flips and still changing long after, and patching between nearby checkpoints of the same run does not help: the nearby ones are already hacking.
+**Experiment 2 (in progress).** Start, goal and reward tile move every episode. From one shared pretrained checkpoint, a good DQN reaches the goal directly in 100% of unseen layouts and a hacking DQN farms in 92%, across 3 seeds. A first activation transplant only stops the farming and does not restore goal-seeking. Tracking training checkpoints shows the hidden layers drifting before behavior flips and still changing long after, and patching between nearby checkpoints of the same run does not help: the nearby ones are already hacking. Copying goal-following weights into any subset of layers fails too. Retraining toward a goal-following teacher repairs the network only when all three layers are updated together.
 
 ## More
 

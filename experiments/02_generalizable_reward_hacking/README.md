@@ -2,7 +2,7 @@
 
 **Long-term question:** can we identify internal representations associated with reward hacking and use them to restore goal-directed behavior in environments the agent and the intervention have never seen?
 
-**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant), Phase 3 (how hacking emerges during training) and Phase 4 (near-transition patching) complete. No repair method works yet.**
+**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant), Phase 3 (how hacking emerges during training), Phase 4 (near-transition patching) and Phase 5 (weight-level interventions) complete. Copying weights or activations does not repair the hacking network; retraining all three layers together does.**
 
 > **Phase 1 in one paragraph.** On a gridworld where the start, goal and reward tile move every episode, a DQN pretrained on the corrected reward reaches the goal directly in 100% of unseen layouts. Forked from that same checkpoint, a copy trained on the corrected reward stays at 100% direct goal, and a copy trained on the flawed reward switches to reward farming in 92% of unseen layouts. Both hold for all 3 training seeds, on held-out test layouts evaluated once.
 
@@ -209,6 +209,81 @@ Per-seed values are in seed order 42 / 123 / 456. A uniformly random policy reac
 
 **Answer:** the hypothesis is not supported. Near the transition there is no compatible goal-following donor to patch from, and the strength sweep that ran for the two triggering pairs (seed 42) only weakened the patch (α 0.75: 0.29–0.32). The Phase 2 failure is better explained by goal pursuit and representation changing together than by drift afterwards.
 
+## Phase 5: which weights have to change?
+
+**Question:** to turn the hacking network back into a goal-follower, is it enough to change the output layer (which picks the action), or a hidden layer, or do they have to change together?
+
+**Bar for "repair" (fixed in [configs/phase5.json](configs/phase5.json) before the run):** direct goal ≥ 0.90, path efficiency ≥ 0.90 and farming ≤ 0.05 on development layouts. Reaching the goal is not enough: a random policy does that in half of these layouts.
+
+| Reference on 1,500 development layouts | Direct goal | Farming | Path efficiency | Steps to goal | Tile visits |
+|---|---|---|---|---|---|
+| Scripted shortest path | 1.00 | 0.00 | 1.00 | 5.2 | 0.0 |
+| Pretrained and good DQN (all seeds) | 1.00 | 0.00 | 1.00 | 5.2 | 0.1 |
+| Hacking DQN, final (seeds 42 / 123 / 456) | 0.08 / 0.08 / 0.09 | 0.92 / 0.92 / 0.91 | 0.98–0.99 | 6.7–9.4 | 43–44 |
+| Uniformly random policy | 0.49 | 0.05 | 0.23 | 41 | 0.9 |
+
+**1. Copying goal-following weights into the hacking network does not restore navigation.** Each row replaces the named layers of the final hacking network with the same seed's pretrained weights.
+
+![Weight swaps](../../assets/figures/exp2_phase5_weight_swaps.png)
+
+| Layers copied from the pretrained network | Direct goal (42 / 123 / 456) | Other / failure | Random edit of the same size: direct goal |
+|---|---|---|---|
+| Output head | 0.09 / 0.05 / 0.08 | 0.88 / 0.95 / 0.90 | 0.07–0.08 |
+| Layer 2 | 0.24 / 0.07 / 0.23 | 0.66 / 0.93 / 0.66 | 0.07–0.09 |
+| Layer 1 | 0.13 / 0.10 / 0.13 | 0.56 / 0.85 / 0.70 | 0.08–0.11 |
+| Layer 2 + head | 0.21 / 0.18 / 0.62 | 0.73 / 0.81 / 0.38 | 0.07–0.09 |
+| Layer 1 + layer 2 (follow-up) | 0.52 / 0.08 / 0.53 | 0.47 / 0.92 / 0.41 | 0.08–0.09 |
+| Layer 1 + head (follow-up) | 0.13 / 0.05 / 0.07 | 0.85 / 0.95 / 0.93 | 0.06–0.07 |
+
+- **None of 72 swaps meets the bar** (4 donor/recipient pairs × 6 layer subsets × 3 seeds, including the good network as donor and the pre-onset checkpoint into the completion checkpoint). The best single result, layer 2 + head from the pretrained network into seed 456's completion checkpoint, reaches 0.84 direct goal with path efficiency 0.72.
+- **The output head alone only breaks things.** A goal-following head on hacking features gives 0.05–0.12 direct goal in every pair, about what a random head of the same size gives (0.07–0.08).
+- **Swaps that include layer 2 do more than damage in two seeds.** They beat same-size random edits (0.21–0.62 against 0.07–0.09) in seeds 42 and 456. Seed 123 responds least (at most 0.30 in any pair), as in Phases 2 and 4.
+- The two follow-up subsets ran because no primary swap repaired all three seeds (rule fixed in advance). Together with layer 2 + head they show that keeping any one hacking layer is enough to block repair.
+
+**2. Fine-tuning on the corrected reward removes the farming but, in 200k steps, does not bring navigation back, whichever layers are trainable.**
+
+![Fine-tuning curves](../../assets/figures/exp2_phase5_finetune_curves.png)
+
+| Trainable layers (parameters) | RL fine-tuning, 200k steps: direct goal | Supervised distillation, 50k updates: direct goal | Distillation: path efficiency |
+|---|---|---|---|
+| Output head only (516) | 0.24 / 0.29 / 0.32 | 0.49 / 0.49 / 0.69 | 0.50–0.63 |
+| Layer 1 only (1,024) | 0.23 / 0.12 / 0.17 | 0.53 / 0.61 / 0.75 | 0.51–0.61 |
+| Layer 2 only (16,512) | 0.32 / 0.18 / 0.26 | 0.64 / 0.70 / 0.83 | 0.58–0.61 |
+| **Full network (18,052)** | 0.28 / 0.41 / 0.41 | **0.99 / 0.99 / 1.00** | **0.98–1.00** |
+
+Seeds 42 / 123 / 456. Checkpoints were picked on 750 development layouts and are reported on the other 750.
+
+- **Reinforcement learning (top two rows of the figure):** farming falls below 0.10 in 9 of 12 runs, but the agent then wanders. Even with every layer trainable, direct goal is 0.28–0.41, below the random policy's 0.49. No run meets the bar at any point. Unlearning the exploit is fast; relearning the task from the hacking weights is slow.
+- **Supervised distillation (bottom row; a separate experiment, added after the RL result):** the same-seed good network labels 28,000 training-layout states with its Q-values, and each condition gets the same data, batches and number of updates. **Only the full network is repaired**, in all three seeds, from 27.5k–35k updates on. Each single layer reaches only 0.49–0.83 direct goal with inefficient paths, and is still improving slowly when the budget ends.
+- **The output head cannot do it even at its optimum.** The exact least-squares head on the frozen hacking features gives 0.66 / 0.66 / 0.89 direct goal with path efficiency 0.60–0.71.
+- **It is not the parameter count.** Layer 2 holds 91% of the parameters and fails; adding the other 1,540 succeeds.
+
+![Parameters vs repair](../../assets/figures/exp2_phase5_params_vs_repair.png)
+
+- **The repaired network is not the good network.** After full-network distillation the weights have moved 0.18–0.40 of their size per layer, while the good network is 0.59–0.86 away. Random edits of the same size as any fine-tuning result give 0.07–0.11 direct goal.
+
+![Repair comparison](../../assets/gifs/exp2_phase5_repair_comparison.gif)
+
+*Seed 42 on the first development layout (Phase 2 rule) where the hacking network farms. The layout was not chosen by outcome. Here the RL fine-tuned network happens to reach the goal; it does so directly on only about 30% of layouts. The head-only distilled network needs 62 steps for a 9-step route. Still frame: [exp2_phase5_trajectories.png](../../assets/figures/exp2_phase5_trajectories.png).*
+
+**3. During training, all three layers change, and the hidden layers move first.**
+
+![Weight drift](../../assets/figures/exp2_phase5_weight_drift.png)
+
+| Weight change from the fork start, relative to starting size (42 / 123 / 456) | Layer 1 | Layer 2 | Output head |
+|---|---|---|---|
+| Hacking branch, final | 0.73 / 0.91 / 0.83 | 1.80 / 1.77 / 1.82 | 1.87 / 1.93 / 2.05 |
+| Good branch, final | 0.27 / 0.27 / 0.20 | 0.27 / 0.30 / 0.37 | 0.14 / 0.17 / 0.18 |
+| Hacking branch, last checkpoint before onset | 0.19 / 0.26 / 0.28 | 0.43 / 0.66 / 0.64 | 0.22 / 0.43 / 0.29 |
+| Share of the final change done by completion | 0.86 / 0.96 / 0.99 | 0.90 / 0.95 / 1.01 | 0.72 / 0.84 / 0.79 |
+
+- **Largest changes: layer 2 and the output head, about equally** (1.8 and 1.9–2.1 times their starting size). Layer 1 changes about half as much.
+- **Timing:** every layer changes fastest inside the behavioral transition (1.7 to 2.7 times its earlier rate). Layer 2 leads: before onset it has done 24–37% of its final change against 12–23% for the head, and it is finished at completion while the head keeps growing.
+- **Q-values at matched states:** where one move approaches the tile and another the goal, the hacking branch's preference for the tile-ward move goes from −0.22…−0.25 at the fork to +1.1…+1.4 at completion (84–92% of such states). The good branch stays at −0.22…−0.25 throughout.
+- **Drift does not explain behavior.** Before onset the hacking branch's layer 2 has already moved 0.43–0.66, more than three times the good branch, while it still reaches the goal directly in 80–88% of layouts. The good branch moves 0.14–0.37 with no behavior change at all. And a random edit as large as a repair produces wandering. Size of change says when the network is being rebuilt, not what it will do.
+
+**Answer:** in these three independently trained networks, reversing reward hacking needs coordinated changes in the hidden layers and the output head. Changing the action-selection layer alone fails, changing either hidden layer alone fails, and copying any subset of goal-following weights fails, because each layer has adapted to the others. This is a statement about what was sufficient here under fixed budgets. It does not identify a reward-hacking circuit.
+
 ## What kind of generalization this is
 
 **Experiment 2 currently shows generalization to unseen combinations of positions. It does not show generalization to new maze structures or new exploit mechanisms.**
@@ -241,7 +316,7 @@ The final evaluation set ([manifest](layouts/final_eval_manifest.json)) was gene
 
 The nine final checkpoints are committed: for each seed (42, 123, 456), the pretrained network and the good and hacking networks that were forked from it. `results/exp2/phase1/checkpoints.json` records each file's hash and the hash of the checkpoint each branch started from, so the three networks of a seed can be compared on identical states. `rewardlens.exp2.checkpoints.load_triplet(seed)` loads and verifies them. Raw per-episode training logs are kept locally and not committed.
 
-Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (3.6 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`). Phase 4 adds nine more (2.7 MB): the hacking checkpoints 10k, 20k and 50k before each seed's completion step (`results/exp2/phase4/required_checkpoints.json`).
+Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (3.6 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`). Phase 4 adds nine more (2.7 MB): the hacking checkpoints 10k, 20k and 50k before each seed's completion step (`results/exp2/phase4/required_checkpoints.json`). Phase 5's interventions use only committed checkpoints (15 files); its weight-drift analysis reads all 246 trajectory files, listed with hashes in `results/exp2/phase5/required_checkpoints.json`. The 24 fine-tuned and distilled networks are saved in `results/exp2/phase5/finetuned/` and `distilled/`.
 
 ## What to keep in mind
 
@@ -254,12 +329,12 @@ Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB
 
 | Document | Contents |
 |---|---|
-| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 to Phase 4 methods and negative results |
+| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 to Phase 5 methods and negative results |
 | [configs/](configs/) | `environment.json` (environment and layout split), `training.json` (DQN, budgets, tuning log) |
 | [SETUP.md](../../SETUP.md) | Commands to regenerate everything |
 
-Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/` to `results/exp2/phase4/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase4.py`. Settings: `configs/phase2.json` to `configs/phase4.json`.
+Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/` to `results/exp2/phase5/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase5.py`. Settings: `configs/phase2.json` to `configs/phase5.json`.
 
 ## Next
 
-Phase 5 (not started). Whole-layer activation transplants have now failed across every pairing tried. The recommended next step is to stop transplanting activations and instead ask which weights carry the switch: fine-tune only the output layer, or only layer 2, of the completion checkpoint back toward goal-following on training layouts, and measure how few steps and which parameters it takes, with the same controls. All development stays on training and development layouts; the reserved final evaluation set is opened once, for a frozen method.
+Phase 6 (not started). The one repair that works so far needs the good network as a teacher and updates every layer. Two open questions follow. First, whether reinforcement learning on the corrected reward repairs the full network given more steps or more exploration, and whether a single layer ever catches up. Second, how small a coordinated update can be: a low-rank or sparse update spanning all three layers, fitted on training layouts and compared against same-size random updates. All development stays on training and development layouts; the reserved final evaluation set is opened once, for a frozen method.

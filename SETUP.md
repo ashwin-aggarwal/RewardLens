@@ -174,6 +174,16 @@ python -m pytest tests/test_exp2_phase5.py -q
 
 The baselines, weight swaps, RL fine-tuning and distillation need only committed checkpoints (15 files) and `results/exp2/phase3/timeline.json`. The `weights` part reads every fork-stage checkpoint (see Phase 3 above for regenerating them); `results/exp2/phase5/required_checkpoints.json` lists each file with its hash. Fine-tuning and distillation run 12 jobs each in 6 worker processes and write the selected networks to `results/exp2/phase5/finetuned/` and `distilled/`. The repair criterion, swaps, budgets and controls are fixed in `experiments/02_generalizable_reward_hacking/configs/phase5.json`.
 
+### Phase 6: coordinated low-rank weight editing
+
+```bash
+python -m scripts.exp2_run_phase6             # 171 training runs in 6 worker processes; about 55 minutes on a shared 8-core CPU
+python -m scripts.exp2_visualize_phase6 --gif
+python -m pytest tests/test_exp2_phase6.py -q
+```
+
+Phase 6 needs the committed final checkpoints and the Phase 5 results (`results/exp2/phase5/`, used for the existing baselines and not rerun). It writes `results/exp2/phase6/runs.json` (every run), `summary.json` (per method, rank and learning rate) and one factor file per learned edit in `results/exp2/phase6/edits/`. To rebuild a repaired network, merge a factor file into its seed's hacking checkpoint with `rewardlens.exp2.low_rank.merged_network`. Ranks, learning rates, seeds and controls are fixed in `experiments/02_generalizable_reward_hacking/configs/phase6.json`.
+
 Phase 2 reads training and development layouts only. `--part representations` or `--part patching` runs one half. Settings are in `experiments/02_generalizable_reward_hacking/configs/phase2.json`; results go to `results/exp2/phase2/`.
 
 ### Layouts and checkpoints

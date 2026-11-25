@@ -703,3 +703,135 @@ This answers the phase's question for these networks and budgets. It does not sh
 ### 10. Recommended next step
 
 Find the smallest coordinated repair. Fit a low-rank or sparse update spanning all three layers on training layouts (the full-network distillation delta is the natural starting point: take its top singular directions per layer), score it with the same repair criterion, and compare against same-rank random updates and against single-layer updates of equal rank. Separately, settle the RL question with one preregistered longer run of the full network with higher exploration, since a teacher-free repair is what the final steering experiment needs.
+
+## Phase 6: Coordinated Low-Rank Weight Editing
+
+**Date:** 2026-11-24. **Branch:** `experiment/generalizable-reward-hacking`. **Layouts used:** training and development only. The test split and the reserved final evaluation set were not loaded. Phase 5 was verified, committed and pushed before this phase started (`806edc3` to `8a4fa53`). This is the final planned research phase.
+
+**Question.** Can small, structured weight updates distributed across the DQN's layers restore efficient goal-directed behavior in the hacking agents?
+
+**Predictions, written before the run.**
+
+- P1: a coordinated low-rank update repairs all three agents at some tested rank of 8 or less.
+- P2: behavior improves with rank.
+- P3: at equal rank, editing all three layers beats editing the head or layer 2 alone.
+- P4: random edits of matched norm and rank do not repair.
+
+### 1. Design
+
+Everything is in `configs/phase6.json`, written before any Phase 6 training ran.
+
+- **Update form:** for each edited layer, `W_new = W_original + A @ B.T`, with A (out × r) starting at zero and B (in × r) Gaussian with standard deviation 1/√in, so training starts exactly at the hacking network. The original weights are frozen buffers. Bias updates are learned as full vectors and counted separately.
+- **Rank cap:** a layer's rank cannot exceed its smaller dimension. Layer 1 is 128×7 (cap 7), layer 2 is 128×128, the head is 4×128 (cap 4). Nominal rank 8 is therefore rank 7 / 8 / 4.
+- **Merging:** every evaluation and every stored result uses a plain `QNetwork` with the update added into its weight matrices. No adapter, donor network or hook exists at evaluation time. Each learned edit is saved as its factors; merging them into the seed's hacking checkpoint reproduces the evaluated network's weight hash (tested).
+- **Training:** identical to Phase 5's full-network distillation, read from the Phase 5 config: student = final hacking network, teacher = same-seed good network, 28,000 training-layout states (state seed 505), smooth-L1 loss on the four Q-values, Adam, batch 64, 50,000 updates, evaluation every 2,500 updates, checkpoint chosen on the first 750 development layouts by mean corrected return and reported on the other 750.
+- **Learning rates, both fixed in advance:** 0.00025 (the Phase 5 rate, the headline comparison) and 0.001 (a sensitivity check for the coordinated edits and the full-network control, because factors that start at a zero update often train slowly at a rate chosen for full matrices). No other hyperparameter was varied and nothing was added after results were seen.
+- **Conditions:** coordinated edit of all three layers at ranks 0 (biases only), 1, 2, 4, 8, both rates; head-only at ranks 1, 2, 4 and layer-2-only at ranks 1, 2, 4, 8, at 0.00025; full-network ordinary fine-tuning at both rates. Single-layer ordinary fine-tuning, the hacking and good networks, the random policy and the scripted path come from the Phase 5 results and were not rerun.
+- **Seeds:** 3 DQN seeds × 3 optimization seeds per condition, 171 runs. Optimization seed k sets the factor initialization (seed 1000k + DQN seed) and the minibatch order (DQN seed + 1000k). With k = 0 the minibatch order is Phase 5's.
+- **Controls per learned edit:** 5 random low-rank edits of the same layers and rank with A·Bᵀ and the bias noise rescaled to the learned update's norms, and 5 full-rank random edits with matched per-tensor norms (the Phase 5 control).
+- **No-training analysis:** the Phase 5 full-network update truncated to its top 1, 2, 4, 8 singular directions per layer (bias updates kept), merged and evaluated.
+- **Reliability rule:** a method is reliably successful only if all 9 runs meet the repair criterion (direct goal ≥ 0.90, path efficiency ≥ 0.90, farming ≤ 0.05) on the 750 reporting layouts at the selected checkpoint. Best single runs are reported separately.
+
+**Comparability check.** The full-network control at 0.00025 with optimization seed 0 reproduced the Phase 5 full-network network exactly (identical weight hash) in all three seeds.
+
+### 2. Parameter counts
+
+| Edit | Factor parameters | Bias parameters | Total | Share of 18,052 |
+|---|---|---|---|---|
+| Coordinated, biases only | 0 | 260 | 260 | 1.4% |
+| Coordinated, rank 1 | 523 | 260 | 783 | 4.3% |
+| Coordinated, rank 2 | 1,046 | 260 | 1,306 | 7.2% |
+| Coordinated, rank 4 | 2,092 | 260 | 2,352 | 13.0% |
+| Coordinated, rank 8 (7 / 8 / 4) | 3,521 | 260 | 3,781 | 20.9% |
+| Head only, rank 1 / 2 / 4 | 132 / 264 / 528 | 4 | 136 / 268 / 532 | 0.8–2.9% |
+| Layer 2 only, rank 1 / 2 / 4 / 8 | 256 / 512 / 1,024 / 2,048 | 128 | 384 / 640 / 1,152 / 2,176 | 2.1–12.1% |
+| Full network | n/a | 260 | 18,052 | 100% |
+
+Two cautions. At rank 4 the head's factors (528) outnumber the head's own 512 weights, and at rank 8 layer 1's factors (945) outnumber its 896 weights: for those two layers the "low-rank" form is a full-rank reparametrization. All of the parameter saving at rank 8 comes from layer 2 (2,048 factor parameters against 16,384 weights).
+
+### 3. Results: coordinated edits
+
+Selected checkpoint on the 750 reporting layouts. Direct goal per DQN seed lists the three optimization seeds.
+
+| Rank | Rate | Seed 42 | Seed 123 | Seed 456 | Path efficiency (range) | Mean other / failure | Runs meeting the criterion |
+|---|---|---|---|---|---|---|---|
+| 0 (biases) | 0.00025 | 0.12 / 0.13 / 0.11 | 0.19 / 0.18 / 0.18 | 0.15 / 0.18 / 0.19 | 0.32–0.52 | 0.78 | 0 / 9 |
+| 1 | 0.00025 | 0.38 / 0.41 / 0.28 | 0.21 / 0.24 / 0.22 | 0.36 / 0.28 / 0.33 | 0.34–0.66 | 0.67 | 0 / 9 |
+| 2 | 0.00025 | 0.64 / 0.44 / 0.35 | 0.60 / 0.47 / 0.41 | 0.52 / 0.33 / 0.63 | 0.42–0.69 | 0.50 | 0 / 9 |
+| 4 | 0.00025 | 0.58 / 0.55 / 0.64 | 0.70 / 0.69 / 0.60 | 0.75 / 0.65 / 0.84 | 0.42–0.72 | 0.31 | 0 / 9 |
+| 8 | 0.00025 | 0.78 / 0.91 / 0.92 | 0.89 / 0.92 / 0.94 | 0.96 / 0.91 / 0.92 | 0.49–0.90 | 0.09 | 0 / 9 |
+| 0 (biases) | 0.001 | 0.11 / 0.12 / 0.11 | 0.16 / 0.16 / 0.15 | 0.15 / 0.18 / 0.17 | 0.38–0.52 | 0.78 | 0 / 9 |
+| 1 | 0.001 | 0.41 / 0.51 / 0.57 | 0.43 / 0.44 / 0.48 | 0.53 / 0.40 / 0.43 | 0.37–0.75 | 0.51 | 0 / 9 |
+| 2 | 0.001 | 0.71 / 0.55 / 0.58 | 0.77 / 0.70 / 0.59 | 0.78 / 0.79 / 0.81 | 0.40–0.72 | 0.29 | 0 / 9 |
+| 4 | 0.001 | 0.90 / 0.81 / 0.81 | 0.90 / 0.83 / 0.79 | 0.85 / 0.97 / 0.97 | 0.65–0.81 | 0.12 | 0 / 9 |
+| **8** | **0.001** | **1.00 / 0.99 / 1.00** | **0.99 / 1.00 / 0.98** | **1.00 / 1.00 / 1.00** | **0.95–1.00** | 0.01 | **9 / 9** |
+| Full network | 0.00025 | 0.99 / 0.99 / 1.00 | 0.99 / 1.00 / 0.94 | 1.00 / 1.00 / 1.00 | 0.93–1.00 | 0.01 | 9 / 9 |
+| Full network | 0.001 | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 | 0.98–1.00 | 0.00 | 9 / 9 |
+
+- **P1 holds at one of the two rates.** Coordinated rank 8 at 0.001 is reliably successful: 9 of 9 runs, 3 of 3 for every DQN seed, no farming of either kind, 5.1–7.4 steps to the goal (shortest path 5.2), agreement with the teacher's greedy action 0.75–0.86 (the Phase 5 full-network repair: 0.80–0.85). The criterion holds on all 1,500 development layouts from 22.5k–37.5k updates to the end of every run.
+- **At the headline rate P1 fails.** Rank 8 at 0.00025 reaches direct goal 0.78–0.96 and nearly removes farming, but its paths are inefficient (0.49–0.90, mean 0.74; 9–27 steps to the goal) and two runs are below 0.90 direct goal. Its training loss ends at 0.0022–0.0055 against 0.0014–0.0044 at the higher rate and 0.0011–0.0023 for the full network. This looks like under-training within the fixed budget, not a capacity limit, but the budget was not extended.
+- **Ranks 1, 2 and 4 fail at both rates.** Rank 4 at 0.001 is the nearest miss: direct goal 0.79–0.97, path efficiency 0.65–0.81. Its best single run (seed 456, 0.97 direct goal, efficiency 0.80) still fails on efficiency.
+- **P2 holds.** Mean direct goal by rank at 0.00025: 0.16, 0.30, 0.49, 0.67, 0.91. At 0.001: 0.15, 0.47, 0.70, 0.87, 0.99. No threshold; path efficiency lags direct goal and only reaches the bar at rank 8.
+- **Biases alone do almost nothing useful** (0.11–0.19 direct goal, 78% failure), so the repair is carried by the weight updates.
+- **Optimization variability.** At rank 8 and 0.001 the nine runs span 0.979–1.000 direct goal (standard deviation 0.007). At lower ranks or the lower rate the spread across optimization seeds of one DQN seed is as large as the spread across DQN seeds (for example rank 2 at 0.00025, seed 42: 0.35–0.64).
+
+### 4. Results: single-layer low-rank edits (learning rate 0.00025)
+
+| Edit | Parameters | Direct goal, mean (range) | Farming | Other | Runs meeting the criterion |
+|---|---|---|---|---|---|
+| Head, rank 1 | 136 | 0.09 (0.09–0.09) | 0.89 | 0.02 | 0 / 9 |
+| Head, rank 2 | 268 | 0.09 (0.09–0.10) | 0.86 | 0.05 | 0 / 9 |
+| Head, rank 4 (full rank) | 532 | 0.25 (0.20–0.31) | 0.28 | 0.47 | 0 / 9 |
+| Layer 2, rank 1 | 384 | 0.15 (0.13–0.17) | 0.16 | 0.69 | 0 / 9 |
+| Layer 2, rank 2 | 640 | 0.15 (0.13–0.20) | 0.06 | 0.80 | 0 / 9 |
+| Layer 2, rank 4 | 1,152 | 0.26 (0.19–0.36) | 0.08 | 0.66 | 0 / 9 |
+| Layer 2, rank 8 | 2,176 | 0.39 (0.29–0.48) | 0.06 | 0.55 | 0 / 9 |
+
+- **P3 holds.** At every rank the coordinated edit beats both single-layer edits at the same rate (rank 8: 0.91 against 0.39). It also wins at lower parameter counts: coordinated rank 2 (1,306 parameters, 0.49) beats layer 2 rank 8 (2,176 parameters, 0.39).
+- **Low-rank head edits at rank 1 or 2 do not even stop the farming** (0.86–0.89 farming, about 40 tile visits). The selected checkpoint for these is often an early one, since the training loss falls while behavior does not improve.
+- **Ordinary single-layer fine-tuning (Phase 5)** did better than its low-rank version at this budget (head 0.49–0.69, layer 2 0.64–0.83) and still never met the criterion.
+- These single-layer conditions were run only at 0.00025, so the comparison with the successful coordinated rank 8 at 0.001 crosses learning rates. The equal-rate comparison is the one in the table and figure.
+
+### 5. Results: controls and structure
+
+- **P4 holds.** Random low-rank edits with matched norms give 0.06–0.11 mean direct goal for every one of the 153 learned edits; full-rank random edits of matched norm give 0.06–0.09. Random rank-limited noise in layer 2 leaves part of the farming in place (23–56%); random noise that reaches the head removes it and produces wandering.
+- **Number of changed weights.** After merging, a coordinated edit changes 13,100–14,800 of the 17,792 weights (about 14,100–14,200 on average at every rank from 1 to 8). The unchanged ones are rows belonging to hidden units that never activate on these inputs (25–35 of 128 layer-2 units and 8–11 layer-1 units have an all-zero update; 27–39 and 9–11 units are inactive on the development states). Rank limits the directions of the change, not how many weights it touches.
+- **Size of the change (relative to the hacking weights' norm).** Coordinated rank 8 at 0.001: 0.54 for the whole network (range 0.36–0.68); per layer 0.62 / 0.54 / 0.38. Coordinated rank 8 at 0.00025: 0.33. Full network: 0.35 at 0.00025, 0.46 at 0.001. The successful low-rank edit is not smaller than full fine-tuning; it is somewhat larger.
+- **Effective rank after merging** equals the cap in every run (7 / 8 / 4 at nominal rank 8). The full-network update has rank 71–85 in layer 2.
+- **Preserve or restructure?** Layer-2 activation similarity (linear CKA on 6,000 development states) after the successful rank-8 edit: 0.71 with the original hacking network (0.61–0.79), 0.50 with the good network (0.34–0.63). Hacking against good is 0.39. Full fine-tuning: 0.76–0.81 with hacking, 0.47–0.52 with good. Both repairs move the representation substantially while staying closer to the hacking network than to the good one. Neither is a light patch.
+- **Truncating the ordinary update does not work.** The Phase 5 full-network update has 90% of its layer-2 energy in 9–10 singular directions, yet keeping its top 8 directions per layer gives 0.06–0.12 direct goal and 88–94% failure in all three seeds (ranks 1, 2, 4: 0.05–0.11). A working low-rank edit has to be optimized under the constraint.
+
+### 6. Interpretation
+
+A coordinated low-rank edit can turn each of the three hacking DQNs back into an efficient goal-follower, reproducibly across optimization seeds, with 21% of the parameters trainable and the result merged into ordinary weights. The edit must span the layers: at equal rank, and at lower parameter counts, single-layer edits do far worse. This agrees with Phase 5: the hacking policy is held jointly by the layers.
+
+What this does not show:
+
+- **It is not evidence of a reward-hacking circuit.** The edit is one of many updates that would fit the teacher; it changes most weights and restructures layer 2.
+- **It is policy distillation under a rank constraint, not teacher-free editing.** The supervision is the good network's Q-values on 28,000 states. What "targeted weight editing" adds over ordinary distillation here is only the constraint on the form of the update and the merged, adapter-free result.
+- **It is not more efficient than fine-tuning in any practical sense.** Full fine-tuning is more robust to the learning rate, changes the weights by a similar or smaller amount, and costs the same number of updates.
+
+### 7. Negative findings and limitations
+
+- The headline setting (Phase 5 learning rate) failed at every rank: 0 of 45 coordinated runs met the criterion there.
+- Ranks 1, 2 and 4 failed at both rates (0 of 54 runs).
+- No single-layer low-rank edit met the criterion (0 of 63 runs).
+- Truncated-SVD edits failed (0 of 12).
+- **Two learning rates only.** The positive result exists at one of them. Both were fixed in advance and both are reported, but the method's sensitivity beyond these two values is unknown.
+- **Rank 8 is the largest rank tested** and the only one that worked, so "minimum successful rank" means the smallest of four tested values. Ranks 5–7 were not run. Rank 4 at a longer budget was not run.
+- **Low-rank only in layer 2.** At the successful setting layer 1 and the head are edited at full rank.
+- **Single-layer low-rank controls ran at 0.00025 only.**
+- **Selection and reporting** both use development layouts (750 / 750 split). No untouched evaluation set was spent; the reserved final evaluation set remains unopened.
+- **Reproducibility:** training is deterministic given the seeds (tested at small scale), and the full-network control reproduced Phase 5 bit for bit. The full 171-run job was run once and not repeated end to end, because it takes about 55 minutes.
+- **Scope:** three DQN seeds, one architecture, one open 8×8 grid, one exploit, teacher from the same pretraining run.
+
+### 8. Compute and artifacts
+
+- `python -m scripts.exp2_run_phase6`: 171 runs in 6 worker processes, 3,279 s wall on an 8-core CPU that was also running unrelated jobs. Each run is 50,000 updates plus 21 development evaluations and the random controls.
+- Results: `results/exp2/phase6/runs.json` (every run with its curve, selected checkpoint, update statistics and controls), `summary.json` (per method, rank and rate; baselines read from Phase 5; SVD truncation; reliability), `gif_episode.json`, and 153 factor files in `edits/` (1.5 MB).
+- Figures: `exp2_phase6_repair_vs_rank.png`, `exp2_phase6_parameter_efficiency.png`, `exp2_phase6_single_vs_coordinated.png`, `exp2_phase6_norm_vs_behavior.png`. GIF: `exp2_phase6_low_rank_repair.gif` (seed 42, development layout 0 by the Phase 2 rule, the rank-8 edit at 0.001 with optimization seed 0, fixed by rule).
+- Tests: `tests/test_exp2_phase6.py`, 33 tests. Full suite: 425 passing.
+
+### 9. Status of Experiment 2
+
+The planned research phases are complete. Two items are open by choice and would each need a decision before they are run: a single confirmatory evaluation of one frozen method on the reserved final evaluation layouts, and a repair that does not rely on a goal-following teacher.

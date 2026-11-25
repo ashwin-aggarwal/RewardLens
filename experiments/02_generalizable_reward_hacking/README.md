@@ -2,7 +2,7 @@
 
 **Long-term question:** can we identify internal representations associated with reward hacking and use them to restore goal-directed behavior in environments the agent and the intervention have never seen?
 
-**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant), Phase 3 (how hacking emerges during training), Phase 4 (near-transition patching) and Phase 5 (weight-level interventions) complete. Copying weights or activations does not repair the hacking network; retraining all three layers together does.**
+**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant), Phase 3 (how hacking emerges during training), Phase 4 (near-transition patching), Phase 5 (weight-level interventions) and Phase 6 (coordinated low-rank edits) complete. Copying weights or activations does not repair the hacking network; retraining all three layers together does, and a rank-8 update across the layers is enough.**
 
 > **Phase 1 in one paragraph.** On a gridworld where the start, goal and reward tile move every episode, a DQN pretrained on the corrected reward reaches the goal directly in 100% of unseen layouts. Forked from that same checkpoint, a copy trained on the corrected reward stays at 100% direct goal, and a copy trained on the flawed reward switches to reward farming in 92% of unseen layouts. Both hold for all 3 training seeds, on held-out test layouts evaluated once.
 
@@ -284,6 +284,67 @@ Seeds 42 / 123 / 456. Checkpoints were picked on 750 development layouts and are
 
 **Answer:** in these three independently trained networks, reversing reward hacking needs coordinated changes in the hidden layers and the output head. Changing the action-selection layer alone fails, changing either hidden layer alone fails, and copying any subset of goal-following weights fails, because each layer has adapted to the others. This is a statement about what was sufficient here under fixed budgets. It does not identify a reward-hacking circuit.
 
+## Phase 6: can a small coordinated edit do the repair?
+
+**Question:** Phase 5 repaired the hacking network only by retraining all 18,052 parameters. Can a low-rank update spread across the three layers do the same?
+
+**Method (fixed in [configs/phase6.json](configs/phase6.json) before the run):** the hacking weights are frozen and each layer learns an update `W + A·Bᵀ` of rank 1, 2, 4 or 8, plus a bias update. Supervision, data, 50,000-update budget, checkpoint selection and the repair bar are exactly Phase 5's. After training the update is merged into the weight matrices, so the repaired model is an ordinary network with no adapter, donor or hook. Each setting ran 9 times: 3 DQN seeds × 3 optimization seeds. A method counts as reliable only if all 9 runs meet the bar.
+
+![Low-rank repair](../../assets/gifs/exp2_phase6_low_rank_repair.gif)
+
+*Seed 42, same development layout as the Phase 5 GIF (chosen by rule, not by outcome). Middle: the hacking network after a merged rank-8 edit.*
+
+**1. A rank-8 coordinated edit repairs all three agents, but only at the higher of two learning rates.**
+
+![Repair vs rank](../../assets/figures/exp2_phase6_repair_vs_rank.png)
+
+| Coordinated edit (all three layers) | Trainable parameters (factors + biases) | Runs meeting the bar, learning rate 0.00025 | Direct goal, 0.00025 | Runs meeting the bar, learning rate 0.001 | Direct goal, 0.001 |
+|---|---|---|---|---|---|
+| Biases only | 0 + 260 | 0 / 9 | 0.11–0.19 | 0 / 9 | 0.11–0.18 |
+| Rank 1 | 523 + 260 | 0 / 9 | 0.21–0.41 | 0 / 9 | 0.40–0.57 |
+| Rank 2 | 1,046 + 260 | 0 / 9 | 0.33–0.64 | 0 / 9 | 0.55–0.81 |
+| Rank 4 | 2,092 + 260 | 0 / 9 | 0.55–0.84 | 0 / 9 | 0.79–0.97 |
+| **Rank 8** | 3,521 + 260 | 0 / 9 | 0.78–0.96 | **9 / 9** | **0.98–1.00** |
+| Full network, ordinary fine-tuning | 18,052 | 9 / 9 | 0.94–1.00 | 9 / 9 | 1.00 |
+
+Ranges are over the 9 runs, on the 750 reporting layouts.
+
+- **Smallest reliable rank tested: 8, at learning rate 0.001.** All 9 runs reach 0.98–1.00 direct goal with path efficiency 0.95–1.00 and no farming, and hold the bar from 22.5k–37.5k updates on.
+- **At the Phase 5 learning rate (0.00025), no rank is reliable.** Rank 8 gets to 0.78–0.96 direct goal but its paths are inefficient (0.49–0.90), so 0 of 9 runs pass. Both learning rates were fixed before the run; 0.00025 was the headline setting and it failed.
+- **Behavior improves steadily with rank.** There is no jump: each doubling of rank adds roughly 0.2 direct goal until the bar is reached.
+- **Ordinary full fine-tuning is the more robust method.** It passes 9 of 9 at both learning rates. The low-rank edit matches it only in its better setting.
+
+**2. What "rank 8" means here.** It does not mean eight weights changed.
+
+- The rank is capped by each matrix's size: layer 1 is 128×7 and the head is 4×128, so the edit has rank 7 / 8 / 4 in the three layers. For layer 1 and the head that is every direction available. Only layer 2's update (rank 8 of a possible 128) is truly low-rank.
+- Trainable parameters: 3,781, which is 21% of the network. The saving comes from layer 2 (2,048 factor parameters instead of 16,384 weights).
+- Weights actually changed after merging: about 14,100 of 17,792. The rest belong to hidden units that never activate.
+- Size of the change: 0.36–0.68 of the network's weight norm (mean 0.54), slightly larger than full fine-tuning at the same learning rate (0.40–0.54).
+
+![Parameter efficiency](../../assets/figures/exp2_phase6_parameter_efficiency.png)
+
+**3. Coordinated edits beat single-layer edits at every rank.**
+
+![Single vs coordinated](../../assets/figures/exp2_phase6_single_vs_coordinated.png)
+
+| Mean direct goal over 9 runs, learning rate 0.00025 | Rank 1 | Rank 2 | Rank 4 | Rank 8 |
+|---|---|---|---|---|
+| Output head only | 0.09 | 0.09 | 0.25 | (head has rank 4 at most) |
+| Layer 2 only | 0.15 | 0.15 | 0.26 | 0.39 |
+| All three layers | 0.30 | 0.49 | 0.67 | 0.91 |
+
+A rank-2 edit of all three layers (1,306 parameters) does better than a rank-8 edit of layer 2 alone (2,176 parameters). A rank-1 or rank-2 head edit leaves the farming in place (0.86–0.89). No single-layer edit met the bar in any run, matching Phase 5.
+
+**4. Random edits of the same size and rank do nothing useful.** They give 0.06–0.11 direct goal in every condition (153 learned edits, 5 random draws each).
+
+![Norm vs behavior](../../assets/figures/exp2_phase6_norm_vs_behavior.png)
+
+**5. The repair restructures the network; it does not lightly patch it.** After the rank-8 edit, layer-2 activations have a similarity (CKA) of 0.71 with the original hacking network and 0.50 with the good network, against 0.39 between the two originals. Full fine-tuning gives 0.81 and 0.52.
+
+**6. The low-rank edit has to be learned.** Cutting the Phase 5 full-network update down to its top 8 singular directions per layer gives 0.06–0.12 direct goal, although those directions hold most of its energy (90% within 9–10 directions in layer 2).
+
+**Answer:** a coordinated low-rank edit can reverse reward hacking in all three independently trained DQNs with about a fifth of the parameters, and the result is stable across optimization seeds. It is less robust to the learning rate than full fine-tuning and is genuinely low-rank only in layer 2. Because it is trained on a goal-following teacher's Q-values, it is policy distillation under a low-rank constraint. It shows a compact repair exists; it does not locate a reward-hacking circuit, and it is not a repair that works without a good network.
+
 ## What kind of generalization this is
 
 **Experiment 2 currently shows generalization to unseen combinations of positions. It does not show generalization to new maze structures or new exploit mechanisms.**
@@ -316,7 +377,7 @@ The final evaluation set ([manifest](layouts/final_eval_manifest.json)) was gene
 
 The nine final checkpoints are committed: for each seed (42, 123, 456), the pretrained network and the good and hacking networks that were forked from it. `results/exp2/phase1/checkpoints.json` records each file's hash and the hash of the checkpoint each branch started from, so the three networks of a seed can be compared on identical states. `rewardlens.exp2.checkpoints.load_triplet(seed)` loads and verifies them. Raw per-episode training logs are kept locally and not committed.
 
-Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (3.6 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`). Phase 4 adds nine more (2.7 MB): the hacking checkpoints 10k, 20k and 50k before each seed's completion step (`results/exp2/phase4/required_checkpoints.json`). Phase 5's interventions use only committed checkpoints (15 files); its weight-drift analysis reads all 246 trajectory files, listed with hashes in `results/exp2/phase5/required_checkpoints.json`. The 24 fine-tuned and distilled networks are saved in `results/exp2/phase5/finetuned/` and `distilled/`.
+Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB). Most are not committed. `results/exp2/phase3/checkpoint_registry.json` lists every one with its hash, and `python -m scripts.exp2_train --all-seeds` regenerates them (about 9 minutes on CPU; the rerun in Phase 1 reproduced earlier checkpoints bit for bit on this machine). The 12 checkpoints of the decision-level comparison are committed (3.6 MB): for each seed, both branches at the last step before onset and at completion (`results/exp2/phase3/required_checkpoints.json`). Phase 4 adds nine more (2.7 MB): the hacking checkpoints 10k, 20k and 50k before each seed's completion step (`results/exp2/phase4/required_checkpoints.json`). Phase 5's interventions use only committed checkpoints (15 files); its weight-drift analysis reads all 246 trajectory files, listed with hashes in `results/exp2/phase5/required_checkpoints.json`. The 24 fine-tuned and distilled networks are saved in `results/exp2/phase5/finetuned/` and `distilled/`. Phase 6 uses only committed checkpoints and saves the 153 learned low-rank edits as factor files in `results/exp2/phase6/edits/`; merging one into its seed's hacking checkpoint reproduces the evaluated network.
 
 ## What to keep in mind
 
@@ -329,12 +390,12 @@ Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB
 
 | Document | Contents |
 |---|---|
-| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 to Phase 5 methods and negative results |
+| [PROGRESS.md](PROGRESS.md) | Chronological journal: design decisions, pilot, the 200k shortfall, diagnostics, compute, Phase 2 to Phase 6 methods and negative results |
 | [configs/](configs/) | `environment.json` (environment and layout split), `training.json` (DQN, budgets, tuning log) |
 | [SETUP.md](../../SETUP.md) | Commands to regenerate everything |
 
-Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/` to `results/exp2/phase5/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase5.py`. Settings: `configs/phase2.json` to `configs/phase5.json`.
+Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/` to `results/exp2/phase6/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase6.py`. Settings: `configs/phase2.json` to `configs/phase6.json`.
 
 ## Next
 
-Phase 6 (not started). The one repair that works so far needs the good network as a teacher and updates every layer. Two open questions follow. First, whether reinforcement learning on the corrected reward repairs the full network given more steps or more exploration, and whether a single layer ever catches up. Second, how small a coordinated update can be: a low-rank or sparse update spanning all three layers, fitted on training layouts and compared against same-size random updates. All development stays on training and development layouts; the reserved final evaluation set is opened once, for a frozen method.
+Phase 6 was the last planned research phase. What remains is the write-up (not started). Two things are deliberately left open: the reserved final evaluation set has still never been evaluated, and a repair that works without a goal-following teacher has not been found.

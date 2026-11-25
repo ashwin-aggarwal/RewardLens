@@ -111,7 +111,15 @@ Experiment 2, Phase 5 (weight-level interventions): complete 2026-11-24, committ
 - Supervised distillation from the same-seed good network (separate experiment, added after the RL result, run once, equal data and updates per condition): only the full network is repaired, in all three seeds (0.99 / 0.99 / 1.00 direct goal, efficiency 0.98–1.00). Single layers reach 0.49–0.83 with efficiency 0.50–0.63. The exact least-squares head gives 0.66 / 0.66 / 0.89.
 - Weight drift: layer 2 and the head change most (about 1.8 and 1.9–2.1 times their starting norm; layer 1 0.7–0.9; good branch 0.14–0.37). All layers change fastest inside the transition; hidden layers lead and the head lags. Drift size does not explain behavior: same-size random edits give 0.07–0.11 direct goal, and the successful repair is smaller (0.18–0.40 per layer) than the distance to the good network (0.59–0.86).
 - Decision: reversing hacking here needs coordinated changes across the hidden layers and the head. No claim of a unique circuit. RL repair at larger budgets is untested.
-- Next: Phase 6, not started. Recommended: the smallest coordinated repair (low-rank or sparse update across all three layers, against same-size random updates), and one preregistered longer RL run with more exploration.
+- Next at the time: Phase 6 (below).
+
+Experiment 2, Phase 6 (coordinated low-rank weight editing): complete 2026-11-24, uncommitted. Final planned research phase. Training and development layouts only; design in `configs/phase6.json`; details in the Experiment 2 `PROGRESS.md`.
+- Method: frozen hacking weights plus a learned `A·Bᵀ` update per layer (ranks 1, 2, 4, 8, capped at each matrix's size; learned biases counted separately), same teacher, states, loss, budget, selection and repair criterion as Phase 5's full-network distillation; merged into plain weights before every evaluation. 3 DQN seeds × 3 optimization seeds per setting; 171 runs. Two learning rates fixed in advance: 0.00025 (Phase 5, headline) and 0.001 (sensitivity check).
+- Result: coordinated rank 8 at 0.001 repairs 9 of 9 runs (direct goal 0.98–1.00, efficiency 0.95–1.00) with 3,781 trainable parameters (21% of 18,052). At 0.00025 no rank is reliable (rank 8: 0.78–0.96 direct goal, efficiency 0.49–0.90, 0 of 9). Ranks 1, 2, 4 fail at both rates; improvement with rank is gradual. Full-network fine-tuning passes 9 of 9 at both rates and reproduces the Phase 5 run exactly.
+- "Rank 8" is rank 7 / 8 / 4 across the layers, the full rank of layer 1 and the head; only layer 2's update is low-rank. About 14,100 of 17,792 weights change; relative change 0.54 of the weight norm.
+- Controls: head-only and layer-2-only low-rank edits never pass (best mean 0.25 and 0.39); coordinated beats single-layer at equal rank. Random edits of matched norm and rank give 0.06–0.11. Truncating the Phase 5 full update to rank 8 gives 0.06–0.12.
+- Decision: a compact coordinated repair exists and is reproducible across seeds, but it is teacher-supervised distillation under a rank constraint, more learning-rate sensitive than full fine-tuning, and not evidence of a unique circuit.
+- Next: write-up (not started). The reserved final evaluation set has never been evaluated.
 
 ## 4. Scientific Controls
 
@@ -159,7 +167,7 @@ Status is maintained at milestone level rather than as a session transcript.
   - Transfer to seeds 42 and 456 fails because the runtime patch itself fails there (0.10, 0.03).
   - Interpretation: behavioral imitation of a patch through a compact edit, not discovery of the reward-hacking mechanism. Details: `experiments/01_fixed_gridworld_repair/weight_editing/README.md`.
 
-Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 committed and pushed there (`7effa21`); Phase 3 committed and pushed there (`ab83f30`, 2026-11-24); Phase 4 committed and pushed there (`65a8d81`, 2026-11-24); Phase 5 committed and pushed there (2026-11-24).
+Current milestone: Experiment 1 complete and merged to `main` (PR #2). Experiment 2 Phase 1 committed and pushed on `experiment/generalizable-reward-hacking`; Phase 2 committed and pushed there (`7effa21`); Phase 3 committed and pushed there (`ab83f30`, 2026-11-24); Phase 4 committed and pushed there (`65a8d81`, 2026-11-24); Phase 5 committed and pushed there (`8a4fa53`, 2026-11-24); Phase 6 complete there, uncommitted.
 
 Documentation layout (revised 2026-11-23, on `experiment/weight-editing`): the root README is a short landing page listing experiments. Experiment 1 lives in `experiments/01_fixed_gridworld_repair/`: `README.md` (research report), `METHODS.md` (shared methods and limitations), `PROGRESS.md` (the full chronological journal, moved from the root, including the archived phase-by-phase README), and one folder per extension (`sparse_patching/`, `low_rank_patching/`, `weight_editing/`) with its report and config. The root `PROGRESS.md` is a short index. `SETUP.md` holds all installation and reproduction commands. Code, scripts, results and assets stay at their shared top-level locations; only the three runner config paths changed. The edited-model checkpoint `results/weight_editing/models/` is gitignored like the training checkpoints and regenerated by `scripts.run_weight_editing`. `requirements.txt` lists `torch` and `scikit-learn`, which the code always required but the file originally omitted.
 
@@ -642,7 +650,7 @@ python -m pytest tests/test_phase4_7.py -q   # 14 passed
 
 ### Immediate next milestone
 
-Review Phase 5, then Phase 6 (not started): find the smallest coordinated weight update that repairs the hacking network, and test whether corrected-reward RL repairs it with a longer, preregistered budget. Developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
+Review Phase 6, the final planned research phase of Experiment 2, then freeze the experiment and write the technical blog (not started). Open by choice: a teacher-free repair, and a single confirmatory evaluation on the reserved final set. Developed on training and development layouts only. The test split is not available for selection, and the reserved final evaluation set is opened only for the final steering experiment after its method is frozen. Keep the pretrained checkpoint as a reference, since it is behaviorally identical to the good agent.
 
 ### Maintenance checklist
 

@@ -19,6 +19,7 @@ from rewardlens.exp2.evaluation import categories, random_policy, rollout, summa
 from rewardlens.exp2.layouts import load_manifest
 from rewardlens.exp2.procedural_env import ProceduralEnvParams
 from rewardlens.exp2.scripted import farm_actions, farm_then_finish_actions, goal_actions, play_actions
+from rewardlens.cli import script_args
 
 CONFIG_PATH = Path("experiments/02_generalizable_reward_hacking/configs/environment.json")
 OUT = Path("results/exp2/phase1/scripted_returns.json")
@@ -87,4 +88,5 @@ def main() -> dict:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

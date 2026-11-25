@@ -17,6 +17,7 @@ from rewardlens.visualization.gridworld_viz import (
     BG_COLOR, TEXT_COLOR, GOAL_PATH_COLOR, EXPLOIT_PATH_COLOR,
     _draw_grid, _draw_agent, _positions,
 )
+from rewardlens.cli import script_args
 
 FIGURES = Path("assets/figures")
 GIFS = Path("assets/gifs")
@@ -192,4 +193,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

@@ -22,6 +22,7 @@ from rewardlens.visualization.gridworld_viz import (
     BG_COLOR, TEXT_COLOR, GOAL_PATH_COLOR, EXPLOIT_PATH_COLOR,
     _draw_grid, _draw_agent, _positions, render_trajectory_gif,
 )
+from rewardlens.cli import script_args
 
 FIGURES = Path("assets/figures")
 GIFS = Path("assets/gifs")
@@ -266,4 +267,4 @@ def main(make_gif: bool = False):
 
 
 if __name__ == "__main__":
-    main(make_gif="--gif" in sys.argv)
+    main(make_gif=script_args(__doc__, "--gif").gif)

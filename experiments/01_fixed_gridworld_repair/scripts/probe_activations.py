@@ -37,6 +37,7 @@ from rewardlens.analysis.probing import (
     check_label_quality,
 )
 from rewardlens.envs.reward_grid import ACTION_DELTAS
+from rewardlens.cli import script_args
 
 
 FLAWED_DIR = Path("results/phase2")
@@ -216,4 +217,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

@@ -1,6 +1,6 @@
 # Setup and Reproduction
 
-Every command runs from the repository root. All experiments run on CPU.
+Every command runs from the repository root. All experiments run on CPU. Script files live in each experiment's `scripts/` folder and are run as `python -m scripts.<name>`; the module names are the same for both experiments. Every script accepts `--help`, which prints its description without running anything; an unknown option is an error.
 
 ## Install
 
@@ -44,9 +44,9 @@ python -m scripts.visualize_phase2 --run-dir results/phase2/baseline_seed42
 ### Phase 2.5: goal-following DQN (corrected reward)
 
 ```bash
-python -m scripts.train_dqn --config configs/dqn_corrected.json
-python -m scripts.train_dqn --config configs/dqn_corrected.json --seed 123 --experiment-id goal_seed123
-python -m scripts.train_dqn --config configs/dqn_corrected.json --seed 456 --experiment-id goal_seed456
+python -m scripts.train_dqn --config experiments/01_fixed_gridworld_repair/configs/dqn_corrected.json
+python -m scripts.train_dqn --config experiments/01_fixed_gridworld_repair/configs/dqn_corrected.json --seed 123 --experiment-id goal_seed123
+python -m scripts.train_dqn --config experiments/01_fixed_gridworld_repair/configs/dqn_corrected.json --seed 456 --experiment-id goal_seed456
 python -m scripts.evaluate_phase2_5
 python -m scripts.visualize_phase2_5
 ```
@@ -215,8 +215,9 @@ The test split has been used once for the Phase 1 baselines and must not guide P
 | `rewardlens/envs/` | Gridworld environment, scripted policies, trajectory recording |
 | `rewardlens/agents/dqn.py` | Q-network, replay buffer, checkpointing |
 | `rewardlens/analysis/` | Activation extraction, probing, interventions, patching, behavior classification |
-| `scripts/` | One runner and one visualizer per phase |
-| `configs/`, `experiments/01_fixed_gridworld_repair/*/configs/`, `experiments/02_generalizable_reward_hacking/configs/` | Fixed experiment configurations |
+| `experiments/01_fixed_gridworld_repair/scripts/`, `experiments/02_generalizable_reward_hacking/scripts/` | One runner and one visualizer per phase, with an index in each folder's README |
+| `scripts/` | The `scripts` Python package that makes `python -m scripts.<name>` find the files above; also holds the frozen confirmatory evaluation script |
+| `experiments/01_fixed_gridworld_repair/configs/`, `experiments/01_fixed_gridworld_repair/*/configs/`, `experiments/02_generalizable_reward_hacking/configs/` | Fixed experiment configurations |
 | `rewardlens/exp2/` | Experiment 2 code: layouts, procedural environment, scripted policies, batched evaluation, training |
 | `experiments/` | One folder per experiment: report, methods, progress journal, extension reports |
 | `results/` | Machine-readable results; checkpoints and trajectories are gitignored |

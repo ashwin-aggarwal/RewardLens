@@ -128,4 +128,4 @@ The patch still needs the donor network at run time. Can we fold it into the hac
 | [weight_editing/](weight_editing/README.md) | Permanent low-rank weight editing (Phase 5) |
 | [SETUP.md](../../SETUP.md) | Installation, tests and commands to reproduce every phase |
 
-Results: `results/` (one folder per phase). Figures and GIFs: `assets/`. Scripts: one runner and one visualizer per phase in `scripts/`.
+Results: `results/` (one folder per phase). Figures and GIFs: `assets/`. Scripts: one runner and one visualizer per phase in [scripts/](scripts/README.md), run as `python -m scripts.<name>` from the repository root. Configs: [configs/](configs/) and each extension's `configs/` folder.

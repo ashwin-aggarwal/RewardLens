@@ -165,8 +165,8 @@ class TestPatching:
 
 
 class TestEvaluationIntegrity:
-    SOURCES = ("rewardlens/exp2/representations.py", "rewardlens/exp2/patching.py", "scripts/exp2_run_phase2.py",
-               "scripts/exp2_visualize_phase2.py")
+    SOURCES = ("rewardlens/exp2/representations.py", "rewardlens/exp2/patching.py", "experiments/02_generalizable_reward_hacking/scripts/exp2_run_phase2.py",
+               "experiments/02_generalizable_reward_hacking/scripts/exp2_visualize_phase2.py")
 
     def test_phase2_code_never_touches_test_or_final_eval_layouts(self):
         for path in self.SOURCES:

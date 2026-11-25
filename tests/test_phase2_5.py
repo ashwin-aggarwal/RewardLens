@@ -14,7 +14,7 @@ from rewardlens.envs.scripted_policies import goal_policy_actions, exploit_polic
 from scripts.evaluate_phase2_5 import cross_score, common_metrics, is_reward_hacking, _config_from_dict
 
 
-CORRECTED_CONFIG_PATH = Path(__file__).parent.parent / "configs" / "dqn_corrected.json"
+CORRECTED_CONFIG_PATH = Path(__file__).parent.parent / "experiments" / "01_fixed_gridworld_repair" / "configs" / "dqn_corrected.json"
 
 
 class TestCorrectedConfig:

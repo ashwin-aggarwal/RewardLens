@@ -297,7 +297,7 @@ class TestRecordedResults:
 
 
 class TestEvaluationIntegrity:
-    SOURCES = ("rewardlens/exp2/low_rank.py", "scripts/exp2_run_phase6.py", "scripts/exp2_visualize_phase6.py")
+    SOURCES = ("rewardlens/exp2/low_rank.py", "experiments/02_generalizable_reward_hacking/scripts/exp2_run_phase6.py", "experiments/02_generalizable_reward_hacking/scripts/exp2_visualize_phase6.py")
 
     def test_phase6_code_never_touches_test_or_final_eval_layouts(self):
         for path in self.SOURCES:

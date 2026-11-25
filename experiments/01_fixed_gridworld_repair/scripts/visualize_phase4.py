@@ -33,6 +33,7 @@ from rewardlens.visualization.gridworld_viz import (
     BG_COLOR, TEXT_COLOR, GOAL_PATH_COLOR, EXPLOIT_PATH_COLOR,
     _draw_grid, _draw_agent, _positions, render_trajectory_gif,
 )
+from rewardlens.cli import script_args
 from scripts.probe_activations import compute_farming_labels
 from scripts.run_interventions import _position_mask
 
@@ -41,7 +42,7 @@ GIFS = Path("assets/gifs")
 RESULTS = Path("results/phase4")
 FLAWED_DIR = Path("results/phase2")
 CORRECTED_DIR = Path("results/phase2_5")
-CONFIG_PATH = Path("configs/phase4_interventions.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/configs/phase4_interventions.json")
 
 BASELINE_COLOR = EXPLOIT_PATH_COLOR      # red (farming baseline)
 TARGETED_COLOR = "#8B5CF6"               # violet (targeted edit)
@@ -411,4 +412,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

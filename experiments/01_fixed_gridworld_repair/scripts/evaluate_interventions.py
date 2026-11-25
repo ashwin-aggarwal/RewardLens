@@ -33,10 +33,11 @@ from rewardlens.analysis.activation_intervention import (
     random_unit_directions,
 )
 from rewardlens.envs.reward_grid import ACTION_DELTAS, RewardGridConfig
+from rewardlens.cli import script_args
 
 FLAWED_DIR = Path("results/phase2")
 OUTPUT_DIR = Path("results/phase4")
-CONFIG_PATH = Path("configs/phase4_interventions.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/configs/phase4_interventions.json")
 
 
 def within_run_farming_labels(greedy_actions: np.ndarray, metadata: dict) -> np.ndarray:
@@ -189,4 +190,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

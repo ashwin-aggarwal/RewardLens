@@ -431,7 +431,7 @@ Phase 3 reads the fork-stage checkpoints saved every 10k steps (246 files, 73 MB
 | [configs/](configs/) | `environment.json` (environment and layout split), `training.json` (DQN, budgets, tuning log) |
 | [SETUP.md](../../SETUP.md) | Commands to regenerate everything |
 
-Code: `rewardlens/exp2/`. Scripts: `scripts/exp2_*.py`. Results: `results/exp2/phase1/` to `results/exp2/phase6/` and `results/exp2/final_eval/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase6.py` and `tests/test_exp2_final_eval.py`. Settings: `configs/phase2.json` to `configs/phase6.json` and `configs/final_eval.json`.
+Code: `rewardlens/exp2/`. Scripts: [scripts/](scripts/README.md) (`experiments/02_generalizable_reward_hacking/scripts/exp2_*.py`, run as `python -m scripts.<name>` from the repository root). Results: `results/exp2/phase1/` to `results/exp2/phase6/` and `results/exp2/final_eval/`. Tests: `tests/test_exp2_phase1.py` to `tests/test_exp2_phase6.py` and `tests/test_exp2_final_eval.py`. Settings: `configs/phase2.json` to `configs/phase6.json` and `configs/final_eval.json`.
 
 ## Next
 

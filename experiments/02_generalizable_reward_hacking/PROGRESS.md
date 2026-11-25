@@ -28,7 +28,7 @@ Chronological record of Experiment 2. The summary is in [README.md](README.md). 
 
 ### 2. Scripted returns before training
 
-Script: `scripts/exp2_scripted_returns.py`, on the 8,500 train + development layouts (test not read). Discount γ = 0.99, the DQN's.
+Script: `experiments/02_generalizable_reward_hacking/scripts/exp2_scripted_returns.py`, on the 8,500 train + development layouts (test not read). Discount γ = 0.99, the DQN's.
 
 | Scripted policy | Goal reached | Tile visits | Discounted return, flawed (mean, min–max) | Discounted return, corrected (mean) |
 |---|---|---|---|---|
@@ -161,7 +161,7 @@ Decisions made before Phase 2, at the project owner's direction:
 
 ## Phase 2: Representation Analysis and Preliminary Transplantation
 
-**Date:** 2026-11-23. Branch: `experiment/generalizable-reward-hacking`. Script: `scripts/exp2_run_phase2.py`. Settings: `configs/phase2.json`.
+**Date:** 2026-11-23. Branch: `experiment/generalizable-reward-hacking`. Script: `experiments/02_generalizable_reward_hacking/scripts/exp2_run_phase2.py`. Settings: `configs/phase2.json`.
 
 **Question.** Do reward-hacking DQNs develop consistent internal representations across randomized layouts and independent seeds, and does transplanting goal-following activations change their behavior?
 

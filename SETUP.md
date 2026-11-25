@@ -1,6 +1,6 @@
 # Setup and Reproduction
 
-Every command runs from the repository root. All experiments run on CPU. Script files live in each experiment's `scripts/` folder and are run as `python -m scripts.<name>`; the module names are the same for both experiments. Several Experiment 1 runners (`run_interventions`, `run_phase4_5`, `run_phase4_6`, `run_phase4_7`, `run_sparse_patching`, `run_low_rank_patching`, `run_weight_editing`) take no arguments and start their full run whatever is passed, including `--help`.
+Every command runs from the repository root. All experiments run on CPU. Script files live in each experiment's `scripts/` folder and are run as `python -m scripts.<name>`; the module names are the same for both experiments. Every script accepts `--help`, which prints its description without running anything; an unknown option is an error.
 
 ## Install
 

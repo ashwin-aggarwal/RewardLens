@@ -182,7 +182,7 @@ All checked against the named files on 2026-11-25.
 | 21 | Exp 2: reserved layouts, farming | 0.000 in all nine | same (`models[*].final_eval.farming`) |
 | 22 | Exp 2: models meeting the bar on reserved layouts | 9 of 9 | same (`n_meeting_criterion`, `confirmed`) |
 | 23 | Exp 2: hacking baseline on reserved layouts | 0.075 / 0.081 / 0.083 direct goal; 0.923 / 0.919 / 0.913 farming | same (`baselines.per_seed`) |
-| 24 | Tests | 438 passing | `python -m pytest -q` |
+| 24 | Tests | 452 passing | `python -m pytest -q` |
 
 The one-number headline: **a coordinated rank-8 weight edit took the hacking networks from about 8% to 99.3% mean direct-goal completion on 1,500 reserved layouts.**
 
@@ -318,7 +318,7 @@ python -m scripts.visualize_weight_editing --gif
 
 - Full command sequences, run times and prerequisites: `SETUP.md`.
 - Script indexes: `experiments/01_fixed_gridworld_repair/scripts/README.md` and `experiments/02_generalizable_reward_hacking/scripts/README.md`.
-- **Warning:** several runner scripts have no command-line parser and start their full experiment when invoked with any argument, including `--help` (for example `python -m scripts.run_weight_editing`). Run only visualizers unless a rerun is intended.
+- Every script accepts `--help`, which prints its description and exits without running. Runner scripts (`run_*`, `exp2_run_*`, `train_dqn`, `exp2_train`) start a full experiment when run without it, so run only visualizers unless a rerun is intended.
 - **Never run** `python -m scripts.exp2_run_final_eval` without `--check`. It refuses to overwrite its result, and the reserved set must not be evaluated again.
 - Experiment 1 training checkpoints are not committed; `SETUP.md` lists the training commands that regenerate them.
 

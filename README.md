@@ -13,11 +13,16 @@ Reward hacking happens when an agent maximizes the reward it is given without do
 | # | Experiment | Status |
 |---|---|---|
 | 1 | [Fixed Gridworld Reward-Hacking Repair](experiments/01_fixed_gridworld_repair/README.md) | Complete |
-| 2 | [Generalizable Reward-Hacking Interventions](experiments/02_generalizable_reward_hacking/README.md) | Phases 1–6 and the confirmatory evaluation complete; a rank-8 edit across all layers repairs the agents, confirmed on reserved layouts |
+| 2 | [Generalizable Reward-Hacking Interventions](experiments/02_generalizable_reward_hacking/README.md) | Complete |
 
 **Experiment 1.** In one fixed 8×8 gridworld, transplanting a goal-following checkpoint's activations restored direct goal pursuit in a hacking DQN, and a rank-4 weight edit made that repair permanent. Ordinary fine-tuning worked as well, and neither repair transferred to other training seeds.
 
-**Experiment 2 (research complete, write-up pending).** Start, goal and reward tile move every episode. From one shared pretrained checkpoint, a good DQN reaches the goal directly in 100% of unseen layouts and a hacking DQN farms in 92%, across 3 seeds. A first activation transplant only stops the farming and does not restore goal-seeking. Tracking training checkpoints shows the hidden layers drifting before behavior flips and still changing long after, and patching between nearby checkpoints of the same run does not help: the nearby ones are already hacking. Copying goal-following weights into any subset of layers fails too. Retraining toward a goal-following teacher repairs the network only when all three layers are updated together, and a rank-8 update across the layers (a fifth of the parameters) is enough. Evaluated once on 1,500 reserved layouts, all nine frozen rank-8 models met the repair bar (0.98–1.00 direct goal, no farming). The repair is distilled from a goal-following teacher; a repair without one was not found.
+**Experiment 2.** Start, goal and reward tile move every episode, and agents are tested on layouts they never trained on.
+
+- **Emergence:** forked from one pretrained checkpoint, the DQN trained on the flawed reward farms in 92% of unseen layouts, in all three independently trained seeds. Its hidden representations change gradually, starting before the behavior flips and continuing after.
+- **Activation and weight transplants:** transplanting goal-following activations usually stops the farming without restoring useful behavior, and copying goal-following weights into any subset of layers fails.
+- **Repair:** distilling a goal-following teacher into the full network restores goal-directed behavior. A coordinated rank-8 edit of all three layers (a fifth of the parameters) does the same and reached 99.3% mean direct-goal completion on 1,500 reserved layouts, evaluated once (9 of 9 frozen models met the bar).
+- **Limits:** the repair needs a goal-following teacher and was not more robust than ordinary fine-tuning. Generalization was tested across randomized layouts from one obstacle-free gridworld generator, not across unrelated tasks.
 
 ## More
 

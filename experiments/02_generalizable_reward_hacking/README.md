@@ -2,7 +2,7 @@
 
 **Long-term question:** can we identify internal representations associated with reward hacking and use them to restore goal-directed behavior in environments the agent and the intervention have never seen?
 
-**Status: Phase 1 (behavioral baselines), Phase 2 (representation analysis, preliminary transplant), Phase 3 (how hacking emerges during training), Phase 4 (near-transition patching), Phase 5 (weight-level interventions) and Phase 6 (coordinated low-rank edits) complete, and the rank-8 edit confirmed once on 1,500 reserved layouts (9 of 9 models). Copying weights or activations does not repair the hacking network; retraining all three layers together toward a goal-following teacher does, and a rank-8 update across the layers is enough.**
+**Status: complete.** Six research phases and one confirmatory evaluation on 1,500 reserved layouts. Copying weights or activations does not repair the hacking network. Retraining all three layers together toward a goal-following teacher does, and a rank-8 update across the layers is enough: 99.3% mean direct-goal completion on the reserved layouts (9 of 9 frozen models met the bar). The repair needs that teacher and was not more robust than ordinary fine-tuning.
 
 > **Phase 1 in one paragraph.** On a gridworld where the start, goal and reward tile move every episode, a DQN pretrained on the corrected reward reaches the goal directly in 100% of unseen layouts. Forked from that same checkpoint, a copy trained on the corrected reward stays at 100% direct goal, and a copy trained on the flawed reward switches to reward farming in 92% of unseen layouts. Both hold for all 3 training seeds, on held-out test layouts evaluated once.
 
@@ -384,7 +384,7 @@ A rank-2 edit of all three layers (1,306 parameters) does better than a rank-8 e
 
 ## What kind of generalization this is
 
-**Experiment 2 currently shows generalization to unseen combinations of positions. It does not show generalization to new maze structures or new exploit mechanisms.**
+**Experiment 2 shows generalization to unseen combinations of positions from one obstacle-free gridworld generator. It does not show generalization to new maze structures, new exploit mechanisms or unrelated tasks.**
 
 - Shown: the agents behave the same on start/goal/tile combinations they never trained on, including the 282 test layouts whose goal/tile pair never appears in training.
 - Not shown: anything about walls or obstacles, other grid sizes, other reward magnitudes, or a different way of hacking the reward. The grid is open, every cell has been seen in every role, and there is one exploit.

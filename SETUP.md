@@ -189,6 +189,7 @@ Phase 6 needs the committed final checkpoints and the Phase 5 results (`results/
 ```bash
 python -m scripts.exp2_run_final_eval --check   # verifies the nine frozen models on development layouts; never opens the reserved set
 python -m scripts.exp2_run_final_eval           # the single evaluation; refuses to run when the results file exists
+python -m scripts.exp2_visualize_final_eval      # figure from the recorded result; evaluates nothing
 python -m pytest tests/test_exp2_final_eval.py -q
 ```
 
@@ -205,7 +206,7 @@ from rewardlens.exp2.checkpoints import load_triplet
 nets = load_triplet(42)   # {"pretrain": ..., "good": ..., "hacking": ...}, hashes verified
 ```
 
-The test split has been used once for the Phase 1 baselines and must not guide Phase 2 choices. A separate final evaluation set is frozen in `layouts/final_eval_manifest.json` (`python -m scripts.exp2_make_layouts --final-eval` regenerates the identical file and refuses to overwrite it); do not evaluate on it until the final steering experiment.
+The test split has been used once for the Phase 1 baselines and must not guide Phase 2 choices. A separate final evaluation set is frozen in `layouts/final_eval_manifest.json` (`python -m scripts.exp2_make_layouts --final-eval` regenerates the identical file and refuses to overwrite it); it was evaluated once, on 2026-11-25, for the confirmatory evaluation above and must not be used to choose or tune anything.
 
 ## Where things live
 

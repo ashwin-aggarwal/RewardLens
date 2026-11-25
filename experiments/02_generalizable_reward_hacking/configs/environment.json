@@ -24,6 +24,7 @@
     "n_layouts": 1500,
     "generation_seed": 20261125,
     "manifest_path": "experiments/02_generalizable_reward_hacking/layouts/final_eval_manifest.json",
-    "purpose": "Reserved for the final steering experiment. Disjoint from all 10,000 train/dev/test layouts. Frozen 2026-11-23, before any intervention development. Never evaluated."
+    "purpose": "Reserved for the final steering experiment. Disjoint from all 10,000 train/dev/test layouts. Frozen 2026-11-23, before any intervention development.",
+    "status": "Evaluated once on 2026-11-25 for the confirmatory evaluation of the frozen rank-8 coordinated edit (configs/final_eval.json). Spent; not to be used for selection or tuning."
   }
 }

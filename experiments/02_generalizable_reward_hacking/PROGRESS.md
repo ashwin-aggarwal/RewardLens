@@ -854,3 +854,77 @@ The reserved final evaluation set was set aside in Phase 1 for one confirmatory 
 - **Planned metrics:** per model, the full behavior summary, the criterion verdict and a 95% Wilson interval for direct goal; over the nine models, mean, sample standard deviation, minimum and maximum, and the mean per DQN seed; each model's development numbers next to its reserved-set numbers.
 - **Run once:** `scripts/exp2_run_final_eval.py` refuses to run when its results file exists and has no overwrite option. Its `--check` mode verifies the nine models on development layouts only; it reproduced every model's Phase 6 development numbers exactly before the freeze.
 - **This is constrained distillation.** Every edit was trained to match the same seed's good network. The evaluation tests whether that repair holds on new layouts. It does not test repair without a teacher.
+
+### 2. Run
+
+- Protocol, script and tests committed and pushed as `faf6cdb` before the run. The working tree was clean when the script started, and the result file records that commit and the hashes of the protocol and the script.
+- `python -m scripts.exp2_run_final_eval`, run once on 2026-11-25. Layout set hash `6c3ba57969f7…`, 1,500 layouts, one greedy 100-step episode per layout per network.
+- Nothing was retrained, reselected or re-thresholded afterwards. Tests check that the protocol and script files still have the hashes recorded in the result.
+
+### 3. Result: confirmed, 9 of 9 models meet the criterion
+
+| DQN seed | Optimization seed | Development: direct goal / efficiency | Reserved: direct goal / efficiency | Reserved direct goal, 95% interval | Reserved farming | Meets criterion |
+|---|---|---|---|---|---|---|
+| 42 | 0 | 0.996 / 0.972 | 0.991 / 0.974 | 0.985–0.995 | 0.000 | Yes |
+| 42 | 1 | 0.988 / 0.946 | 0.989 / 0.955 | 0.982–0.993 | 0.000 | Yes |
+| 42 | 2 | 1.000 / 0.993 | 1.000 / 0.999 | 0.997–1.000 | 0.000 | Yes |
+| 123 | 0 | 0.991 / 0.999 | 0.977 / 0.997 | 0.968–0.984 | 0.000 | Yes |
+| 123 | 1 | 1.000 / 1.000 | 1.000 / 1.000 | 0.997–1.000 | 0.000 | Yes |
+| 123 | 2 | 0.979 / 0.982 | 0.979 / 0.985 | 0.970–0.985 | 0.000 | Yes |
+| 456 | 0 | 1.000 / 0.995 | 1.000 / 0.997 | 0.997–1.000 | 0.000 | Yes |
+| 456 | 1 | 0.996 / 0.991 | 0.998 / 0.991 | 0.994–0.999 | 0.000 | Yes |
+| 456 | 2 | 1.000 / 0.984 | 1.000 / 0.983 | 0.997–1.000 | 0.000 | Yes |
+
+Aggregate over the nine models (mean, sample standard deviation, range):
+
+| Metric | Development, 750 reporting layouts | Development, all 1,500 | Reserved, 1,500 |
+|---|---|---|---|
+| Direct goal | 0.994, sd 0.007 (0.979–1.000) | 0.994, sd 0.008 (0.977–1.000) | 0.993, sd 0.009 (0.977–1.000) |
+| Path efficiency | 0.985, sd 0.017 (0.946–1.000) | 0.986, sd 0.016 (0.950–1.000) | 0.987, sd 0.015 (0.955–1.000) |
+| Farming | 0.000 | 0.000 | 0.000 |
+| Neither goal nor farming | 0.006 (0.000–0.021) | 0.006 (0.000–0.023) | 0.007 (0.000–0.023) |
+| Mean corrected return | 9.88 (9.71–9.95) | 9.88 (9.69–9.95) | 9.86 (9.70–9.95) |
+| Mean episode length (steps) | 6.1 (5.1–8.5) | 6.2 (5.2–8.3) | 6.3 (5.2–8.2) |
+
+Mean per DQN seed on the reserved set (direct goal / efficiency): 42: 0.993 / 0.976; 123: 0.985 / 0.994; 456: 0.999 / 0.990.
+
+Baselines on the reserved set:
+
+| Network | Direct goal | Farming | Path efficiency | Mean corrected return |
+|---|---|---|---|---|
+| Hacking, unedited (42 / 123 / 456) | 0.075 / 0.081 / 0.083 | 0.923 / 0.919 / 0.913 | 0.973 / 0.989 / 0.987 (direct episodes only) | −0.02 / −0.02 / −0.00 |
+| Good (42 / 123 / 456) | 1.000 / 1.000 / 1.000 | 0.000 | 1.000 | 9.95 |
+| Scripted shortest path | 1.000 | 0.000 | 0.999 | not tabulated |
+
+### 4. Development versus reserved
+
+- No model moved by more than 0.013 in direct goal (seed 123, optimization seed 0: 0.991 to 0.977) or 0.010 in path efficiency (seed 42, optimization seed 1: 0.946 to 0.955).
+- The same three models are the weakest on both sets (seed 123 with optimization seeds 0 and 2, seed 42 with optimization seed 1), although their order among themselves differs.
+- The baselines also match their development values (hacking 0.08 direct goal and 0.91–0.92 farming; good 1.00).
+- The margin over the criterion is large: the lowest reserved direct goal is 0.977 (95% interval 0.968–0.984) and the lowest efficiency is 0.955, against bars of 0.90.
+
+### 5. Conclusions
+
+- The coordinated rank-8 edit, frozen as it was selected in Phase 6, repairs all three hacking agents on 1,500 layouts that were never used for training, selection or reporting. The development results were not an artifact of selecting on development layouts.
+- Variability across optimization seeds is small next to the margin over the criterion.
+- **Constrained distillation versus teacher-free repair.** Every edit was trained on the Q-values of the same seed's good network, so this is a known good policy written into the hacking network through a small coordinated weight change. It is not a repair found from the corrected reward alone, and it needs a goal-following network to exist. The only teacher-free method tried in Experiment 2, RL fine-tuning on the corrected reward (Phase 5), removed farming in 9 of 12 runs but left direct goal at 0.12–0.41; it was not part of this evaluation. Teacher-free repair remains open.
+
+### 6. Limitations
+
+- **Generalization tested is to new position combinations** from the same generator on the same open 8×8 grid. No obstacles, other grid sizes, other reward magnitudes or other exploits.
+- **Residual failures:** five of nine models end in neither goal nor farming in 0.2–2.3% of reserved layouts (up to 34 episodes). These episodes were not examined.
+- **One learning rate.** The confirmed setting is 0.001. At 0.00025 the same rank failed on development layouts (0 of 9); that setting was not evaluated here.
+- **Low-rank only in layer 2;** layer 1 and the head are edited at their full rank (7 and 4).
+- **Three DQN seeds,** and the three optimization seeds per agent share one teacher and one base network, so the nine models are not nine independent agents.
+- **The reserved set is now spent.** Any further method would need a new untouched set.
+- Passing the criterion does not show that the edit locates a unique reward-hacking circuit.
+
+### 7. Artifacts and checks
+
+- `results/exp2/final_eval/final_eval.json` (per model, aggregate, baselines, hashes, commit); figure `assets/figures/exp2_final_eval.png` (`python -m scripts.exp2_visualize_final_eval`, reads the result and evaluates nothing).
+- Tests: `tests/test_exp2_final_eval.py`, 13 tests (protocol contents, model hashes, tamper rejection, run-once guard, recorded verdict).
+- Not done: the evaluation was not repeated (by design), and no per-layout breakdown of the reserved set was made.
+
+### 8. Status of Experiment 2
+
+Research phases and the confirmatory evaluation are complete. No further experiments are planned. The write-up has not been started.

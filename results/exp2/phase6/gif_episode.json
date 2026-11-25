@@ -1,0 +1,33 @@
+{
+  "seed": 42,
+  "dev_layout_index": 0,
+  "layout": [
+    2,
+    7,
+    0,
+    0,
+    5,
+    3
+  ],
+  "edit_run": "seed42_coordinated_r8_secondary_opt0",
+  "rank": 8,
+  "learning_rate": "secondary",
+  "episodes": {
+    "Hacking network": {
+      "steps": 100,
+      "reached_goal": false,
+      "tile_entries": 47
+    },
+    "Same network after a merged rank-8 edit of all three layers": {
+      "steps": 9,
+      "reached_goal": true,
+      "tile_entries": 0
+    },
+    "Goal-following network": {
+      "steps": 9,
+      "reached_goal": true,
+      "tile_entries": 0
+    }
+  },
+  "frames_shown": 40
+}

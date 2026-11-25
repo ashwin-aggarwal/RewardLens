@@ -835,3 +835,22 @@ What this does not show:
 ### 9. Status of Experiment 2
 
 The planned research phases are complete. Two items are open by choice and would each need a decision before they are run: a single confirmatory evaluation of one frozen method on the reserved final evaluation layouts, and a repair that does not rely on a goal-following teacher.
+
+---
+
+## Confirmatory evaluation on the reserved layouts (2026-11-25)
+
+### 1. Protocol, frozen before the reserved set was evaluated
+
+The reserved final evaluation set was set aside in Phase 1 for one confirmatory run of a frozen method. The project lead chose to spend it on the Phase 6 result. The protocol below was written to `configs/final_eval.json` and committed, together with the evaluation script and its tests, before the reserved layouts were evaluated.
+
+- **Method:** coordinated rank-8 edit of all three layers (rank 7 / 8 / 4 after the per-layer cap, 3,781 trained parameters), learning rate 0.001.
+- **Training and selection:** unchanged from Phase 6 (28,000 training-layout states, 50,000 updates, checkpoint chosen on the first 750 development layouts by mean corrected return). Nothing is retrained and nothing is reselected.
+- **Models:** the nine networks selected in Phase 6 (3 DQN seeds × 3 optimization seeds). The protocol lists each factor file's hash and each merged network's weight hash, and the script refuses to evaluate anything else.
+- **Layouts:** the 1,500 layouts in `layouts/final_eval_manifest.json`, frozen on 2026-11-23 and disjoint from all train, development and test layouts.
+- **Criterion:** direct goal ≥ 0.90, path efficiency ≥ 0.90, farming ≤ 0.05, applied to each model.
+- **Decision rule:** the method is confirmed only if all nine models meet the criterion. Any other outcome is reported as a failure to confirm.
+- **Baselines:** each seed's unedited final hacking and good networks, plus the scripted shortest path.
+- **Planned metrics:** per model, the full behavior summary, the criterion verdict and a 95% Wilson interval for direct goal; over the nine models, mean, sample standard deviation, minimum and maximum, and the mean per DQN seed; each model's development numbers next to its reserved-set numbers.
+- **Run once:** `scripts/exp2_run_final_eval.py` refuses to run when its results file exists and has no overwrite option. Its `--check` mode verifies the nine models on development layouts only; it reproduced every model's Phase 6 development numbers exactly before the freeze.
+- **This is constrained distillation.** Every edit was trained to match the same seed's good network. The evaluation tests whether that repair holds on new layouts. It does not test repair without a teacher.

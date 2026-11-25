@@ -184,6 +184,16 @@ python -m pytest tests/test_exp2_phase6.py -q
 
 Phase 6 needs the committed final checkpoints and the Phase 5 results (`results/exp2/phase5/`, used for the existing baselines and not rerun). It writes `results/exp2/phase6/runs.json` (every run), `summary.json` (per method, rank and learning rate) and one factor file per learned edit in `results/exp2/phase6/edits/`. To rebuild a repaired network, merge a factor file into its seed's hacking checkpoint with `rewardlens.exp2.low_rank.merged_network`. Ranks, learning rates, seeds and controls are fixed in `experiments/02_generalizable_reward_hacking/configs/phase6.json`.
 
+### Confirmatory evaluation (reserved layouts, run once)
+
+```bash
+python -m scripts.exp2_run_final_eval --check   # verifies the nine frozen models on development layouts; never opens the reserved set
+python -m scripts.exp2_run_final_eval           # the single evaluation; refuses to run when the results file exists
+python -m pytest tests/test_exp2_final_eval.py -q
+```
+
+The protocol is frozen in `experiments/02_generalizable_reward_hacking/configs/final_eval.json`: the nine rank-8 coordinated edits selected in Phase 6 (learning rate 0.001), identified by file and weight hashes, evaluated on the 1,500 reserved layouts with the Phase 5 repair criterion. The script trains nothing and selects nothing. It writes `results/exp2/final_eval/final_eval.json`. To reproduce the numbers after the fact, evaluate the same nine merged networks on `layouts/final_eval_manifest.json`; do not use that set to choose or tune anything.
+
 Phase 2 reads training and development layouts only. `--part representations` or `--part patching` runs one half. Settings are in `experiments/02_generalizable_reward_hacking/configs/phase2.json`; results go to `results/exp2/phase2/`.
 
 ### Layouts and checkpoints

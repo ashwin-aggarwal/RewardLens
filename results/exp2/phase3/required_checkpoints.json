@@ -1,0 +1,135 @@
+{
+ "manifest_sha256": "ceac8a6e7f572e1dd8a31d56c96e11d959eaa0f6f1a4456bf226137d719b1cf7",
+ "splits_used": [
+  "train",
+  "dev"
+ ],
+ "seeds": [
+  42,
+  123,
+  456
+ ],
+ "note": "Committed so the decision-level analysis can be rerun without retraining. All other intermediate checkpoints stay local and are listed with hashes in checkpoint_registry.json.",
+ "files": [
+  {
+   "seed": 42,
+   "branch": "good",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed42/good/checkpoints/checkpoint_60000.pt",
+   "step": 60000,
+   "file_sha256": "e2969368b3979a5dcc4e61d518978e533480d58f713837f3911104b87186ec88",
+   "weights_sha256": "0aa7407d30eaccb914d5f40d12e55e363d80df01a69a9104d7944f3d58a00120",
+   "reward_mode": "corrected"
+  },
+  {
+   "seed": 42,
+   "branch": "good",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed42/good/checkpoints/checkpoint_160000.pt",
+   "step": 160000,
+   "file_sha256": "60283c7bdde979c4d5963100f7197291bfa344a7d89c933040e3d4df0b16d00f",
+   "weights_sha256": "dd7a772d7215913a78344ccb0223ec715142a0340f5efae2f2b9b53476f72be8",
+   "reward_mode": "corrected"
+  },
+  {
+   "seed": 42,
+   "branch": "hacking",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_60000.pt",
+   "step": 60000,
+   "file_sha256": "e8d1bdefe9ac3bb9a7cc442c2f4fe9fdc2636a7905e01ecd64a4ed35de6fd892",
+   "weights_sha256": "e0c13ac7570bccd0ce2f4b208d4f6386696b739389b2d858f12bef9a5319bb2d",
+   "reward_mode": "flawed"
+  },
+  {
+   "seed": 42,
+   "branch": "hacking",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_160000.pt",
+   "step": 160000,
+   "file_sha256": "3751b97cdfe09cf15c00294633de6e0594723529827429d513537cc52bc5e2fd",
+   "weights_sha256": "a6b53ccd1dc9afee90c06f009b5de1daf6b38b4c5d9b23f4110479e2f7ff4081",
+   "reward_mode": "flawed"
+  },
+  {
+   "seed": 123,
+   "branch": "good",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed123/good/checkpoints/checkpoint_110000.pt",
+   "step": 110000,
+   "file_sha256": "b80853dfff2aa28661ef08507ee6d8e433438d64478c0b2def68399e40e7acbd",
+   "weights_sha256": "ef0cb854349a58e1f98471c0e8c74622e061a6a676df58a70bf88bf804cc52c9",
+   "reward_mode": "corrected"
+  },
+  {
+   "seed": 123,
+   "branch": "good",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed123/good/checkpoints/checkpoint_220000.pt",
+   "step": 220000,
+   "file_sha256": "219ac94fcf43838c1cbcb697b3dd5a8efd1e483bc22b32b26fd643ae961a1135",
+   "weights_sha256": "7a7fcc1687165945f76efd01f1d166b4f69173cf94fe479385a1a5fb6913c58f",
+   "reward_mode": "corrected"
+  },
+  {
+   "seed": 123,
+   "branch": "hacking",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_110000.pt",
+   "step": 110000,
+   "file_sha256": "b73129797233598b84cbf1402a9eac2858aaadaa1f2e9d85a52a40e0f9a3ce2c",
+   "weights_sha256": "b9968c55bc4f16f1c48f31a3e8e0392cfaf9a7947ee3e821f65a617ea51475d7",
+   "reward_mode": "flawed"
+  },
+  {
+   "seed": 123,
+   "branch": "hacking",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_220000.pt",
+   "step": 220000,
+   "file_sha256": "4e1e7f05a2c24ae4d9a2742fb4e96dab82fa434f5688b20e8cb0d7f7d5e53ba3",
+   "weights_sha256": "7cc26b1792bb2e08f6f1db6657c70a933e2ad187d49672d5bbcf4d6b6365461c",
+   "reward_mode": "flawed"
+  },
+  {
+   "seed": 456,
+   "branch": "good",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed456/good/checkpoints/checkpoint_90000.pt",
+   "step": 90000,
+   "file_sha256": "410c6fa48d9156beb1a602a3eb863387306ca1937ed692843f3727fee245b932",
+   "weights_sha256": "a69b6a53c1b5a6ed527b507f06a87eb63d48c99f79c5c7538bf8982c61b67f5b",
+   "reward_mode": "corrected"
+  },
+  {
+   "seed": 456,
+   "branch": "good",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed456/good/checkpoints/checkpoint_190000.pt",
+   "step": 190000,
+   "file_sha256": "cbdd2afbaea013b63e250d8f33de872afafc23eb6d9ca5b14eb5a36beb64a91a",
+   "weights_sha256": "492c259d4277b5012ef819a3952cd723ad4419ce62fa9e0196b7a6d7813c6a22",
+   "reward_mode": "corrected"
+  },
+  {
+   "seed": 456,
+   "branch": "hacking",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_90000.pt",
+   "step": 90000,
+   "file_sha256": "7c14e25dce1eb4ae62c89576de975b3a649d2fd700a2f43d92e8114544b4d8bf",
+   "weights_sha256": "fce5599f08d55bab64a34471e8f9c31288e76f6f92ab270468d053e7f89d92fa",
+   "reward_mode": "flawed"
+  },
+  {
+   "seed": 456,
+   "branch": "hacking",
+   "role": "decision pair",
+   "path": "results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_190000.pt",
+   "step": 190000,
+   "file_sha256": "633eee231148cc4f7042394062d2e5ef8399cce6e99abaf147e3c5ea235df019",
+   "weights_sha256": "43cf2a313fafb529c42ce6c3e909279fc9d271a7d662ac43dda41b2ec4cfa7f9",
+   "reward_mode": "flawed"
+  }
+ ]
+}

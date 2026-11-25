@@ -1,0 +1,31 @@
+{
+  "seed": 42,
+  "dev_layout_index": 7,
+  "layout": [
+    5,
+    1,
+    2,
+    4,
+    4,
+    3
+  ],
+  "pair": "pre_onset",
+  "episodes": {
+    "Recipient (160k, hacking)": {
+      "steps": 100,
+      "reached_goal": false,
+      "tile_entries": 49
+    },
+    "Donor (60k, pre-onset)": {
+      "steps": 6,
+      "reached_goal": true,
+      "tile_entries": 1
+    },
+    "Recipient + donor's layer 2": {
+      "steps": 100,
+      "reached_goal": false,
+      "tile_entries": 0
+    }
+  },
+  "frames_shown": 40
+}

@@ -1,0 +1,1106 @@
+{
+ "manifest_sha256": "ceac8a6e7f572e1dd8a31d56c96e11d959eaa0f6f1a4456bf226137d719b1cf7",
+ "splits_used": [
+  "train",
+  "dev"
+ ],
+ "seeds": [
+  42,
+  123,
+  456
+ ],
+ "label_definitions": {
+  "agree": "same greedy action",
+  "equivalent_route": "different actions, both closer to the goal",
+  "tile_over_goal": "earlier checkpoint moves closer to the goal; later one does not and moves closer to the tile, or steps off it",
+  "other_disagreement": "any other difference"
+ },
+ "per_seed": {
+  "42": {
+   "goal_following_checkpoint_step": 60000,
+   "hacking_checkpoint_step": 160000,
+   "sampling": {
+    "uniform": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.484,
+      "equivalent_route": 0.177,
+      "tile_over_goal": 0.2831666666666667,
+      "other_disagreement": 0.05583333333333333
+     },
+     "disagreement_rate": 0.516,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.40019435592563873,
+        "equivalent_route": 0.378481991152365,
+        "tile_over_goal": 0.38879556467283805,
+        "other_disagreement": 0.40100366263330983
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.05279802617961355,
+        "equivalent_route": 0.05176223987585516,
+        "tile_over_goal": 0.05439683612273396,
+        "other_disagreement": 0.05396922403531392
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.08839810870456444,
+       "variance_explained_by_state_features": 0.9851977458577688,
+       "residual_tile_over_goal_vs_rest_cohens_d": 0.02464264438076455,
+       "residual_mean": {
+        "tile_over_goal": 0.00010988199379654502,
+        "rest": -9.717985285823549e-05
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.0467407360765781,
+        "equivalent_route": 0.9276765964748575,
+        "tile_over_goal": 0.9951440030702643,
+        "other_disagreement": 1.0635185425810252
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.020586606519603354,
+        "equivalent_route": 0.019837329013932193,
+        "tile_over_goal": 0.02060031325807632,
+        "other_disagreement": 0.02110786422342887
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.07350793804354641,
+       "variance_explained_by_state_features": 0.9900645537626753,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.028761908848444255,
+       "residual_mean": {
+        "tile_over_goal": -0.0004187103412420297,
+        "rest": 0.0004984095952487545
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5480333015892522,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.5852743642483953,
+       "n_strata": 140,
+       "n_states": 3785
+      },
+      "auroc_tile_distance_only": 0.5840274357538159,
+      "auroc_pre_activation_on_direction": 0.44774850805327593,
+      "auroc_post_activation_on_direction": 0.5324603186441578,
+      "auroc_good_branch_change_on_direction": 0.5540395426608017
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9842543153863639,
+      "plus_pre_checkpoint_q_values": 0.9831175223906617,
+      "plus_activation_change_magnitude": 0.9817650575806794,
+      "activation_change_magnitude_alone": 0.581247308378809,
+      "plus_top8_change_directions_near_circular": 0.9822458031920799
+     }
+    },
+    "rollout_goal_following": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.2345,
+      "equivalent_route": 0.07466666666666667,
+      "tile_over_goal": 0.3285,
+      "other_disagreement": 0.36233333333333334
+     },
+     "disagreement_rate": 0.7655,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.38451357982739576,
+        "equivalent_route": 0.3590285017195649,
+        "tile_over_goal": 0.398174853790891,
+        "other_disagreement": 0.39234115387614926
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.0545009565405168,
+        "equivalent_route": 0.05296624259535717,
+        "tile_over_goal": 0.05295176055076439,
+        "other_disagreement": 0.052418851364563715
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.17142489259728452,
+       "variance_explained_by_state_features": 0.9843854517585079,
+       "residual_tile_over_goal_vs_rest_cohens_d": 0.18236845983765623,
+       "residual_mean": {
+        "tile_over_goal": 0.0010339662452843806,
+        "rest": -0.0005966440127385626
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.1094318876464808,
+        "equivalent_route": 0.9849115836822303,
+        "tile_over_goal": 1.1082639223372677,
+        "other_disagreement": 1.1137216083995882
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.020402838083779996,
+        "equivalent_route": 0.019447409306249688,
+        "tile_over_goal": 0.0192440756783463,
+        "other_disagreement": 0.019150443723493865
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.032816955249315126,
+       "variance_explained_by_state_features": 0.9887415029401658,
+       "residual_tile_over_goal_vs_rest_cohens_d": 0.03331663588903511,
+       "residual_mean": {
+        "tile_over_goal": -0.000890006781048236,
+        "rest": -0.002006348660538915
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5337389668183196,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.5397404005278856,
+       "n_strata": 93,
+       "n_states": 4369
+      },
+      "auroc_tile_distance_only": 0.5974908700354696,
+      "auroc_pre_activation_on_direction": 0.5363646540763131,
+      "auroc_post_activation_on_direction": 0.533696025983109,
+      "auroc_good_branch_change_on_direction": 0.524034086208323
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9515335859664816,
+      "plus_pre_checkpoint_q_values": 0.9620034052963805,
+      "plus_activation_change_magnitude": 0.9632101560993804,
+      "activation_change_magnitude_alone": 0.5828361452024824,
+      "plus_top8_change_directions_near_circular": 0.9568382902294238
+     }
+    },
+    "rollout_hacking": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.2613333333333333,
+      "equivalent_route": 0.22583333333333333,
+      "tile_over_goal": 0.4285,
+      "other_disagreement": 0.08433333333333333
+     },
+     "disagreement_rate": 0.7386666666666667,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.3664570387221561,
+        "equivalent_route": 0.39532928957476615,
+        "tile_over_goal": 0.3790286875043178,
+        "other_disagreement": 0.37056196530019725
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.05107475981511813,
+        "equivalent_route": 0.053904208766758124,
+        "tile_over_goal": 0.052900364997164814,
+        "other_disagreement": 0.05147217231743734
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.008747514753068513,
+       "variance_explained_by_state_features": 0.9851442534305123,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.003969069322570332,
+       "residual_mean": {
+        "tile_over_goal": 0.0006605084411046088,
+        "rest": 0.0006913003312813071
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 0.9587405199900987,
+        "equivalent_route": 1.1196358891562648,
+        "tile_over_goal": 0.9708502984282892,
+        "other_disagreement": 0.9869661182427798
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.018503985138116696,
+        "equivalent_route": 0.021671949558461683,
+        "tile_over_goal": 0.020148680318531103,
+        "other_disagreement": 0.020334963504897934
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.1618390478143227,
+       "variance_explained_by_state_features": 0.99279779654088,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.04214249339042981,
+       "residual_mean": {
+        "tile_over_goal": 0.0006338405950812369,
+        "rest": 0.0018669701783773438
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5549516507506445,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.5692491351459732,
+       "n_strata": 63,
+       "n_states": 5338
+      },
+      "auroc_tile_distance_only": 0.5199051515552647,
+      "auroc_pre_activation_on_direction": 0.5490701578807252,
+      "auroc_post_activation_on_direction": 0.5574867124495475,
+      "auroc_good_branch_change_on_direction": 0.4966292379535794
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9723770834233688,
+      "plus_pre_checkpoint_q_values": 0.967074710760338,
+      "plus_activation_change_magnitude": 0.9688504676575742,
+      "activation_change_magnitude_alone": 0.5348250825576661,
+      "plus_top8_change_directions_near_circular": 0.9767400234052812
+     }
+    }
+   }
+  },
+  "123": {
+   "goal_following_checkpoint_step": 110000,
+   "hacking_checkpoint_step": 220000,
+   "sampling": {
+    "uniform": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.5418333333333333,
+      "equivalent_route": 0.16266666666666665,
+      "tile_over_goal": 0.24333333333333335,
+      "other_disagreement": 0.05216666666666667
+     },
+     "disagreement_rate": 0.45816666666666667,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.46995980958162353,
+        "equivalent_route": 0.44629630332118525,
+        "tile_over_goal": 0.46243018973607064,
+        "other_disagreement": 0.44517644552003066
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.05147087102671664,
+        "equivalent_route": 0.049905144699221825,
+        "tile_over_goal": 0.05268979603889488,
+        "other_disagreement": 0.05190403852186215
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.009549088644052324,
+       "variance_explained_by_state_features": 0.9914318008749358,
+       "residual_tile_over_goal_vs_rest_cohens_d": 0.049310765757453384,
+       "residual_mean": {
+        "tile_over_goal": 8.501821953764859e-05,
+        "rest": -0.0002656859479781294
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.2399642495085668,
+        "equivalent_route": 1.3237071310492579,
+        "tile_over_goal": 1.232565146815113,
+        "other_disagreement": 1.2712013155393067
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.024215743121042323,
+        "equivalent_route": 0.024476257975360616,
+        "tile_over_goal": 0.02428059371331499,
+        "other_disagreement": 0.025510612154050098
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.07989881958279575,
+       "variance_explained_by_state_features": 0.9880623281848274,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.1048190779284235,
+       "residual_mean": {
+        "tile_over_goal": -0.0036246779766799467,
+        "rest": 0.000323393474215103
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5876238609619214,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.6312167307025668,
+       "n_strata": 121,
+       "n_states": 3305
+      },
+      "auroc_tile_distance_only": 0.6065400398286162,
+      "auroc_pre_activation_on_direction": 0.5044306318266851,
+      "auroc_post_activation_on_direction": 0.5766281455554885,
+      "auroc_good_branch_change_on_direction": 0.5160206082915938
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9725695492124797,
+      "plus_pre_checkpoint_q_values": 0.9679931808581257,
+      "plus_activation_change_magnitude": 0.9702081950395268,
+      "activation_change_magnitude_alone": 0.5612129624042002,
+      "plus_top8_change_directions_near_circular": 0.9686132399975862
+     }
+    },
+    "rollout_goal_following": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.273,
+      "equivalent_route": 0.09083333333333334,
+      "tile_over_goal": 0.221,
+      "other_disagreement": 0.4151666666666667
+     },
+     "disagreement_rate": 0.727,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.4445468566717481,
+        "equivalent_route": 0.4302662542590135,
+        "tile_over_goal": 0.4448083261867864,
+        "other_disagreement": 0.44049810316498417
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.05222296102853351,
+        "equivalent_route": 0.051828172918567075,
+        "tile_over_goal": 0.0525574481639874,
+        "other_disagreement": 0.05144671083613902
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.07732957952189179,
+       "variance_explained_by_state_features": 0.9890960150840057,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.012547309337591333,
+       "residual_mean": {
+        "tile_over_goal": 0.0002784350665191275,
+        "rest": 0.00034767288585398233
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.3851241913317682,
+        "equivalent_route": 1.310744265365685,
+        "tile_over_goal": 1.297577856409934,
+        "other_disagreement": 1.2622399007064422
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.024373216179411784,
+        "equivalent_route": 0.02449332146410382,
+        "tile_over_goal": 0.024625069486411237,
+        "other_disagreement": 0.02683691205930527
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.037765309846662695,
+       "variance_explained_by_state_features": 0.9899995020169601,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.12536460187815046,
+       "residual_mean": {
+        "tile_over_goal": -0.004267560516972343,
+        "rest": 0.00016950551510962926
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.517903346454279,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.550204223798568,
+       "n_strata": 87,
+       "n_states": 3845
+      },
+      "auroc_tile_distance_only": 0.5482089876864473,
+      "auroc_pre_activation_on_direction": 0.48594693794044397,
+      "auroc_post_activation_on_direction": 0.5152175217870302,
+      "auroc_good_branch_change_on_direction": 0.41003100493019695
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9421997494564133,
+      "plus_pre_checkpoint_q_values": 0.9393882334870025,
+      "plus_activation_change_magnitude": 0.9410765952146303,
+      "activation_change_magnitude_alone": 0.5690919763448646,
+      "plus_top8_change_directions_near_circular": 0.9372664868587243
+     }
+    },
+    "rollout_hacking": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.3491666666666667,
+      "equivalent_route": 0.16666666666666666,
+      "tile_over_goal": 0.415,
+      "other_disagreement": 0.06916666666666667
+     },
+     "disagreement_rate": 0.6508333333333334,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.4263656094596579,
+        "equivalent_route": 0.42684559586716986,
+        "tile_over_goal": 0.43534457997146914,
+        "other_disagreement": 0.4350085880776169
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.05194662937392342,
+        "equivalent_route": 0.052119240825235336,
+        "tile_over_goal": 0.051454353558184764,
+        "other_disagreement": 0.052615033314133614
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.13815845696754372,
+       "variance_explained_by_state_features": 0.9908024282968007,
+       "residual_tile_over_goal_vs_rest_cohens_d": 0.07449253415081566,
+       "residual_mean": {
+        "tile_over_goal": 0.00022495096367254312,
+        "rest": -0.00018009925600797586
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.2617200596909122,
+        "equivalent_route": 1.1848426898277518,
+        "tile_over_goal": 1.2194690660494956,
+        "other_disagreement": 1.1187874462506207
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.02435706912210684,
+        "equivalent_route": 0.024402976345109875,
+        "tile_over_goal": 0.023944500449713805,
+        "other_disagreement": 0.02539036934389163
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.009690310373172018,
+       "variance_explained_by_state_features": 0.991684549781416,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.05432145532096142,
+       "residual_mean": {
+        "tile_over_goal": -0.002863644169002498,
+        "rest": -0.0011010981548989097
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5286281307566447,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.5312434260813453,
+       "n_strata": 63,
+       "n_states": 5393
+      },
+      "auroc_tile_distance_only": 0.6040362017872057,
+      "auroc_pre_activation_on_direction": 0.5754755775237703,
+      "auroc_post_activation_on_direction": 0.5369244499364981,
+      "auroc_good_branch_change_on_direction": 0.4656071579766359
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9718448723669608,
+      "plus_pre_checkpoint_q_values": 0.9713528758910287,
+      "plus_activation_change_magnitude": 0.9678719436149156,
+      "activation_change_magnitude_alone": 0.5471714779345301,
+      "plus_top8_change_directions_near_circular": 0.9707559583061591
+     }
+    }
+   }
+  },
+  "456": {
+   "goal_following_checkpoint_step": 90000,
+   "hacking_checkpoint_step": 190000,
+   "sampling": {
+    "uniform": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.49416666666666664,
+      "equivalent_route": 0.17616666666666667,
+      "tile_over_goal": 0.292,
+      "other_disagreement": 0.03766666666666667
+     },
+     "disagreement_rate": 0.5058333333333334,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.3803671406672164,
+        "equivalent_route": 0.3686036069375797,
+        "tile_over_goal": 0.37728910302253005,
+        "other_disagreement": 0.3748617320968274
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.04041966639809136,
+        "equivalent_route": 0.04219906447378702,
+        "tile_over_goal": 0.043417484768616316,
+        "other_disagreement": 0.04331245348754644
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.004364392322095277,
+       "variance_explained_by_state_features": 0.9629096212505271,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.04674963971040626,
+       "residual_mean": {
+        "tile_over_goal": -0.0002541852532737562,
+        "rest": 3.8470824317560014e-05
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.010429546175537,
+        "equivalent_route": 0.9718927869110059,
+        "tile_over_goal": 1.0145183619937985,
+        "other_disagreement": 0.9693521981178727
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.019904076456190602,
+        "equivalent_route": 0.020754949736681825,
+        "tile_over_goal": 0.020360646117095413,
+        "other_disagreement": 0.020658539740134818
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.09615717238140799,
+       "variance_explained_by_state_features": 0.9786991155840061,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.03290031448665085,
+       "residual_mean": {
+        "tile_over_goal": -0.0011680065018345007,
+        "rest": -0.0003751960305555263
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.6710274348820611,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.6522040281287873,
+       "n_strata": 136,
+       "n_states": 3717
+      },
+      "auroc_tile_distance_only": 0.5716290610031903,
+      "auroc_pre_activation_on_direction": 0.5290852692430066,
+      "auroc_post_activation_on_direction": 0.6590239349809526,
+      "auroc_good_branch_change_on_direction": 0.4137898092252922
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9850000591199511,
+      "plus_pre_checkpoint_q_values": 0.9844884028153997,
+      "plus_activation_change_magnitude": 0.9835915262836554,
+      "activation_change_magnitude_alone": 0.5345312244709302,
+      "plus_top8_change_directions_near_circular": 0.986415847586616
+     }
+    },
+    "rollout_goal_following": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.327,
+      "equivalent_route": 0.076,
+      "tile_over_goal": 0.2455,
+      "other_disagreement": 0.3515
+     },
+     "disagreement_rate": 0.673,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.37747523862194915,
+        "equivalent_route": 0.3634183970022724,
+        "tile_over_goal": 0.37603373523575434,
+        "other_disagreement": 0.36605612937715826
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.040077334955201306,
+        "equivalent_route": 0.04002321640095527,
+        "tile_over_goal": 0.04131820987512793,
+        "other_disagreement": 0.04092595041897088
+       },
+       "tile_over_goal_vs_rest_cohens_d": 0.15945149007548845,
+       "variance_explained_by_state_features": 0.9705863605817185,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.08522559461192447,
+       "residual_mean": {
+        "tile_over_goal": -0.00027879139519956645,
+        "rest": 0.00020733589370921918
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.1223531569035234,
+        "equivalent_route": 1.0098273045169293,
+        "tile_over_goal": 1.0679690862414382,
+        "other_disagreement": 1.0332743816982464
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.01924654139661318,
+        "equivalent_route": 0.018943055336762337,
+        "tile_over_goal": 0.019401249349733724,
+        "other_disagreement": 0.01878535235876296
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.008438045388689756,
+       "variance_explained_by_state_features": 0.9828900107662099,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.09063953963544603,
+       "residual_mean": {
+        "tile_over_goal": 0.0003300529979527844,
+        "rest": 0.002506566777473465
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5805954796978108,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.6040431991805013,
+       "n_strata": 93,
+       "n_states": 4064
+      },
+      "auroc_tile_distance_only": 0.5367716009142399,
+      "auroc_pre_activation_on_direction": 0.6069468382433768,
+      "auroc_post_activation_on_direction": 0.5921394016529922,
+      "auroc_good_branch_change_on_direction": 0.5529989707976776
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9672515559130694,
+      "plus_pre_checkpoint_q_values": 0.9690098077897553,
+      "plus_activation_change_magnitude": 0.9666744198008749,
+      "activation_change_magnitude_alone": 0.552452352341409,
+      "plus_top8_change_directions_near_circular": 0.970246785111163
+     }
+    },
+    "rollout_hacking": {
+     "n_fit": 6000,
+     "n_dev": 6000,
+     "label_fraction": {
+      "agree": 0.367,
+      "equivalent_route": 0.13116666666666665,
+      "tile_over_goal": 0.43316666666666664,
+      "other_disagreement": 0.06866666666666667
+     },
+     "disagreement_rate": 0.633,
+     "layers": {
+      "layer1": {
+       "activation_change_by_label": {
+        "agree": 0.36631291246369024,
+        "equivalent_route": 0.36808594126697947,
+        "tile_over_goal": 0.3674131892633487,
+        "other_disagreement": 0.37584241148113146
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.041582563905570226,
+        "equivalent_route": 0.041221325777359416,
+        "tile_over_goal": 0.042389094067799026,
+        "other_disagreement": 0.041310706118159825
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.015760806318658626,
+       "variance_explained_by_state_features": 0.9678669350231794,
+       "residual_tile_over_goal_vs_rest_cohens_d": 0.04019373261945154,
+       "residual_mean": {
+        "tile_over_goal": 0.0002499684236069161,
+        "rest": 3.769667533964617e-05
+       }
+      },
+      "layer2": {
+       "activation_change_by_label": {
+        "agree": 1.0353819895755725,
+        "equivalent_route": 0.9455347395178487,
+        "tile_over_goal": 0.9857217335403133,
+        "other_disagreement": 0.9950725459993163
+       },
+       "good_branch_change_by_label": {
+        "agree": 0.02037189818049452,
+        "equivalent_route": 0.019612519823538534,
+        "tile_over_goal": 0.02010562532811962,
+        "other_disagreement": 0.020047422694958936
+       },
+       "tile_over_goal_vs_rest_cohens_d": -0.12976863878206746,
+       "variance_explained_by_state_features": 0.9887790763779071,
+       "residual_tile_over_goal_vs_rest_cohens_d": -0.12017084927599721,
+       "residual_mean": {
+        "tile_over_goal": -0.0009179891333301196,
+        "rest": 0.0014356159271593496
+       }
+      }
+     },
+     "enough_of_both_classes": true,
+     "direction": {
+      "auroc": 0.5432792043713464,
+      "auroc_within_distance_and_time_strata": {
+       "auroc": 0.5635889092026343,
+       "n_strata": 70,
+       "n_states": 5350
+      },
+      "auroc_tile_distance_only": 0.5741212523894982,
+      "auroc_pre_activation_on_direction": 0.5379723886745846,
+      "auroc_post_activation_on_direction": 0.5434718688876673,
+      "auroc_good_branch_change_on_direction": 0.48560157996216624
+     },
+     "predict_tile_over_goal_auroc": {
+      "state_features": 0.9716526350407996,
+      "plus_pre_checkpoint_q_values": 0.9670587798736062,
+      "plus_activation_change_magnitude": 0.9681735867695703,
+      "activation_change_magnitude_alone": 0.53993540591178,
+      "plus_top8_change_directions_near_circular": 0.9713381834711493
+     }
+    }
+   }
+  }
+ },
+ "cross_seed_uniform": {
+  "42-123": {
+   "tile_over_goal_rate": [
+    0.2831666666666667,
+    0.24333333333333335
+   ],
+   "tile_over_goal_both": 0.18483333333333332,
+   "expected_if_independent": 0.06890388888888889,
+   "label_phi_correlation": 0.5996674699496165,
+   "direction_score_correlation": 0.7382779061271838,
+   "relative_change_correlation": {
+    "layer1": -0.08297673578338012,
+    "layer2": 0.786682931504549
+   },
+   "cka": {
+    "layer1": {
+     "change_hacking_branch": 0.6225138631777,
+     "goal_following_checkpoints": 0.9218144131339654,
+     "hacking_checkpoints": 0.814011431861199
+    },
+    "layer2": {
+     "change_hacking_branch": 0.736021555476589,
+     "goal_following_checkpoints": 0.836723916921148,
+     "hacking_checkpoints": 0.7632919220725576
+    }
+   }
+  },
+  "42-456": {
+   "tile_over_goal_rate": [
+    0.2831666666666667,
+    0.292
+   ],
+   "tile_over_goal_both": 0.1645,
+   "expected_if_independent": 0.08268466666666667,
+   "label_phi_correlation": 0.39938935857084346,
+   "direction_score_correlation": -0.04688664764361509,
+   "relative_change_correlation": {
+    "layer1": 0.29956815363510947,
+    "layer2": 0.067058425083919
+   },
+   "cka": {
+    "layer1": {
+     "change_hacking_branch": 0.6247893369677158,
+     "goal_following_checkpoints": 0.9440669072021111,
+     "hacking_checkpoints": 0.8773576314084433
+    },
+    "layer2": {
+     "change_hacking_branch": 0.2049330968197681,
+     "goal_following_checkpoints": 0.7899842216330829,
+     "hacking_checkpoints": 0.2523887223716852
+    }
+   }
+  },
+  "123-456": {
+   "tile_over_goal_rate": [
+    0.24333333333333335,
+    0.292
+   ],
+   "tile_over_goal_both": 0.17383333333333334,
+   "expected_if_independent": 0.07105333333333333,
+   "label_phi_correlation": 0.5268020482220834,
+   "direction_score_correlation": -0.32548060225232467,
+   "relative_change_correlation": {
+    "layer1": 0.4472720565154087,
+    "layer2": 0.18217378183124064
+   },
+   "cka": {
+    "layer1": {
+     "change_hacking_branch": 0.7923252193626242,
+     "goal_following_checkpoints": 0.9156852853915294,
+     "hacking_checkpoints": 0.8337762458094264
+    },
+    "layer2": {
+     "change_hacking_branch": 0.2847043750717277,
+     "goal_following_checkpoints": 0.8621267453161172,
+     "hacking_checkpoints": 0.3383661271507089
+    }
+   }
+  }
+ },
+ "example": {
+  "rule": "first uniformly sampled development state labelled tile_over_goal with goal distance >= 3, tile distance >= 2 and at least half the episode left",
+  "seed": 42,
+  "state_index": 5,
+  "pos": [
+   1,
+   5
+  ],
+  "layout": [
+   0,
+   2,
+   1,
+   2,
+   4,
+   4
+  ],
+  "elapsed_steps": 39,
+  "obs": [
+   0.1428571492433548,
+   0.7142857313156128,
+   0.1428571492433548,
+   0.2857142984867096,
+   0.5714285969734192,
+   0.5714285969734192,
+   0.6100000143051147
+  ],
+  "action_pre": 0,
+  "action_post": 1,
+  "q_pre": [
+   9.829593658447266,
+   9.740535736083984,
+   9.65169620513916,
+   9.706076622009277
+  ],
+  "q_post": [
+   23.050025939941406,
+   23.687925338745117,
+   22.159423828125,
+   21.374446868896484
+  ],
+  "q_good_pre": [
+   9.738236427307129,
+   9.533673286437988,
+   9.501852989196777,
+   9.557170867919922
+  ],
+  "q_good_post": [
+   9.750504493713379,
+   9.542548179626465,
+   9.508066177368164,
+   9.561753273010254
+  ],
+  "layer2_change": [
+   0.9141218662261963,
+   0.0,
+   0.5795905590057373,
+   -0.23444834351539612,
+   0.7247289074584842,
+   0.9334889650344849,
+   0.9512192010879517,
+   0.0,
+   0.9709776639938354,
+   0.0,
+   0.0,
+   0.19200141727924347,
+   0.793190598487854,
+   0.6024074256420135,
+   0.8269757032394409,
+   -0.2759133279323578,
+   0.0,
+   0.0,
+   0.0,
+   0.6081491112709045,
+   0.8867702484130859,
+   0.7181755304336548,
+   0.9374492168426514,
+   0.8282455205917358,
+   1.0341037511825562,
+   1.131349802017212,
+   0.0,
+   0.0,
+   0.9113001823425293,
+   -0.527626097202301,
+   0.7570779323577881,
+   0.0,
+   0.8136814832687378,
+   0.0,
+   0.7677441835403442,
+   0.975482702255249,
+   0.8833634853363037,
+   -0.036483943462371826,
+   0.0,
+   0.0,
+   0.6779757142066956,
+   0.0,
+   0.0,
+   0.5225257277488708,
+   0.6028122305870056,
+   0.0,
+   0.9188072681427002,
+   0.7452414035797119,
+   0.0,
+   0.9400041103363037,
+   0.90076744556427,
+   0.8057848215103149,
+   0.0,
+   0.8515661954879761,
+   0.36496394872665405,
+   0.0,
+   0.0,
+   -0.00926940143108368,
+   0.0,
+   0.2971988841891289,
+   0.0,
+   1.0402326583862305,
+   0.0,
+   1.0295333862304688,
+   0.11498488485813141,
+   1.4392538666725159,
+   0.8554960489273071,
+   0.7752262353897095,
+   0.1711549013853073,
+   0.0,
+   0.0,
+   0.9245010614395142,
+   0.7894576787948608,
+   0.0,
+   0.9837456941604614,
+   0.5564034283161163,
+   0.43647390604019165,
+   0.22852346301078796,
+   0.0,
+   0.38453349471092224,
+   0.7666287422180176,
+   -0.4297242760658264,
+   0.5192877650260925,
+   0.0,
+   0.0,
+   0.8463709354400635,
+   0.9576020240783691,
+   0.0,
+   0.34386900067329407,
+   -0.3981770724058151,
+   0.0,
+   0.4970587342977524,
+   0.0,
+   0.33227112889289856,
+   0.8758597373962402,
+   0.7717576026916504,
+   0.0,
+   -0.004132628440856934,
+   0.0,
+   0.9799773097038269,
+   0.0,
+   0.0,
+   0.876306414604187,
+   1.111727237701416,
+   0.7756540775299072,
+   0.944400429725647,
+   0.0,
+   0.7203730344772339,
+   0.7623593807220459,
+   0.717730924487114,
+   0.9545145034790039,
+   0.9818991422653198,
+   0.0,
+   0.12101636826992035,
+   0.0,
+   -0.3264121413230896,
+   0.9567047357559204,
+   -0.03407379239797592,
+   1.0032248497009277,
+   1.0093196630477905,
+   0.0,
+   0.6031366586685181,
+   0.0,
+   0.7488042116165161,
+   0.7356629371643066,
+   0.8040367364883423,
+   0.9398879259824753,
+   0.9608395099639893
+  ],
+  "layer2_change_good_branch": [
+   -0.02651950716972351,
+   0.0,
+   0.009478449821472168,
+   -0.019638508558273315,
+   0.0,
+   0.013515949249267578,
+   -0.008275628089904785,
+   0.0,
+   -0.005212068557739258,
+   0.0,
+   0.0,
+   0.0,
+   -0.0038057565689086914,
+   0.0,
+   0.020235180854797363,
+   -0.03292638063430786,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   -0.0021207332611083984,
+   -0.02557229995727539,
+   -0.011722803115844727,
+   0.008695721626281738,
+   -0.0031576156616210938,
+   0.016196012496948242,
+   0.0,
+   0.0,
+   -0.012264609336853027,
+   0.010301947593688965,
+   -0.002537846565246582,
+   0.0,
+   -0.03848858177661896,
+   0.0,
+   -0.01632857322692871,
+   0.003692626953125,
+   0.004155874252319336,
+   0.004062920808792114,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.019955866038799286,
+   0.0,
+   0.0,
+   0.00635981559753418,
+   -0.010756433010101318,
+   0.0,
+   -0.0002727508544921875,
+   -0.006090044975280762,
+   -0.0097273588180542,
+   0.0,
+   -0.0059223175048828125,
+   -0.005860686302185059,
+   0.0,
+   0.0,
+   -0.010912120342254639,
+   0.0,
+   0.052118152379989624,
+   0.0,
+   0.01963019371032715,
+   0.0,
+   0.012437880039215088,
+   0.0,
+   0.0,
+   -0.014796853065490723,
+   -0.006261467933654785,
+   0.0,
+   0.0,
+   0.0,
+   -0.011035799980163574,
+   0.01767551898956299,
+   0.0,
+   -0.0044171810150146484,
+   -0.019352316856384277,
+   -0.015781670808792114,
+   0.0,
+   0.0,
+   0.0,
+   0.01565730571746826,
+   0.004389047622680664,
+   0.015746891498565674,
+   0.0,
+   0.0,
+   -0.004093647003173828,
+   0.008035421371459961,
+   0.0,
+   0.0,
+   0.0017731785774230957,
+   0.01236414909362793,
+   -0.010298682376742363,
+   0.0,
+   0.0,
+   0.027126312255859375,
+   0.0,
+   0.0,
+   -0.017174184322357178,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0008805990219116211,
+   -0.00775146484375,
+   0.004072666168212891,
+   0.015376806259155273,
+   0.0,
+   0.016322672367095947,
+   -0.007648348808288574,
+   0.0,
+   0.05393904447555542,
+   -0.010140657424926758,
+   0.0,
+   0.0,
+   0.0,
+   0.011268973350524902,
+   -0.004909038543701172,
+   -0.016652092337608337,
+   0.02618539333343506,
+   0.004068613052368164,
+   0.0,
+   -0.009645462036132812,
+   0.0,
+   -0.0027077198028564453,
+   0.023430466651916504,
+   0.020795345306396484,
+   -0.012881822884082794,
+   0.0027189254760742188
+  ]
+ }
+}

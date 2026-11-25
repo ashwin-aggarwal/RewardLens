@@ -1,0 +1,202 @@
+{
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "results_dir": "results/exp2/phase5",
+  "checkpoint_dir": "results/exp2/phase1",
+  "phase3_timeline": "results/exp2/phase3/timeline.json",
+  "training_config": "experiments/02_generalizable_reward_hacking/configs/training.json",
+  "allowed_splits": [
+    "train",
+    "dev"
+  ],
+  "repair_criterion": {
+    "min_direct_goal": 0.9,
+    "min_path_efficiency": 0.9,
+    "max_farming": 0.05,
+    "note": "An intervention counts as repair only if, on development layouts, it reaches the goal directly in at least 90% of episodes, with path efficiency of at least 0.9 on those episodes, and farms in at most 5%. Goal completion alone is not enough: a uniformly random policy reaches the goal in about half of these layouts with path efficiency 0.23. Fixed before the run."
+  },
+  "baselines": {
+    "n_random_draws": 3,
+    "random_seed": 0,
+    "n_train_layouts": 1500,
+    "note": "Networks: pretrained (fork start), good final, hacking at the last step before onset, at completion and final. References: uniformly random policy and the scripted shortest path that avoids the reward tile. Each is scored on the 1,500 development layouts and on the first 1,500 training layouts."
+  },
+  "weight_swap": {
+    "pairs": {
+      "pretrain_to_final": {
+        "donor": [
+          "pretrain",
+          "start"
+        ],
+        "recipient": [
+          "hacking",
+          "final"
+        ]
+      },
+      "good_to_final": {
+        "donor": [
+          "good",
+          "final"
+        ],
+        "recipient": [
+          "hacking",
+          "final"
+        ]
+      },
+      "pre_onset_to_completion": {
+        "donor": [
+          "hacking",
+          "last_before_onset"
+        ],
+        "recipient": [
+          "hacking",
+          "completion"
+        ]
+      },
+      "pretrain_to_completion": {
+        "donor": [
+          "pretrain",
+          "start"
+        ],
+        "recipient": [
+          "hacking",
+          "completion"
+        ]
+      }
+    },
+    "primary_swaps": {
+      "head": [
+        "fc3"
+      ],
+      "layer2": [
+        "fc2"
+      ],
+      "layer1": [
+        "fc1"
+      ],
+      "layer2_head": [
+        "fc2",
+        "fc3"
+      ]
+    },
+    "followup_swaps": {
+      "layer1_layer2": [
+        "fc1",
+        "fc2"
+      ],
+      "layer1_head": [
+        "fc1",
+        "fc3"
+      ]
+    },
+    "followup_trigger": "The two remaining layer subsets are run for a pair only if no primary swap meets the repair criterion in all three seeds. In that case the primary swaps cannot tell whether a single retained hacking layer is enough to block repair, and the two follow-up swaps (each keeps exactly one hacking layer) answer that.",
+    "random_control": {
+      "n_draws": 5,
+      "seed": 0,
+      "note": "For each swap, the same tensors of the recipient are changed by Gaussian noise rescaled to the Frobenius norm of (donor - recipient), tensor by tensor. Same layers, same number of parameters, same update size, random direction."
+    },
+    "note": "A swap copies the donor's weight and bias for the named layers into a copy of the recipient. Donor and recipient always come from the same seed, so neurons line up at the fork start. Pairs and swaps are the same for every seed; none is chosen by its result."
+  },
+  "finetune": {
+    "start": [
+      "hacking",
+      "final"
+    ],
+    "reward_mode": "corrected",
+    "conditions": {
+      "head_only": [
+        "fc3"
+      ],
+      "layer2_only": [
+        "fc2"
+      ],
+      "layer1_only": [
+        "fc1"
+      ],
+      "full_network": [
+        "fc1",
+        "fc2",
+        "fc3"
+      ]
+    },
+    "total_timesteps": 200000,
+    "eval_interval": 10000,
+    "epsilon_start": 0.3,
+    "epsilon_end": 0.05,
+    "epsilon_fraction": 0.25,
+    "dqn": "Taken unchanged from configs/training.json (learning rate, buffer, batch size, target updates). Fresh Adam state and an empty replay buffer for every condition.",
+    "selection": {
+      "n_dev_select": 750,
+      "metric": "mean_return_corrected",
+      "note": "The development layouts are split once: the first 750 pick the checkpoint (highest mean corrected return among the evaluations at 0, 10k, ..., 200k steps; earliest on ties), the other 750 report it. Full-development curves are also recorded."
+    },
+    "random_control": {
+      "n_draws": 5,
+      "seed": 0
+    },
+    "max_workers": 6,
+    "note": "Same budget, same exploration schedule (the Phase 1 fork schedule), same training layouts and the same seed for all four conditions; only the set of trainable layers differs. Frozen layers have requires_grad off and are left out of the optimizer; their hashes are checked after training. One run per seed and condition, no tuning. Supervised distillation is not run: reinforcement learning at this budget takes minutes."
+  },
+  "distillation": {
+    "status": "Added after the reinforcement-learning fine-tuning result was seen (no condition, including the full network, met the repair criterion in 200k steps). The task brief allows a separately labelled supervised experiment in that case. Everything below was fixed before the distillation ran; it was run once.",
+    "start": [
+      "hacking",
+      "final"
+    ],
+    "teacher": [
+      "good",
+      "final"
+    ],
+    "conditions": {
+      "head_only": [
+        "fc3"
+      ],
+      "layer2_only": [
+        "fc2"
+      ],
+      "layer1_only": [
+        "fc1"
+      ],
+      "full_network": [
+        "fc1",
+        "fc2",
+        "fc3"
+      ]
+    },
+    "n_train_layouts": 7000,
+    "states_per_layout": 4,
+    "state_seed": 505,
+    "loss": "smooth L1 between the student's and the teacher's four Q-values",
+    "n_updates": 50000,
+    "eval_interval_updates": 2500,
+    "batch_size": 64,
+    "learning_rate": 0.00025,
+    "selection": {
+      "n_dev_select": 750,
+      "metric": "mean_return_corrected"
+    },
+    "random_control": {
+      "n_draws": 5,
+      "seed": 0
+    },
+    "closed_form_head": "Reference for the head-only condition: the least-squares output layer that maps the frozen hacking layer-2 activations to the teacher's Q-values on the same training states. No optimizer, no hyperparameter.",
+    "max_workers": 6,
+    "note": "Supervised, not reinforcement learning: the same-seed good network labels 28,000 uniformly sampled states from the 7,000 training layouts with its Q-values. Every condition gets the same states, the same labels, the same minibatch order, batch size, learning rate and number of gradient updates (50,000, the number the 200k-step RL fine-tuning performs). Only the set of trainable layers differs. It measures whether a layer subset can represent the good policy starting from the hacking weights, with exploration and value unlearning taken out."
+  },
+  "weight_analysis": {
+    "layers": [
+      "fc1",
+      "fc2",
+      "fc3"
+    ],
+    "note": "Every saved checkpoint (41 per branch and seed, every 10k steps). Per layer, weight and bias together: change from the fork start relative to the start norm, change per 10k steps, cosine similarity with the start, share of the final change reached, and the difference between the hacking and good branch at the same step. Q-value preference: on uniformly sampled development states where one action approaches the tile but not the goal and another approaches the goal but not the tile, the best tile-ward Q minus the best goal-ward Q."
+  },
+  "states": {
+    "states_per_layout": 4,
+    "dev_state_seed": 202,
+    "note": "The Phase 2 to 4 uniform development states (6,000). Used for action and Q-value diagnostics only; behavior is measured by full episodes."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "pilot_seed": 7,
+  "results_dir": "results/exp2/phase1",
+  "dqn": {
+    "hidden_dim": 128,
+    "learning_rate": 0.00025,
+    "gamma": 0.99,
+    "buffer_capacity": 50000,
+    "batch_size": 64,
+    "learning_starts": 1000,
+    "train_frequency": 4,
+    "target_update_frequency": 500,
+    "eval_interval": 10000,
+    "checkpoint_interval": 10000
+  },
+  "pretrain": {
+    "reward_mode": "corrected",
+    "total_timesteps": 300000,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_fraction": 0.5
+  },
+  "fork": {
+    "total_timesteps": 400000,
+    "epsilon_start": 0.3,
+    "epsilon_end": 0.05,
+    "epsilon_fraction": 0.25,
+    "good_reward_mode": "corrected",
+    "hacking_reward_mode": "flawed"
+  },
+  "checkpoint_selection": "final checkpoint of each stage; fixed after the seed-7 pilot and before the reporting seeds were trained",
+  "tuning_budget": {
+    "max_configurations": 3,
+    "used": 2,
+    "log": [
+      "1: Experiment 1 DQN hyperparameters, pretrain 300k, fork 200k (epsilon 0.3 to 0.05 over the first 100k). Pilot seed 7 met both targets on dev. Reporting seeds: good 1.00/1.00/1.00; hacking farming 0.93/0.72/0.88 on dev, seed 123 still rising at 200k.",
+      "2: fork extended to 400k for both branches and all seeds, epsilon still decaying over the first 100k steps, so the first 200k steps repeat configuration 1 exactly. Chosen from development curves only; test layouts not yet evaluated."
+    ]
+  }
+}

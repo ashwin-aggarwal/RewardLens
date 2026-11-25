@@ -1,0 +1,38 @@
+{
+  "seeds": [42, 123, 456],
+  "branches": ["good", "hacking"],
+  "results_dir": "results/exp2/phase3",
+  "checkpoint_dir": "results/exp2/phase1",
+  "allowed_splits": ["train", "dev"],
+  "checkpoints": {
+    "interval": 10000,
+    "total_timesteps": 400000,
+    "note": "Fork-stage checkpoints of both branches, every 10k steps from the shared pretrained start (step 0) to step 400k. Written by scripts.exp2_train in Phase 1; nothing is retrained."
+  },
+  "states": {
+    "n_fit_layouts": 1500,
+    "states_per_layout": 4,
+    "fit_state_seed": 101,
+    "dev_state_seed": 202,
+    "rollout_states_per_policy": 6000,
+    "rollout_fit_seed": 303,
+    "rollout_dev_seed": 404,
+    "trajectory_pca_states": 2000,
+    "note": "The uniform states are the Phase 2 matched states (same seeds). Rollout states are visited by the greedy policies on the same layouts. Fit sets come from the first 1,500 training layouts, evaluation sets from the 1,500 development layouts."
+  },
+  "transition": {
+    "onset": 0.1,
+    "midpoint": 0.5,
+    "completion": 0.8,
+    "note": "Each is the first checkpoint from which the development farming rate stays at or above the threshold for the rest of training. Fixed before the Phase 3 analysis was run."
+  },
+  "decision": {
+    "goal_following_checkpoint": "last hacking-branch checkpoint before the onset step",
+    "hacking_checkpoint": "hacking-branch checkpoint at the completion step",
+    "control": "good-branch checkpoints at the same two steps",
+    "top_k": 8,
+    "min_class_count": 30,
+    "stratum_min_per_class": 5
+  },
+  "representation_onset_rule": "first checkpoint at which the hacking branch's layer-2 change from the fork start exceeds twice the largest change the good branch has shown up to that checkpoint; uses no later checkpoint"
+}

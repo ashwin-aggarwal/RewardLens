@@ -21,3 +21,28 @@ results/phase2*/**/evaluation_trajectories/
 results/phase3/*.npz
 results/phase3/*.npy
 results/weight_editing/models/
+# Experiment 2: intermediate checkpoints and raw per-episode logs stay local.
+# The nine final checkpoints of the reporting seeds are committed (exact weights for activation analysis).
+results/exp2/**/checkpoints/*
+!results/exp2/phase1/seed*/*/checkpoints/checkpoint_final.pt
+results/exp2/**/training_episodes.csv
+results/exp2/**/*.log
+# Phase 3 decision-level pairs: the last checkpoint before hacking onset and the one at completion, both branches.
+# Listed with hashes in results/exp2/phase3/required_checkpoints.json.
+!results/exp2/phase1/seed42/[gh]*/checkpoints/checkpoint_60000.pt
+!results/exp2/phase1/seed42/[gh]*/checkpoints/checkpoint_160000.pt
+!results/exp2/phase1/seed123/[gh]*/checkpoints/checkpoint_110000.pt
+!results/exp2/phase1/seed123/[gh]*/checkpoints/checkpoint_220000.pt
+!results/exp2/phase1/seed456/[gh]*/checkpoints/checkpoint_90000.pt
+!results/exp2/phase1/seed456/[gh]*/checkpoints/checkpoint_190000.pt
+# Phase 4 near-transition donors: hacking checkpoints 10k, 20k and 50k before each seed's completion step.
+# Listed with hashes in results/exp2/phase4/required_checkpoints.json.
+!results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_110000.pt
+!results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_140000.pt
+!results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_150000.pt
+!results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_170000.pt
+!results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_200000.pt
+!results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_210000.pt
+!results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_140000.pt
+!results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_170000.pt
+!results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_180000.pt

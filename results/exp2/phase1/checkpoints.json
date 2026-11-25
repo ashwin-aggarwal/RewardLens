@@ -1,0 +1,83 @@
+{
+  "results_dir": "results/exp2/phase1",
+  "seeds": {
+    "42": {
+      "pretrain": {
+        "path": "results/exp2/phase1/seed42/pretrain/checkpoints/checkpoint_final.pt",
+        "sha256": "4b159dc16b501cd8b5ed61cee44cda49ab059cfafbf4434418abf2eeabe50896",
+        "training_steps": 300000,
+        "reward_mode": "corrected",
+        "init_checkpoint": null,
+        "init_checkpoint_sha256": null
+      },
+      "good": {
+        "path": "results/exp2/phase1/seed42/good/checkpoints/checkpoint_final.pt",
+        "sha256": "867269a822ea475bfaee98000267267f44db33d12079d7221521f9ce6bd1d162",
+        "training_steps": 400000,
+        "reward_mode": "corrected",
+        "init_checkpoint": "results/exp2/phase1/seed42/pretrain/checkpoints/checkpoint_final.pt",
+        "init_checkpoint_sha256": "4b159dc16b501cd8b5ed61cee44cda49ab059cfafbf4434418abf2eeabe50896"
+      },
+      "hacking": {
+        "path": "results/exp2/phase1/seed42/hacking/checkpoints/checkpoint_final.pt",
+        "sha256": "9d6f6adff67f86f6f6d3d0c43e34803969ac09cec3faa508821bd4943c173540",
+        "training_steps": 400000,
+        "reward_mode": "flawed",
+        "init_checkpoint": "results/exp2/phase1/seed42/pretrain/checkpoints/checkpoint_final.pt",
+        "init_checkpoint_sha256": "4b159dc16b501cd8b5ed61cee44cda49ab059cfafbf4434418abf2eeabe50896"
+      }
+    },
+    "123": {
+      "pretrain": {
+        "path": "results/exp2/phase1/seed123/pretrain/checkpoints/checkpoint_final.pt",
+        "sha256": "bef4b1c01573d8aab10e75e564d300d5ee7496ed2ce84fb7649234b489d0fdf5",
+        "training_steps": 300000,
+        "reward_mode": "corrected",
+        "init_checkpoint": null,
+        "init_checkpoint_sha256": null
+      },
+      "good": {
+        "path": "results/exp2/phase1/seed123/good/checkpoints/checkpoint_final.pt",
+        "sha256": "43edc0c7d1bf17a70917b04c6625a15b6af9c80e2617ee6557485b6e8e4cb2d0",
+        "training_steps": 400000,
+        "reward_mode": "corrected",
+        "init_checkpoint": "results/exp2/phase1/seed123/pretrain/checkpoints/checkpoint_final.pt",
+        "init_checkpoint_sha256": "bef4b1c01573d8aab10e75e564d300d5ee7496ed2ce84fb7649234b489d0fdf5"
+      },
+      "hacking": {
+        "path": "results/exp2/phase1/seed123/hacking/checkpoints/checkpoint_final.pt",
+        "sha256": "131cfda218064705aa584db17d315c3aa5a94152886a60f77ed02221f8d4d07a",
+        "training_steps": 400000,
+        "reward_mode": "flawed",
+        "init_checkpoint": "results/exp2/phase1/seed123/pretrain/checkpoints/checkpoint_final.pt",
+        "init_checkpoint_sha256": "bef4b1c01573d8aab10e75e564d300d5ee7496ed2ce84fb7649234b489d0fdf5"
+      }
+    },
+    "456": {
+      "pretrain": {
+        "path": "results/exp2/phase1/seed456/pretrain/checkpoints/checkpoint_final.pt",
+        "sha256": "49a831bf01bf5b40ac1337ea076b5c1c90542b9aa86a93a1692762f84b362a01",
+        "training_steps": 300000,
+        "reward_mode": "corrected",
+        "init_checkpoint": null,
+        "init_checkpoint_sha256": null
+      },
+      "good": {
+        "path": "results/exp2/phase1/seed456/good/checkpoints/checkpoint_final.pt",
+        "sha256": "ebf825ea1a2ff81589604f47e2447923893cda7d2ec4692faff116f44130cd30",
+        "training_steps": 400000,
+        "reward_mode": "corrected",
+        "init_checkpoint": "results/exp2/phase1/seed456/pretrain/checkpoints/checkpoint_final.pt",
+        "init_checkpoint_sha256": "49a831bf01bf5b40ac1337ea076b5c1c90542b9aa86a93a1692762f84b362a01"
+      },
+      "hacking": {
+        "path": "results/exp2/phase1/seed456/hacking/checkpoints/checkpoint_final.pt",
+        "sha256": "c427d2bc62e3df2a174a417d67f67a2ea0a14c8cded526c27a4df4342d096c14",
+        "training_steps": 400000,
+        "reward_mode": "flawed",
+        "init_checkpoint": "results/exp2/phase1/seed456/pretrain/checkpoints/checkpoint_final.pt",
+        "init_checkpoint_sha256": "49a831bf01bf5b40ac1337ea076b5c1c90542b9aa86a93a1692762f84b362a01"
+      }
+    }
+  }
+}

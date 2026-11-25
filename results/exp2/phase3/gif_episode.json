@@ -1,0 +1,49 @@
+{
+  "seed": 42,
+  "dev_layout_index": 0,
+  "layout": [
+    2,
+    7,
+    0,
+    0,
+    5,
+    3
+  ],
+  "checkpoints": [
+    {
+      "step": 0,
+      "episode_states": 9,
+      "tile_entries_seen": 0,
+      "dev_farming_rate": 0.0,
+      "reached_goal": true
+    },
+    {
+      "step": 60000,
+      "episode_states": 19,
+      "tile_entries_seen": 1,
+      "dev_farming_rate": 0.08666666666666667,
+      "reached_goal": true
+    },
+    {
+      "step": 100000,
+      "episode_states": 17,
+      "tile_entries_seen": 0,
+      "dev_farming_rate": 0.5293333333333333,
+      "reached_goal": true
+    },
+    {
+      "step": 160000,
+      "episode_states": 100,
+      "tile_entries_seen": 0,
+      "dev_farming_rate": 0.8753333333333333,
+      "reached_goal": false
+    },
+    {
+      "step": 400000,
+      "episode_states": 100,
+      "tile_entries_seen": 47,
+      "dev_farming_rate": 0.9166666666666666,
+      "reached_goal": false
+    }
+  ]
+}

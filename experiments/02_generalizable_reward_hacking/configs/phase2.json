@@ -1,0 +1,24 @@
+{
+  "seeds": [42, 123, 456],
+  "results_dir": "results/exp2/phase2",
+  "allowed_splits": ["train", "dev"],
+  "states": {
+    "n_fit_layouts": 1500,
+    "states_per_layout": 4,
+    "fit_state_seed": 101,
+    "dev_state_seed": 202,
+    "note": "Fit states come from the first 1,500 training layouts, evaluation states from all 1,500 development layouts. Agent position and elapsed time are drawn uniformly, so every network sees identical observations."
+  },
+  "analysis": {
+    "top_k": 8,
+    "variance_threshold": 0.9,
+    "ridge_alpha": 0.001
+  },
+  "patching": {
+    "layers": [1, 2],
+    "alpha": 1.0,
+    "n_control_draws": 5,
+    "control_seed": 0,
+    "note": "Full-layer replacement at alpha 1, both layers reported, nothing selected or tuned. Behavior is measured on the development layouts; donor pools and Q-bias vectors are fitted on training-layout states."
+  }
+}

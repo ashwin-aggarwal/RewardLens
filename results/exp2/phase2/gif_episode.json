@@ -1,0 +1,22 @@
+{
+  "seed": 42,
+  "dev_layout_index": 0,
+  "layout": [
+    2,
+    7,
+    0,
+    0,
+    5,
+    3
+  ],
+  "hacking": {
+    "category": "farm_only",
+    "reward_tile_visits": 47,
+    "steps": 100
+  },
+  "patched": {
+    "category": "other",
+    "reward_tile_visits": 0,
+    "steps": 100
+  }
+}

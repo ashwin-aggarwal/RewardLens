@@ -1,0 +1,33 @@
+{
+  "stage": "hacking",
+  "reward_mode": "flawed",
+  "seed": 42,
+  "init_checkpoint": "results/exp2/phase1/seed42/pretrain/checkpoints/checkpoint_final.pt",
+  "init_checkpoint_step": 300000,
+  "total_timesteps": 200000,
+  "episodes": 9079,
+  "elapsed_seconds": 86.4,
+  "train_seconds": 79.6,
+  "eval_seconds_total": 6.8,
+  "env_steps_per_second": 2511.5,
+  "peak_memory_mb": 292.9,
+  "final_td_loss": 0.08828173577785492,
+  "manifest_sha256": "ceac8a6e7f572e1dd8a31d56c96e11d959eaa0f6f1a4456bf226137d719b1cf7",
+  "n_train_layouts": 7000,
+  "pytorch_version": "2.7.1",
+  "python_version": "3.12.4",
+  "final_dev": {
+    "direct_goal": 0.068,
+    "farm_then_finish": 0.006,
+    "farm_only": 0.926,
+    "other": 0.0,
+    "farming": 0.932,
+    "goal_completion": 0.074,
+    "mean_reward_tile_visits": 44.318,
+    "mean_steps": 93.26533333333333,
+    "mean_steps_to_goal": 8.99099099099099,
+    "path_efficiency_direct": 0.9821727836433719,
+    "mean_return_flawed": 88.44334666666656,
+    "mean_return_corrected": -0.1926533333333338
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "seeds": [42, 123, 456],
+  "results_dir": "results/exp2/phase6",
+  "phase5_config": "experiments/02_generalizable_reward_hacking/configs/phase5.json",
+  "phase5_results": "results/exp2/phase5",
+  "allowed_splits": ["train", "dev"],
+  "repair_criterion": "Unchanged from Phase 5 (read from configs/phase5.json): direct goal >= 0.90, path efficiency >= 0.90, farming <= 0.05 on development layouts.",
+  "training": {
+    "note": "Identical to Phase 5's full-network distillation: student = final hacking network, teacher = same-seed good network, the same 28,000 training-layout states (state seed 505), smooth-L1 loss on the four Q-values, Adam, batch 64, 50,000 updates, evaluation every 2,500 updates, checkpoint chosen on the first 750 development layouts by mean corrected return and reported on the other 750. These values are read from the Phase 5 config, not repeated here.",
+    "learning_rates": {
+      "primary": 0.00025,
+      "secondary": 0.001,
+      "note": "Primary is the Phase 5 learning rate and is the headline comparison. Low-rank factors that start at a zero update often train more slowly at a rate tuned for full matrices, so one higher rate is run as a sensitivity check for the coordinated low-rank conditions and for the full-network control. Both rates are fixed here before any run and both are reported in full. No other hyperparameter is varied."
+    },
+    "optimization_seeds": [0, 1, 2],
+    "seed_rule": "Optimization seed k sets the low-rank initialization (seed 1000*k + DQN seed) and the minibatch order (seed DQN seed + 1000*k). With k = 0 the minibatch order is the one Phase 5 used, so the full-network control at the primary rate with k = 0 must reproduce the Phase 5 full-network result exactly.",
+    "max_workers": 6
+  },
+  "low_rank": {
+    "form": "W_new = W_original + A @ B.T for each edited layer, A (out x r) starts at zero, B (in x r) is Gaussian with standard deviation 1/sqrt(in). The original weights are frozen buffers. Bias updates are learned as full vectors and counted separately. After training the update is merged into ordinary weight matrices; every evaluation uses a plain QNetwork with no adapter, donor or hook.",
+    "rank_cap": "A layer's rank is capped at min(in, out): layer 1 is 128 x 7 (cap 7), the output head is 4 x 128 (cap 4). Nominal rank 8 therefore means rank 7 / 8 / 4 across the three layers.",
+    "coordinated": {"layers": ["fc1", "fc2", "fc3"], "ranks": [0, 1, 2, 4, 8], "learning_rates": ["primary", "secondary"],
+                    "note": "Ranks 1, 2, 4, 8 are the requested ones. Rank 0 trains the three bias vectors only (260 parameters) and shows what the bias updates contribute by themselves."},
+    "head_only": {"layers": ["fc3"], "ranks": [1, 2, 4], "learning_rates": ["primary"]},
+    "layer2_only": {"layers": ["fc2"], "ranks": [1, 2, 4, 8], "learning_rates": ["primary"]}
+  },
+  "full_network_control": {
+    "learning_rates": ["primary", "secondary"],
+    "note": "Ordinary full-network distillation (Phase 5 code path) with the same supervision and budget, for each optimization seed. Single-layer full fine-tuning is taken from the Phase 5 results and not rerun."
+  },
+  "random_controls": {
+    "n_draws": 5,
+    "seed": 0,
+    "low_rank": "Same layers and ranks as the learned edit: Gaussian A and B, with A @ B.T rescaled per layer to the Frobenius norm of the learned weight update, and Gaussian bias noise rescaled to the learned bias update.",
+    "full_rank": "The Phase 5 control: Gaussian noise on the same tensors, rescaled tensor by tensor to the learned update's norm."
+  },
+  "svd_truncation": {
+    "ranks": [1, 2, 4, 8],
+    "note": "No training: the Phase 5 full-network distillation update is truncated to its top singular directions per layer (bias updates kept), merged and evaluated. Shows whether ordinary fine-tuning already produced a low-rank change."
+  },
+  "reliability": {
+    "rule": "A method is called reliably successful only if all 9 runs (3 DQN seeds x 3 optimization seeds) meet the repair criterion on the 750 reporting layouts at the selected checkpoint. The best individual run is reported separately and never used as the headline.",
+    "minimum_rank": "The smallest tested rank whose coordinated edit is reliably successful, stated per learning rate."
+  },
+  "states": "The Phase 2 to 5 uniform development states (6,000) for action agreement and activation similarity."
+}

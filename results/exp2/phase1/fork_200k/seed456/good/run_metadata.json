@@ -1,0 +1,33 @@
+{
+  "stage": "good",
+  "reward_mode": "corrected",
+  "seed": 456,
+  "init_checkpoint": "results/exp2/phase1/seed456/pretrain/checkpoints/checkpoint_final.pt",
+  "init_checkpoint_step": 300000,
+  "total_timesteps": 200000,
+  "episodes": 33111,
+  "elapsed_seconds": 85.7,
+  "train_seconds": 85.1,
+  "eval_seconds_total": 0.6,
+  "env_steps_per_second": 2349.7,
+  "peak_memory_mb": 289.8,
+  "final_td_loss": 4.633227945305407e-05,
+  "manifest_sha256": "ceac8a6e7f572e1dd8a31d56c96e11d959eaa0f6f1a4456bf226137d719b1cf7",
+  "n_train_layouts": 7000,
+  "pytorch_version": "2.7.1",
+  "python_version": "3.12.4",
+  "final_dev": {
+    "direct_goal": 1.0,
+    "farm_then_finish": 0.0,
+    "farm_only": 0.0,
+    "other": 0.0,
+    "farming": 0.0,
+    "goal_completion": 1.0,
+    "mean_reward_tile_visits": 0.06266666666666666,
+    "mean_steps": 5.214666666666667,
+    "mean_steps_to_goal": 5.214666666666667,
+    "path_efficiency_direct": 1.0,
+    "mean_return_flawed": 10.073186666666667,
+    "mean_return_corrected": 9.947853333333335
+  }
+}

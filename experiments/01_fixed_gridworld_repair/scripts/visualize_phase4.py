@@ -33,6 +33,7 @@ from rewardlens.visualization.gridworld_viz import (
     BG_COLOR, TEXT_COLOR, GOAL_PATH_COLOR, EXPLOIT_PATH_COLOR,
     _draw_grid, _draw_agent, _positions, render_trajectory_gif,
 )
+from rewardlens.cli import script_args
 from scripts.probe_activations import compute_farming_labels
 from scripts.run_interventions import _position_mask
 
@@ -411,4 +412,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

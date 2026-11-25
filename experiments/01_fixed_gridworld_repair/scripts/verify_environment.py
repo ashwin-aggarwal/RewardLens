@@ -14,6 +14,7 @@ from rewardlens.visualization.gridworld_viz import (
     render_trajectory_comparison,
     render_cumulative_reward,
 )
+from rewardlens.cli import script_args
 
 SEED = 42
 RESULTS_DIR = Path("results/phase1")
@@ -122,4 +123,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     sys.exit(main())

@@ -25,6 +25,7 @@ from rewardlens.analysis.representation_analysis import fit_pca_projection
 from rewardlens.visualization.gridworld_viz import (
     BG_COLOR, TEXT_COLOR, GOAL_PATH_COLOR, EXPLOIT_PATH_COLOR,
 )
+from rewardlens.cli import script_args
 
 FIGURES = Path("assets/figures")
 RESULTS = Path("results/phase3")
@@ -511,4 +512,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

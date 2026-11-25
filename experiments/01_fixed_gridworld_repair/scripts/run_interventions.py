@@ -33,6 +33,7 @@ from rewardlens.analysis.activation_intervention import (
     random_unit_directions,
 )
 from rewardlens.envs.reward_grid import RewardGridConfig
+from rewardlens.cli import script_args
 from scripts.probe_activations import compute_farming_labels
 
 FLAWED_DIR = Path("results/phase2")
@@ -256,4 +257,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

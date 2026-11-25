@@ -33,6 +33,7 @@ from rewardlens.analysis.activation_intervention import (
     random_unit_directions,
 )
 from rewardlens.envs.reward_grid import ACTION_DELTAS, RewardGridConfig
+from rewardlens.cli import script_args
 
 FLAWED_DIR = Path("results/phase2")
 OUTPUT_DIR = Path("results/phase4")
@@ -189,4 +190,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

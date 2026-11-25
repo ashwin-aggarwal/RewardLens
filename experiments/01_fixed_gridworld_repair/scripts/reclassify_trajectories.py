@@ -48,6 +48,7 @@ from rewardlens.analysis.behavior_classification import (
 from rewardlens.analysis.steering import evaluate_steering
 from rewardlens.envs.reward_grid import RewardGridConfig
 from rewardlens.envs.trajectory import Trajectory
+from rewardlens.cli import script_args
 from scripts.run_interventions import _position_mask
 
 OUT_DIR = Path("results/phase4_6")
@@ -279,4 +280,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

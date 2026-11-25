@@ -49,6 +49,7 @@ from rewardlens.analysis.time_dependence import (
     patched_q_components,
 )
 from rewardlens.envs.reward_grid import RewardGridConfig
+from rewardlens.cli import script_args
 from scripts.run_interventions import _position_mask
 
 FLAWED_DIR = Path("results/phase2")
@@ -348,4 +349,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

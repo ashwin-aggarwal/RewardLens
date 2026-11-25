@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 
+from rewardlens.cli import script_args
 from scripts.exp2_visualize_phase6 import MARK, SEED_COLORS, SEEDS, _save, _style
 
 RESULT = Path("results/exp2/final_eval/final_eval.json")
@@ -71,4 +72,5 @@ def render_final_eval():
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     render_final_eval()

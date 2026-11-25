@@ -28,6 +28,7 @@ from typing import Any
 
 from rewardlens.envs.reward_grid import RewardGridEnv, RewardGridConfig
 from rewardlens.envs.trajectory import Trajectory, record_episode
+from rewardlens.cli import script_args
 
 FLAWED_DIR = Path("results/phase2")
 CORRECTED_DIR = Path("results/phase2_5")
@@ -126,4 +127,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

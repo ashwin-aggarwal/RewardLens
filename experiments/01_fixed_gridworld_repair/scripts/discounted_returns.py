@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from rewardlens.envs.trajectory import Trajectory
+from rewardlens.cli import script_args
 
 BG_COLOR = "#F7F7F7"
 GOAL_COLOR = "#16A34A"
@@ -95,4 +96,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

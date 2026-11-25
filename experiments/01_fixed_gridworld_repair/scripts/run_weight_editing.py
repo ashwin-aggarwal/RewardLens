@@ -36,6 +36,7 @@ from rewardlens.analysis.weight_editing import (
     weight_change_stats,
 )
 from rewardlens.envs.reward_grid import RewardGridConfig
+from rewardlens.cli import script_args
 
 FLAWED_DIR = Path("results/phase2")
 OUTPUT_DIR = Path("results/weight_editing")
@@ -279,4 +280,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    script_args(__doc__)
     main()

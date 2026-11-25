@@ -242,7 +242,7 @@ class TestMetrics:
 
 
 class TestEvaluationIntegrity:
-    SOURCES = ("rewardlens/exp2/emergence.py", "scripts/exp2_run_phase3.py", "scripts/exp2_visualize_phase3.py")
+    SOURCES = ("rewardlens/exp2/emergence.py", "experiments/02_generalizable_reward_hacking/scripts/exp2_run_phase3.py", "experiments/02_generalizable_reward_hacking/scripts/exp2_visualize_phase3.py")
 
     def test_phase3_code_never_touches_test_or_final_eval_layouts(self):
         for path in self.SOURCES:

@@ -38,7 +38,7 @@ from scripts.probe_activations import compute_farming_labels
 FLAWED_DIR = Path("results/phase2")
 CORRECTED_DIR = Path("results/phase2_5")
 OUTPUT_DIR = Path("results/phase4")
-CONFIG_PATH = Path("configs/phase4_interventions.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/configs/phase4_interventions.json")
 
 
 def _strip_actions(result: dict) -> dict:

@@ -51,7 +51,7 @@ from rewardlens.envs.trajectory import Trajectory
 from scripts.run_interventions import _position_mask
 
 OUT_DIR = Path("results/phase4_6")
-CONFIG_PATH = Path("configs/phase4_6.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/configs/phase4_6.json")
 FLAWED_DIR = Path("results/phase2")
 CORRECTED_DIR = Path("results/phase2_5")
 SEEDS = (42, 123, 456)

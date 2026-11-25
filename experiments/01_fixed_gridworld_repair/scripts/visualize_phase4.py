@@ -41,7 +41,7 @@ GIFS = Path("assets/gifs")
 RESULTS = Path("results/phase4")
 FLAWED_DIR = Path("results/phase2")
 CORRECTED_DIR = Path("results/phase2_5")
-CONFIG_PATH = Path("configs/phase4_interventions.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/configs/phase4_interventions.json")
 
 BASELINE_COLOR = EXPLOIT_PATH_COLOR      # red (farming baseline)
 TARGETED_COLOR = "#8B5CF6"               # violet (targeted edit)

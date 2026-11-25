@@ -5,7 +5,7 @@ with the donor's remaining-time input clamped to 0.2, injected at alpha = 1
 into the 30k hacking recipient) transfer goal-directed representation, or
 does it succeed mainly by changing the agent's representation of time?
 
-Conditions (all prespecified in configs/phase4_7.json; no selection):
+Conditions (all prespecified in experiments/01_fixed_gridworld_repair/configs/phase4_7.json; no selection):
   A  original recipient, real time
   B  recipient time clamp only (network input; env unchanged), sweep
   C  donor alone with time clamp, sweep
@@ -54,7 +54,7 @@ from scripts.run_interventions import _position_mask
 
 FLAWED_DIR = Path("results/phase2")
 OUTPUT_DIR = Path("results/phase4_7")
-CONFIG_PATH = Path("configs/phase4_7.json")
+CONFIG_PATH = Path("experiments/01_fixed_gridworld_repair/configs/phase4_7.json")
 
 
 def _ckpt(step: int) -> Path:
